@@ -21,25 +21,24 @@ app.commandLine.appendSwitch('use-gl', 'swiftshader');
 let mainWindow;
 let projectPath = null;
 
-
 function createWindow() {
   // Get primary display scale factor for HiDPI support
   const { screen } = require('electron');
   const primaryDisplay = screen.getPrimaryDisplay();
-  const scaleFactor = primaryDisplay.scaleFactor || 1;
+  const _scaleFactor = primaryDisplay.scaleFactor || 1;
 
   mainWindow = new BrowserWindow({
     width: 1600,
     height: 900,
     minWidth: 1200,
     minHeight: 700,
-    show: false,  // Don't show until maximized
+    show: false, // Don't show until maximized
     icon: path.join(__dirname, 'assets', 'icon.png'),
     webPreferences: {
-      nodeIntegration: true,   // Required for CommonJS require() in renderer
+      nodeIntegration: true, // Required for CommonJS require() in renderer
       contextIsolation: false, // Disabled to allow require() in renderer scripts
       preload: path.join(__dirname, 'preload.js'),
-      zoomFactor: 1.0  // No auto-scaling - user can adjust with Ctrl+/Ctrl-
+      zoomFactor: 1.0 // No auto-scaling - user can adjust with Ctrl+/Ctrl-
     },
     title: 'Timeline Scene Builder'
   });
@@ -105,7 +104,7 @@ ipcMain.handle('open-project', async () => {
 
     // Verify it's an MZ project
     const gameFile = path.join(projectPath, 'game.rmmzproject');
-    if (!await pathExists(gameFile)) {
+    if (!(await pathExists(gameFile))) {
       return { error: 'Not a valid RPG Maker MZ project folder (game.rmmzproject not found)' };
     }
 
@@ -120,7 +119,7 @@ ipcMain.handle('set-project-path', async (event, projPath) => {
 
   // Verify it's a valid RPG Maker MZ project
   const gameFile = path.join(projPath, 'game.rmmzproject');
-  if (!await pathExists(gameFile)) {
+  if (!(await pathExists(gameFile))) {
     return { error: 'Not a valid RPG Maker MZ project folder' };
   }
 
@@ -133,7 +132,7 @@ ipcMain.handle('get-screen-resolution', async () => {
   if (!projectPath) return { width: 816, height: 624 }; // Default RPG Maker MZ
 
   const systemPath = path.join(projectPath, 'data', 'System.json');
-  if (!await pathExists(systemPath)) {
+  if (!(await pathExists(systemPath))) {
     return { width: 816, height: 624 }; // Default RPG Maker MZ
   }
 
@@ -142,7 +141,7 @@ ipcMain.handle('get-screen-resolution', async () => {
     const width = data.advanced?.screenWidth || 816;
     const height = data.advanced?.screenHeight || 624;
     return { width, height };
-  } catch (e) {
+  } catch {
     return { width: 816, height: 624 }; // Default on error
   }
 });
@@ -152,7 +151,7 @@ ipcMain.handle('get-pictures-folders', async () => {
   if (!projectPath) return { error: 'No project loaded' };
 
   const picturesPath = path.join(projectPath, 'img', 'pictures');
-  if (!await pathExists(picturesPath)) {
+  if (!(await pathExists(picturesPath))) {
     return { error: 'Pictures folder not found' };
   }
 
@@ -199,7 +198,7 @@ ipcMain.handle('get-folder-contents', async (event, folderPath) => {
   }
 
   const fullPath = path.join(picturesBase, folderPath);
-  if (!await pathExists(fullPath)) {
+  if (!(await pathExists(fullPath))) {
     return { error: 'Folder not found' };
   }
 
@@ -216,7 +215,7 @@ ipcMain.handle('get-folder-contents', async (event, folderPath) => {
         type: 'folder',
         name: entry.name,
         path: relativePath,
-        children: null  // Will be lazy loaded when expanded
+        children: null // Will be lazy loaded when expanded
       });
     } else if (entry.isFile() && entry.name.toLowerCase().endsWith('.png')) {
       const relativePath = path.join(folderPath, entry.name.replace('.png', '')).replace(/\\/g, '/');
@@ -241,12 +240,12 @@ ipcMain.handle('get-thumbnail', async (event, imagePath) => {
   }
 
   const fullPath = path.join(picturesBase, imagePath + '.png');
-  if (!await pathExists(fullPath)) return null;
+  if (!(await pathExists(fullPath))) return null;
 
   try {
     const data = await fsPromises.readFile(fullPath);
     return `data:image/png;base64,${data.toString('base64')}`;
-  } catch (e) {
+  } catch {
     return null;
   }
 });
@@ -261,7 +260,7 @@ ipcMain.handle('get-image-path', async (event, imagePath) => {
   }
 
   const fullPath = path.join(picturesBase, imagePath + '.png');
-  if (!await pathExists(fullPath)) return null;
+  if (!(await pathExists(fullPath))) return null;
 
   return fullPath;
 });
@@ -271,7 +270,7 @@ ipcMain.handle('export-to-map', async (event, { events: evtList, mapId, eventId,
   if (!projectPath) return { error: 'No project loaded' };
 
   const mapFile = path.join(projectPath, 'data', `Map${String(mapId).padStart(3, '0')}.json`);
-  if (!await pathExists(mapFile)) {
+  if (!(await pathExists(mapFile))) {
     return { error: `Map file not found: Map${String(mapId).padStart(3, '0')}.json` };
   }
 
@@ -280,7 +279,7 @@ ipcMain.handle('export-to-map', async (event, { events: evtList, mapId, eventId,
     const mzCommands = convertToMZFormat(evtList);
 
     // Find the event
-    const mapEvent = mapData.events.find(e => e && e.id === eventId);
+    const mapEvent = mapData.events.find((e) => e && e.id === eventId);
     if (!mapEvent) {
       return { error: `Event ID ${eventId} not found in map` };
     }
@@ -308,13 +307,13 @@ ipcMain.handle('get-maps', async () => {
   if (!projectPath) return { error: 'No project loaded' };
 
   const mapInfoFile = path.join(projectPath, 'data', 'MapInfos.json');
-  if (!await pathExists(mapInfoFile)) {
+  if (!(await pathExists(mapInfoFile))) {
     return { error: 'MapInfos.json not found' };
   }
 
   try {
     const mapInfos = JSON.parse(await fsPromises.readFile(mapInfoFile, 'utf-8'));
-    return mapInfos.filter(m => m).map(m => ({ id: m.id, name: m.name }));
+    return mapInfos.filter((m) => m).map((m) => ({ id: m.id, name: m.name }));
   } catch (e) {
     return { error: e.message };
   }
@@ -325,15 +324,13 @@ ipcMain.handle('get-map-events', async (event, mapId) => {
   if (!projectPath) return { error: 'No project loaded' };
 
   const mapFile = path.join(projectPath, 'data', `Map${String(mapId).padStart(3, '0')}.json`);
-  if (!await pathExists(mapFile)) {
+  if (!(await pathExists(mapFile))) {
     return { error: 'Map file not found' };
   }
 
   try {
     const mapData = JSON.parse(await fsPromises.readFile(mapFile, 'utf-8'));
-    return mapData.events
-      .filter(e => e)
-      .map(e => ({ id: e.id, name: e.name, pages: e.pages.length }));
+    return mapData.events.filter((e) => e).map((e) => ({ id: e.id, name: e.name, pages: e.pages.length }));
   } catch (e) {
     return { error: e.message };
   }
@@ -375,7 +372,7 @@ const AUTOSAVE_PATH = path.join(os.tmpdir(), 'timeline-scene-builder', 'autosave
 
 async function ensureAutosaveDir() {
   const dir = path.dirname(AUTOSAVE_PATH);
-  if (!await pathExists(dir)) {
+  if (!(await pathExists(dir))) {
     await fsPromises.mkdir(dir, { recursive: true });
   }
 }
@@ -392,10 +389,10 @@ ipcMain.handle('autosave-write', async (event, sceneData) => {
 
 ipcMain.handle('autosave-read', async () => {
   try {
-    if (!await pathExists(AUTOSAVE_PATH)) return null;
+    if (!(await pathExists(AUTOSAVE_PATH))) return null;
     const data = await fsPromises.readFile(AUTOSAVE_PATH, 'utf-8');
     return JSON.parse(data);
-  } catch (e) {
+  } catch {
     return null;
   }
 });

@@ -107,15 +107,19 @@ function showConfirmDialog(title, message, buttons) {
         <div class="modal-body" style="padding: 20px;">
           <p>${message}</p>
           <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
-            ${buttons.map((btn, i) => `
+            ${buttons
+              .map(
+                (btn, i) => `
               <button class="btn ${i === 0 ? 'btn-primary' : ''}" data-result="${btn}">${btn}</button>
-            `).join('')}
+            `
+              )
+              .join('')}
           </div>
         </div>
       </div>
     `;
 
-    modal.querySelectorAll('button').forEach(btn => {
+    modal.querySelectorAll('button').forEach((btn) => {
       btn.addEventListener('click', () => {
         document.body.removeChild(modal);
         resolve(btn.dataset.result);

@@ -40,8 +40,7 @@ function handleKeyboardMove(e) {
   }
 
   // Ctrl+Shift+Z or Ctrl+Y - Redo
-  if ((e.key === 'z' && (e.ctrlKey || e.metaKey) && e.shiftKey) ||
-      (e.key === 'y' && (e.ctrlKey || e.metaKey))) {
+  if ((e.key === 'z' && (e.ctrlKey || e.metaKey) && e.shiftKey) || (e.key === 'y' && (e.ctrlKey || e.metaKey))) {
     e.preventDefault();
     redo();
     return;
@@ -104,11 +103,9 @@ function handleKeyboardMove(e) {
       newEvent.startFrame = state.currentFrame;
 
       if (newEvent.type === 'showText') {
-        const textEvents = state.events.filter(evt => evt.type === 'showText');
+        const textEvents = state.events.filter((evt) => evt.type === 'showText');
         if (textEvents.length > 0) {
-          const lastText = textEvents.reduce((a, b) =>
-            (a.startFrame || 0) > (b.startFrame || 0) ? a : b
-          );
+          const lastText = textEvents.reduce((a, b) => ((a.startFrame || 0) > (b.startFrame || 0) ? a : b));
           if (newEvent.startFrame <= (lastText.startFrame || 0)) {
             newEvent.startFrame = (lastText.startFrame || 0) + 10;
           }

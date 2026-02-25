@@ -57,10 +57,8 @@ function stopTimelineDrag(onDrag, onStop) {
   // For text events: prevent stacking
   if (draggedEvt && draggedEvt.type === 'showText') {
     const draggedStart = draggedEvt.startFrame || 0;
-    const overlappingText = state.events.find((evt, idx) =>
-      idx !== draggedIdx &&
-      evt.type === 'showText' &&
-      Math.abs((evt.startFrame || 0) - draggedStart) < 10
+    const overlappingText = state.events.find(
+      (evt, idx) => idx !== draggedIdx && evt.type === 'showText' && Math.abs((evt.startFrame || 0) - draggedStart) < 10
     );
     if (overlappingText) {
       overlappingText.startFrame = originalFrame;

@@ -92,7 +92,7 @@ const state = {
 
   // Export cache (prefetched data)
   cachedMaps: null,
-  cachedMapEvents: {}  // { mapId: eventsArray }
+  cachedMapEvents: {} // { mapId: eventsArray }
 };
 
 function get(key) {

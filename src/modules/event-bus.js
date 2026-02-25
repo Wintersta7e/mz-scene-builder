@@ -77,20 +77,20 @@ const eventBus = {
 // Event name constants
 const Events = {
   // Render events
-  RENDER: 'render',                    // Full render (timeline + preview + properties)
-  RENDER_TIMELINE: 'render:timeline',  // Timeline only
-  RENDER_PREVIEW: 'render:preview',    // Preview at current frame
+  RENDER: 'render', // Full render (timeline + preview + properties)
+  RENDER_TIMELINE: 'render:timeline', // Timeline only
+  RENDER_PREVIEW: 'render:preview', // Preview at current frame
   RENDER_PROPERTIES: 'render:properties', // Properties panel
 
   // State events
-  STATE_CHANGED: 'state:changed',      // Any state change
-  EVENT_SELECTED: 'event:selected',    // Event selection changed
-  FRAME_CHANGED: 'frame:changed',      // Current frame changed
+  STATE_CHANGED: 'state:changed', // Any state change
+  EVENT_SELECTED: 'event:selected', // Event selection changed
+  FRAME_CHANGED: 'frame:changed', // Current frame changed
 
   // Project events
-  PROJECT_LOADED: 'project:loaded',    // Project was loaded
-  SCENE_LOADED: 'scene:loaded',        // Scene was loaded
-  SCENE_SAVED: 'scene:saved',          // Scene was saved
+  PROJECT_LOADED: 'project:loaded', // Project was loaded
+  SCENE_LOADED: 'scene:loaded', // Scene was loaded
+  SCENE_SAVED: 'scene:saved' // Scene was saved
 };
 
 module.exports = { eventBus, Events };

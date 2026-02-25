@@ -28,10 +28,9 @@ function startPlayback() {
   elements.btnPlay.textContent = '⏸';
 
   // Check for text event at current frame before starting
-  const initialTextIndex = state.events.findIndex((evt, idx) =>
-    evt.type === 'showText' &&
-    (evt.startFrame || 0) === state.currentFrame &&
-    !state.processedTextEvents.has(idx)
+  const initialTextIndex = state.events.findIndex(
+    (evt, idx) =>
+      evt.type === 'showText' && (evt.startFrame || 0) === state.currentFrame && !state.processedTextEvents.has(idx)
   );
   if (initialTextIndex !== -1) {
     state.waitingForTextClick = true;
@@ -45,10 +44,9 @@ function startPlayback() {
     state.currentFrame++;
 
     // Check for text event at this frame
-    const textEventIndex = state.events.findIndex((evt, idx) =>
-      evt.type === 'showText' &&
-      (evt.startFrame || 0) === state.currentFrame &&
-      !state.processedTextEvents.has(idx)
+    const textEventIndex = state.events.findIndex(
+      (evt, idx) =>
+        evt.type === 'showText' && (evt.startFrame || 0) === state.currentFrame && !state.processedTextEvents.has(idx)
     );
 
     if (textEventIndex !== -1) {
@@ -60,7 +58,7 @@ function startPlayback() {
 
     // Find max frame
     let maxFrame = 0;
-    state.events.forEach(evt => {
+    state.events.forEach((evt) => {
       const endFrame = (evt.startFrame || 0) + getEventDuration(evt.type, evt);
       if (endFrame > maxFrame) maxFrame = endFrame;
     });
@@ -70,10 +68,8 @@ function startPlayback() {
       state.processedTextEvents.clear();
 
       // Check for text at frame 0 after looping
-      const textAtZero = state.events.findIndex((evt, idx) =>
-        evt.type === 'showText' &&
-        (evt.startFrame || 0) === 0 &&
-        !state.processedTextEvents.has(idx)
+      const textAtZero = state.events.findIndex(
+        (evt, idx) => evt.type === 'showText' && (evt.startFrame || 0) === 0 && !state.processedTextEvents.has(idx)
       );
       if (textAtZero !== -1) {
         state.waitingForTextClick = true;

@@ -13,7 +13,7 @@ const { showError } = require('./notifications');
 const { eventBus, Events } = require('./event-bus');
 
 async function openProject() {
-  if (!await checkUnsavedChanges()) return;
+  if (!(await checkUnsavedChanges())) return;
 
   const result = await api.invoke('open-project');
   if (result && !result.error) {

@@ -1,181 +1,193 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Timeline Scene Builder</title>
-  <link rel="stylesheet" href="styles.css">
-</head>
-<body>
-  <div class="app">
-    <!-- Top Toolbar -->
-    <header class="toolbar">
-      <div class="toolbar-group">
-        <div class="dropdown-container" id="open-project-container">
-          <button id="btn-open-project" class="btn btn-primary">Open Project ▾</button>
-          <div class="dropdown" id="recent-projects-dropdown">
-            <div class="dropdown-item disabled">No recent projects</div>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Timeline Scene Builder</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app">
+      <!-- Top Toolbar -->
+      <header class="toolbar">
+        <div class="toolbar-group">
+          <div class="dropdown-container" id="open-project-container">
+            <button id="btn-open-project" class="btn btn-primary">Open Project ▾</button>
+            <div class="dropdown" id="recent-projects-dropdown">
+              <div class="dropdown-item disabled">No recent projects</div>
+            </div>
+          </div>
+          <span id="project-name" class="project-name">No project loaded</span>
+        </div>
+        <div class="toolbar-group">
+          <button id="btn-new-scene" class="btn" disabled title="New Scene">New</button>
+          <button id="btn-load-scene" class="btn" disabled title="Load Scene">Load</button>
+          <button id="btn-save-scene" class="btn" disabled title="Save Scene (Ctrl+S)">Save</button>
+        </div>
+        <div class="toolbar-group">
+          <button id="btn-export-map" class="btn btn-primary" disabled>Export to Map</button>
+          <button id="btn-quick-export" class="btn" disabled title="Export to last used location">Quick Export</button>
+        </div>
+        <div class="toolbar-group" style="margin-left: auto">
+          <button id="btn-help" class="btn" title="Keyboard Shortcuts (F1)">?</button>
+          <button id="btn-about" class="btn" title="About">About</button>
+        </div>
+      </header>
+
+      <div class="main-content">
+        <!-- Left Panel: Image Browser -->
+        <aside class="panel panel-left" id="panel-left">
+          <h3>Pictures</h3>
+          <div class="search-box">
+            <input type="text" id="image-search" placeholder="Search images..." disabled />
+          </div>
+          <div id="image-browser" class="image-browser">
+            <p class="placeholder">Open a project to browse images</p>
+          </div>
+          <div class="resize-handle" id="resize-left"></div>
+        </aside>
+
+        <!-- Center: Preview -->
+        <main class="panel panel-center">
+          <div class="preview-header">
+            <h3>Preview (1920x1080)</h3>
+            <div class="preview-tools">
+              <button id="btn-toggle-grid" class="btn btn-sm" title="Toggle Grid Overlay">Grid</button>
+              <button id="btn-toggle-snap" class="btn btn-sm" title="Snap to Grid">Snap</button>
+            </div>
+          </div>
+          <div class="preview-container">
+            <div id="preview-canvas" class="preview-canvas">
+              <div id="preview-grid" class="preview-grid"></div>
+              <!-- Images will be positioned here -->
+            </div>
+          </div>
+        </main>
+
+        <!-- Right Panel: Properties -->
+        <aside class="panel panel-right" id="panel-right">
+          <div class="resize-handle" id="resize-right"></div>
+          <h3>Properties</h3>
+          <div id="properties-panel" class="properties-panel">
+            <p class="placeholder">Select an event to edit properties</p>
+          </div>
+        </aside>
+      </div>
+
+      <!-- Bottom: Timeline -->
+      <footer class="timeline-container" id="panel-timeline">
+        <div class="resize-handle-horizontal" id="resize-timeline"></div>
+        <div class="timeline-header">
+          <div class="timeline-controls">
+            <button id="btn-play" class="btn btn-sm" disabled title="Play">▶</button>
+            <button id="btn-stop" class="btn btn-sm" disabled title="Stop">■</button>
+            <span class="timeline-position">Frame: <span id="current-frame">0</span></span>
+            <span class="timeline-length-control">
+              Length:
+              <input
+                type="number"
+                id="timeline-length"
+                value="300"
+                min="60"
+                max="9999"
+                step="60"
+                title="Timeline length in frames (60 = 1 second)"
+              />
+              frames
+            </span>
+          </div>
+          <div class="event-buttons">
+            <button id="btn-add-picture" class="btn btn-sm" disabled title="Add Show Picture">+ Show</button>
+            <button id="btn-add-move" class="btn btn-sm" disabled title="Add Move Picture">+ Move</button>
+            <button id="btn-add-rotate" class="btn btn-sm" disabled title="Add Rotate Picture">+ Rotate</button>
+            <button id="btn-add-tint" class="btn btn-sm" disabled title="Add Tint Picture">+ Tint</button>
+            <button id="btn-add-erase" class="btn btn-sm" disabled title="Add Erase Picture">+ Erase</button>
+            <button id="btn-add-text" class="btn btn-sm" disabled title="Add Show Text">+ Text</button>
+            <button id="btn-add-wait" class="btn btn-sm" disabled title="Add Wait">+ Wait</button>
+            <button id="btn-add-flash" class="btn btn-sm" disabled title="Add Screen Flash">+ Flash</button>
+            <button id="btn-delete-event" class="btn btn-sm btn-danger" disabled title="Delete Selected (Del)">
+              Del
+            </button>
+            <button id="btn-clear-scene" class="btn btn-sm" disabled title="Clear all events">Clear</button>
           </div>
         </div>
-        <span id="project-name" class="project-name">No project loaded</span>
-      </div>
-      <div class="toolbar-group">
-        <button id="btn-new-scene" class="btn" disabled title="New Scene">New</button>
-        <button id="btn-load-scene" class="btn" disabled title="Load Scene">Load</button>
-        <button id="btn-save-scene" class="btn" disabled title="Save Scene (Ctrl+S)">Save</button>
-      </div>
-      <div class="toolbar-group">
-        <button id="btn-export-map" class="btn btn-primary" disabled>Export to Map</button>
-        <button id="btn-quick-export" class="btn" disabled title="Export to last used location">Quick Export</button>
-      </div>
-      <div class="toolbar-group" style="margin-left: auto;">
-        <button id="btn-help" class="btn" title="Keyboard Shortcuts (F1)">?</button>
-        <button id="btn-about" class="btn" title="About">About</button>
-      </div>
-    </header>
-
-    <div class="main-content">
-      <!-- Left Panel: Image Browser -->
-      <aside class="panel panel-left" id="panel-left">
-        <h3>Pictures</h3>
-        <div class="search-box">
-          <input type="text" id="image-search" placeholder="Search images..." disabled>
-        </div>
-        <div id="image-browser" class="image-browser">
-          <p class="placeholder">Open a project to browse images</p>
-        </div>
-        <div class="resize-handle" id="resize-left"></div>
-      </aside>
-
-      <!-- Center: Preview -->
-      <main class="panel panel-center">
-        <div class="preview-header">
-          <h3>Preview (1920x1080)</h3>
-          <div class="preview-tools">
-            <button id="btn-toggle-grid" class="btn btn-sm" title="Toggle Grid Overlay">Grid</button>
-            <button id="btn-toggle-snap" class="btn btn-sm" title="Snap to Grid">Snap</button>
+        <div class="timeline-body">
+          <div class="timeline-lanes" id="timeline-lanes">
+            <!-- Lanes will be added here -->
+          </div>
+          <div class="timeline-track" id="timeline-track">
+            <div class="timeline-ruler" id="timeline-ruler"></div>
+            <div class="timeline-events" id="timeline-events">
+              <!-- Events will be placed here -->
+            </div>
+            <div class="timeline-cursor" id="timeline-cursor"></div>
           </div>
         </div>
-        <div class="preview-container">
-          <div id="preview-canvas" class="preview-canvas">
-            <div id="preview-grid" class="preview-grid"></div>
-            <!-- Images will be positioned here -->
-          </div>
+        <!-- Timeline Minimap -->
+        <div class="timeline-minimap" id="timeline-minimap">
+          <canvas id="minimap-canvas"></canvas>
+          <div class="minimap-viewport" id="minimap-viewport"></div>
+          <div class="minimap-cursor" id="minimap-cursor"></div>
         </div>
-      </main>
-
-      <!-- Right Panel: Properties -->
-      <aside class="panel panel-right" id="panel-right">
-        <div class="resize-handle" id="resize-right"></div>
-        <h3>Properties</h3>
-        <div id="properties-panel" class="properties-panel">
-          <p class="placeholder">Select an event to edit properties</p>
-        </div>
-      </aside>
+      </footer>
     </div>
 
-    <!-- Bottom: Timeline -->
-    <footer class="timeline-container" id="panel-timeline">
-      <div class="resize-handle-horizontal" id="resize-timeline"></div>
-      <div class="timeline-header">
-        <div class="timeline-controls">
-          <button id="btn-play" class="btn btn-sm" disabled title="Play">▶</button>
-          <button id="btn-stop" class="btn btn-sm" disabled title="Stop">■</button>
-          <span class="timeline-position">Frame: <span id="current-frame">0</span></span>
-          <span class="timeline-length-control">
-            Length: <input type="number" id="timeline-length" value="300" min="60" max="9999" step="60" title="Timeline length in frames (60 = 1 second)"> frames
-          </span>
+    <!-- Image Picker Modal -->
+    <div id="image-picker-modal" class="modal" style="display: none">
+      <div class="modal-content modal-large">
+        <div class="modal-header">
+          <h3>Select Image</h3>
+          <button class="btn-close" id="btn-close-image-picker">&times;</button>
         </div>
-        <div class="event-buttons">
-          <button id="btn-add-picture" class="btn btn-sm" disabled title="Add Show Picture">+ Show</button>
-          <button id="btn-add-move" class="btn btn-sm" disabled title="Add Move Picture">+ Move</button>
-          <button id="btn-add-rotate" class="btn btn-sm" disabled title="Add Rotate Picture">+ Rotate</button>
-          <button id="btn-add-tint" class="btn btn-sm" disabled title="Add Tint Picture">+ Tint</button>
-          <button id="btn-add-erase" class="btn btn-sm" disabled title="Add Erase Picture">+ Erase</button>
-          <button id="btn-add-text" class="btn btn-sm" disabled title="Add Show Text">+ Text</button>
-          <button id="btn-add-wait" class="btn btn-sm" disabled title="Add Wait">+ Wait</button>
-          <button id="btn-add-flash" class="btn btn-sm" disabled title="Add Screen Flash">+ Flash</button>
-          <button id="btn-delete-event" class="btn btn-sm btn-danger" disabled title="Delete Selected (Del)">Del</button>
-          <button id="btn-clear-scene" class="btn btn-sm" disabled title="Clear all events">Clear</button>
-        </div>
-      </div>
-      <div class="timeline-body">
-        <div class="timeline-lanes" id="timeline-lanes">
-          <!-- Lanes will be added here -->
-        </div>
-        <div class="timeline-track" id="timeline-track">
-          <div class="timeline-ruler" id="timeline-ruler"></div>
-          <div class="timeline-events" id="timeline-events">
-            <!-- Events will be placed here -->
+        <div class="modal-body">
+          <div class="image-picker-layout">
+            <div class="folder-tree" id="picker-folders"></div>
+            <div class="image-grid" id="picker-images"></div>
           </div>
-          <div class="timeline-cursor" id="timeline-cursor"></div>
-        </div>
-      </div>
-      <!-- Timeline Minimap -->
-      <div class="timeline-minimap" id="timeline-minimap">
-        <canvas id="minimap-canvas"></canvas>
-        <div class="minimap-viewport" id="minimap-viewport"></div>
-        <div class="minimap-cursor" id="minimap-cursor"></div>
-      </div>
-    </footer>
-  </div>
-
-  <!-- Image Picker Modal -->
-  <div id="image-picker-modal" class="modal" style="display: none;">
-    <div class="modal-content modal-large">
-      <div class="modal-header">
-        <h3>Select Image</h3>
-        <button class="btn-close" id="btn-close-image-picker">&times;</button>
-      </div>
-      <div class="modal-body">
-        <div class="image-picker-layout">
-          <div class="folder-tree" id="picker-folders"></div>
-          <div class="image-grid" id="picker-images"></div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Export to Map Modal -->
-  <div id="export-modal" class="modal" style="display: none;">
-    <div class="modal-content" style="width: 500px;">
-      <div class="modal-header">
-        <h3>Export to Map</h3>
-        <button class="btn-close" id="btn-close-export-modal">&times;</button>
-      </div>
-      <div class="modal-body" style="padding: 16px;">
-        <div class="property-group">
-          <h4>Target Location</h4>
-          <div class="property-row">
-            <span class="property-label">Map:</span>
-            <div class="property-input">
-              <div id="export-map-select"></div>
-            </div>
-          </div>
-          <div class="property-row">
-            <span class="property-label">Event:</span>
-            <div class="property-input">
-              <div id="export-event-select"></div>
-            </div>
-          </div>
-          <div class="property-row">
-            <span class="property-label">Page:</span>
-            <div class="property-input">
-              <div id="export-page-select"></div>
-            </div>
-          </div>
-        </div>
-        <p style="color: var(--text-muted); font-size: 12px; margin: 12px 0;">
-          Commands will be inserted at the end of the selected event page.
-        </p>
-        <div style="display: flex; gap: 8px; justify-content: flex-end;">
-          <button class="btn" id="btn-cancel-export">Cancel</button>
-          <button class="btn btn-success" id="btn-do-export" disabled>Export</button>
         </div>
       </div>
     </div>
-  </div>
 
-  <script src="renderer.js"></script>
-</body>
+    <!-- Export to Map Modal -->
+    <div id="export-modal" class="modal" style="display: none">
+      <div class="modal-content" style="width: 500px">
+        <div class="modal-header">
+          <h3>Export to Map</h3>
+          <button class="btn-close" id="btn-close-export-modal">&times;</button>
+        </div>
+        <div class="modal-body" style="padding: 16px">
+          <div class="property-group">
+            <h4>Target Location</h4>
+            <div class="property-row">
+              <span class="property-label">Map:</span>
+              <div class="property-input">
+                <div id="export-map-select"></div>
+              </div>
+            </div>
+            <div class="property-row">
+              <span class="property-label">Event:</span>
+              <div class="property-input">
+                <div id="export-event-select"></div>
+              </div>
+            </div>
+            <div class="property-row">
+              <span class="property-label">Page:</span>
+              <div class="property-input">
+                <div id="export-page-select"></div>
+              </div>
+            </div>
+          </div>
+          <p style="color: var(--text-muted); font-size: 12px; margin: 12px 0">
+            Commands will be inserted at the end of the selected event page.
+          </p>
+          <div style="display: flex; gap: 8px; justify-content: flex-end">
+            <button class="btn" id="btn-cancel-export">Cancel</button>
+            <button class="btn btn-success" id="btn-do-export" disabled>Export</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="renderer.js"></script>
+  </body>
 </html>

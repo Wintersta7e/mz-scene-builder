@@ -1,4 +1,11 @@
-const { rgbToHex, hexToRgb, sortEvents, TYPE_PRIORITY, getNextInsertOrder, resetInsertOrderCounter } = require('../src/modules/utils');
+const {
+  rgbToHex,
+  hexToRgb,
+  sortEvents,
+  TYPE_PRIORITY,
+  getNextInsertOrder,
+  resetInsertOrderCounter
+} = require('../src/modules/utils');
 
 describe('rgbToHex', () => {
   it('converts standard RGB values', () => {
@@ -96,7 +103,7 @@ describe('sortEvents', () => {
 
       sortEvents(events);
 
-      expect(events.map(e => e.startFrame)).toEqual([50, 100, 200]);
+      expect(events.map((e) => e.startFrame)).toEqual([50, 100, 200]);
     });
 
     it('handles missing startFrame as 0', () => {
@@ -108,38 +115,38 @@ describe('sortEvents', () => {
 
       sortEvents(events);
 
-      expect(events.map(e => e.startFrame || 0)).toEqual([0, 5, 10]);
+      expect(events.map((e) => e.startFrame || 0)).toEqual([0, 5, 10]);
     });
   });
 
   describe('type priority sorting (same frame)', () => {
     it('sorts by type priority when frames are equal', () => {
       const events = [
-        { startFrame: 0, type: 'showText' },      // priority 7
-        { startFrame: 0, type: 'showPicture' },   // priority 0
-        { startFrame: 0, type: 'wait' },          // priority 6
-        { startFrame: 0, type: 'movePicture' }    // priority 1
+        { startFrame: 0, type: 'showText' }, // priority 7
+        { startFrame: 0, type: 'showPicture' }, // priority 0
+        { startFrame: 0, type: 'wait' }, // priority 6
+        { startFrame: 0, type: 'movePicture' } // priority 1
       ];
 
       sortEvents(events);
 
-      expect(events.map(e => e.type)).toEqual([
-        'showPicture',  // 0
-        'movePicture',  // 1
-        'wait',         // 6
-        'showText'      // 7
+      expect(events.map((e) => e.type)).toEqual([
+        'showPicture', // 0
+        'movePicture', // 1
+        'wait', // 6
+        'showText' // 7
       ]);
     });
 
     it('handles unknown types with priority 0', () => {
       const events = [
         { startFrame: 0, type: 'showText' },
-        { startFrame: 0, type: 'unknownType' }  // defaults to priority 0
+        { startFrame: 0, type: 'unknownType' } // defaults to priority 0
       ];
 
       sortEvents(events);
 
-      expect(events.map(e => e.type)).toEqual(['unknownType', 'showText']);
+      expect(events.map((e) => e.type)).toEqual(['unknownType', 'showText']);
     });
   });
 
@@ -153,7 +160,7 @@ describe('sortEvents', () => {
 
       sortEvents(events);
 
-      expect(events.map(e => e.imageName)).toEqual(['third', 'second', 'first']);
+      expect(events.map((e) => e.imageName)).toEqual(['third', 'second', 'first']);
     });
 
     it('handles missing _insertOrder as 0', () => {
@@ -164,7 +171,7 @@ describe('sortEvents', () => {
 
       sortEvents(events);
 
-      expect(events.map(e => e.imageName)).toEqual(['with', 'without']);
+      expect(events.map((e) => e.imageName)).toEqual(['with', 'without']);
     });
   });
 

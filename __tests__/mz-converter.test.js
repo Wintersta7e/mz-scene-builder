@@ -4,19 +4,21 @@ const path = require('path');
 describe('convertToMZFormat', () => {
   describe('showPicture (code 231)', () => {
     it('converts showPicture with all properties', () => {
-      const events = [{
-        type: 'showPicture',
-        pictureNumber: 5,
-        imageName: 'characters/mika/pose1',
-        origin: 1,
-        positionType: 0,
-        x: 960,
-        y: 540,
-        scaleX: 100,
-        scaleY: 100,
-        opacity: 255,
-        blend: 0
-      }];
+      const events = [
+        {
+          type: 'showPicture',
+          pictureNumber: 5,
+          imageName: 'characters/mika/pose1',
+          origin: 1,
+          positionType: 0,
+          x: 960,
+          y: 540,
+          scaleX: 100,
+          scaleY: 100,
+          opacity: 255,
+          blend: 0
+        }
+      ];
 
       const result = convertToMZFormat(events);
 
@@ -39,21 +41,23 @@ describe('convertToMZFormat', () => {
 
   describe('movePicture (code 232)', () => {
     it('converts movePicture with all properties', () => {
-      const events = [{
-        type: 'movePicture',
-        pictureNumber: 3,
-        origin: 1,
-        positionType: 0,
-        x: 100,
-        y: 200,
-        scaleX: 150,
-        scaleY: 150,
-        opacity: 128,
-        blend: 1,
-        duration: 30,
-        wait: true,
-        easingType: 2
-      }];
+      const events = [
+        {
+          type: 'movePicture',
+          pictureNumber: 3,
+          origin: 1,
+          positionType: 0,
+          x: 100,
+          y: 200,
+          scaleX: 150,
+          scaleY: 150,
+          opacity: 128,
+          blend: 1,
+          duration: 30,
+          wait: true,
+          easingType: 2
+        }
+      ];
 
       const result = convertToMZFormat(events);
 
@@ -77,11 +81,13 @@ describe('convertToMZFormat', () => {
 
   describe('rotatePicture (code 233)', () => {
     it('converts rotatePicture with speed', () => {
-      const events = [{
-        type: 'rotatePicture',
-        pictureNumber: 2,
-        speed: 5
-      }];
+      const events = [
+        {
+          type: 'rotatePicture',
+          pictureNumber: 2,
+          speed: 5
+        }
+      ];
 
       const result = convertToMZFormat(events);
 
@@ -104,16 +110,18 @@ describe('convertToMZFormat', () => {
 
   describe('tintPicture (code 234)', () => {
     it('converts tintPicture with color values', () => {
-      const events = [{
-        type: 'tintPicture',
-        pictureNumber: 4,
-        red: 100,
-        green: -50,
-        blue: 0,
-        gray: 128,
-        duration: 45,
-        wait: false
-      }];
+      const events = [
+        {
+          type: 'tintPicture',
+          pictureNumber: 4,
+          red: 100,
+          green: -50,
+          blue: 0,
+          gray: 128,
+          duration: 45,
+          wait: false
+        }
+      ];
 
       const result = convertToMZFormat(events);
 
@@ -126,10 +134,12 @@ describe('convertToMZFormat', () => {
     });
 
     it('defaults wait to true when not specified', () => {
-      const events = [{
-        type: 'tintPicture',
-        pictureNumber: 1
-      }];
+      const events = [
+        {
+          type: 'tintPicture',
+          pictureNumber: 1
+        }
+      ];
 
       const result = convertToMZFormat(events);
 
@@ -148,10 +158,12 @@ describe('convertToMZFormat', () => {
 
   describe('erasePicture (code 235)', () => {
     it('converts erasePicture', () => {
-      const events = [{
-        type: 'erasePicture',
-        pictureNumber: 7
-      }];
+      const events = [
+        {
+          type: 'erasePicture',
+          pictureNumber: 7
+        }
+      ];
 
       const result = convertToMZFormat(events);
 
@@ -174,14 +186,16 @@ describe('convertToMZFormat', () => {
 
   describe('showText (code 101 + 401)', () => {
     it('converts single line text', () => {
-      const events = [{
-        type: 'showText',
-        faceName: 'Actor1',
-        faceIndex: 2,
-        background: 1,
-        position: 0,
-        text: 'Hello, world!'
-      }];
+      const events = [
+        {
+          type: 'showText',
+          faceName: 'Actor1',
+          faceIndex: 2,
+          background: 1,
+          position: 0,
+          text: 'Hello, world!'
+        }
+      ];
 
       const result = convertToMZFormat(events);
 
@@ -199,10 +213,12 @@ describe('convertToMZFormat', () => {
     });
 
     it('converts multiline text', () => {
-      const events = [{
-        type: 'showText',
-        text: 'Line 1\nLine 2\nLine 3'
-      }];
+      const events = [
+        {
+          type: 'showText',
+          text: 'Line 1\nLine 2\nLine 3'
+        }
+      ];
 
       const result = convertToMZFormat(events);
 
@@ -223,10 +239,12 @@ describe('convertToMZFormat', () => {
     });
 
     it('handles empty text', () => {
-      const events = [{
-        type: 'showText',
-        text: ''
-      }];
+      const events = [
+        {
+          type: 'showText',
+          text: ''
+        }
+      ];
 
       const result = convertToMZFormat(events);
 
@@ -237,10 +255,12 @@ describe('convertToMZFormat', () => {
 
   describe('wait (code 230)', () => {
     it('converts wait with frames', () => {
-      const events = [{
-        type: 'wait',
-        frames: 120
-      }];
+      const events = [
+        {
+          type: 'wait',
+          frames: 120
+        }
+      ];
 
       const result = convertToMZFormat(events);
 
@@ -263,15 +283,17 @@ describe('convertToMZFormat', () => {
 
   describe('screenFlash (code 224)', () => {
     it('converts screenFlash with all properties', () => {
-      const events = [{
-        type: 'screenFlash',
-        red: 255,
-        green: 128,
-        blue: 64,
-        intensity: 200,
-        duration: 15,
-        wait: false
-      }];
+      const events = [
+        {
+          type: 'screenFlash',
+          red: 255,
+          green: 128,
+          blue: 64,
+          intensity: 200,
+          duration: 15,
+          wait: false
+        }
+      ];
 
       const result = convertToMZFormat(events);
 
@@ -314,10 +336,7 @@ describe('convertToMZFormat', () => {
     });
 
     it('ignores unknown event types', () => {
-      const events = [
-        { type: 'unknownType' },
-        { type: 'wait', frames: 30 }
-      ];
+      const events = [{ type: 'unknownType' }, { type: 'wait', frames: 30 }];
 
       const result = convertToMZFormat(events);
 

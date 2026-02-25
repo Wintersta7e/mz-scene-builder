@@ -156,7 +156,7 @@ function renderFlashProperties(evt) {
   });
 
   // Color presets
-  document.querySelectorAll('.flash-preset').forEach(btn => {
+  document.querySelectorAll('.flash-preset').forEach((btn) => {
     btn.addEventListener('click', () => {
       evt.red = parseInt(btn.dataset.r);
       evt.green = parseInt(btn.dataset.g);

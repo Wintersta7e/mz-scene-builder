@@ -41,7 +41,7 @@ function renderMinimap() {
   ctx.clearRect(0, 0, width, height);
 
   let maxFrame = state.timelineLength;
-  state.events.forEach(evt => {
+  state.events.forEach((evt) => {
     const endFrame = (evt.startFrame || 0) + getEventDuration(evt.type, evt);
     if (endFrame > maxFrame) maxFrame = endFrame + 30;
   });
@@ -59,7 +59,7 @@ function renderMinimap() {
 
   // Events
   const laneHeight = height / 3;
-  state.events.forEach(evt => {
+  state.events.forEach((evt) => {
     const startFrame = evt.startFrame || 0;
     const duration = Math.max(getEventDuration(evt.type, evt), 5);
     const lane = getEventLane(evt.type);
@@ -90,7 +90,7 @@ function updateMinimapViewport() {
   if (!track || !container || !viewport) return;
 
   let maxFrame = state.timelineLength;
-  state.events.forEach(evt => {
+  state.events.forEach((evt) => {
     const endFrame = (evt.startFrame || 0) + getEventDuration(evt.type, evt);
     if (endFrame > maxFrame) maxFrame = endFrame + 30;
   });
@@ -156,14 +156,14 @@ function handleMinimapClick(e) {
   const containerWidth = rect.width;
 
   let maxFrame = state.timelineLength;
-  state.events.forEach(evt => {
+  state.events.forEach((evt) => {
     const endFrame = (evt.startFrame || 0) + getEventDuration(evt.type, evt);
     if (endFrame > maxFrame) maxFrame = endFrame + 30;
   });
 
   const clickFrame = (x / containerWidth) * maxFrame;
   const visibleWidth = track.clientWidth;
-  const targetScrollPixels = (clickFrame * state.timelineScale) - (visibleWidth / 2);
+  const targetScrollPixels = clickFrame * state.timelineScale - visibleWidth / 2;
   track.scrollLeft = Math.max(0, targetScrollPixels);
 
   state.currentFrame = Math.round(clickFrame / 10) * 10;

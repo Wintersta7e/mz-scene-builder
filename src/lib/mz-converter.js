@@ -36,16 +36,16 @@ function convertToMZFormat(events) {
           code: 231,
           indent: 0,
           parameters: [
-            evt.pictureNumber || 1,        // Picture Number
-            evt.imageName || '',           // Image path
-            evt.origin || 0,               // Origin (0=upper-left, 1=center)
-            evt.positionType || 0,         // Position type (0=direct, 1=variables)
-            evt.x || 0,                    // X position
-            evt.y || 0,                    // Y position
-            evt.scaleX || 100,             // Scale X %
-            evt.scaleY || 100,             // Scale Y %
-            evt.opacity || 255,            // Opacity
-            evt.blend || 0                 // Blend mode
+            evt.pictureNumber || 1, // Picture Number
+            evt.imageName || '', // Image path
+            evt.origin || 0, // Origin (0=upper-left, 1=center)
+            evt.positionType || 0, // Position type (0=direct, 1=variables)
+            evt.x || 0, // X position
+            evt.y || 0, // Y position
+            evt.scaleX || 100, // Scale X %
+            evt.scaleY || 100, // Scale Y %
+            evt.opacity || 255, // Opacity
+            evt.blend || 0 // Blend mode
           ]
         });
         break;
@@ -101,7 +101,7 @@ function convertToMZFormat(events) {
         });
         break;
 
-      case 'showText':
+      case 'showText': {
         // Show Text command (face, position, background)
         mzCommands.push({
           code: 101,
@@ -109,8 +109,8 @@ function convertToMZFormat(events) {
           parameters: [
             evt.faceName || '',
             evt.faceIndex ?? 0,
-            evt.background ?? 0,           // 0=window, 1=dim, 2=transparent
-            evt.position ?? 2              // 0=top, 1=middle, 2=bottom
+            evt.background ?? 0, // 0=window, 1=dim, 2=transparent
+            evt.position ?? 2 // 0=top, 1=middle, 2=bottom
           ]
         });
         // Text content lines
@@ -123,6 +123,7 @@ function convertToMZFormat(events) {
           });
         }
         break;
+      }
 
       case 'wait':
         mzCommands.push({

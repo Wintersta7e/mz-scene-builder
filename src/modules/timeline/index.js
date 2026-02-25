@@ -5,28 +5,37 @@
 const { state, TIMELINE_LANES, LANE_HEIGHT } = require('../state');
 const { getElements } = require('../elements');
 const { getEventLane, getEventDuration, selectEvent } = require('../events');
-const { renderMinimap, updateMinimapViewport } = require('./minimap');
+const { renderMinimap } = require('./minimap');
 const { startTimelineDrag } = require('./drag');
 
 function initTimeline() {
   const elements = getElements();
-  elements.timelineLanes.innerHTML = TIMELINE_LANES.map(name =>
-    `<div class="timeline-lane-label">${name}</div>`
+  elements.timelineLanes.innerHTML = TIMELINE_LANES.map(
+    (name) => `<div class="timeline-lane-label">${name}</div>`
   ).join('');
   renderTimeline();
 }
 
 function getTimelineEventLabel(evt) {
   switch (evt.type) {
-    case 'showPicture': return `#${evt.pictureNumber}`;
-    case 'movePicture': return `→#${evt.pictureNumber}`;
-    case 'rotatePicture': return `↻#${evt.pictureNumber}`;
-    case 'tintPicture': return `🎨#${evt.pictureNumber}`;
-    case 'erasePicture': return `✕#${evt.pictureNumber}`;
-    case 'showText': return evt.text ? evt.text.substring(0, 8) : 'Text';
-    case 'wait': return `⏸${evt.frames}f`;
-    case 'screenFlash': return '⚡Flash';
-    default: return evt.type;
+    case 'showPicture':
+      return `#${evt.pictureNumber}`;
+    case 'movePicture':
+      return `→#${evt.pictureNumber}`;
+    case 'rotatePicture':
+      return `↻#${evt.pictureNumber}`;
+    case 'tintPicture':
+      return `🎨#${evt.pictureNumber}`;
+    case 'erasePicture':
+      return `✕#${evt.pictureNumber}`;
+    case 'showText':
+      return evt.text ? evt.text.substring(0, 8) : 'Text';
+    case 'wait':
+      return `⏸${evt.frames}f`;
+    case 'screenFlash':
+      return '⚡Flash';
+    default:
+      return evt.type;
   }
 }
 
@@ -34,7 +43,7 @@ function renderTimeline() {
   const elements = getElements();
 
   let maxFrame = state.timelineLength;
-  state.events.forEach(evt => {
+  state.events.forEach((evt) => {
     const endFrame = (evt.startFrame || 0) + getEventDuration(evt.type, evt);
     if (endFrame > maxFrame) maxFrame = endFrame + 30;
   });
@@ -75,9 +84,7 @@ function renderTimeline() {
     const laneRows = laneSubRows[lane];
     while (true) {
       if (!laneRows[subRow]) laneRows[subRow] = [];
-      const hasOverlap = laneRows[subRow].some(range =>
-        !(endFrame <= range.start || startFrame >= range.end)
-      );
+      const hasOverlap = laneRows[subRow].some((range) => !(endFrame <= range.start || startFrame >= range.end));
       if (!hasOverlap) break;
       subRow++;
     }
@@ -85,7 +92,7 @@ function renderTimeline() {
     eventSubRowMap.set(index, subRow);
   });
 
-  const maxSubRows = laneSubRows.map(rows => Math.max(1, rows.length));
+  const maxSubRows = laneSubRows.map((rows) => Math.max(1, rows.length));
   const laneOffsets = [0];
   for (let i = 1; i < TIMELINE_LANES.length; i++) {
     laneOffsets[i] = laneOffsets[i - 1] + maxSubRows[i - 1] * LANE_HEIGHT;
@@ -98,8 +105,8 @@ function renderTimeline() {
   elements.timelineEvents.style.height = `${totalHeight}px`;
 
   // Update lane labels
-  elements.timelineLanes.innerHTML = TIMELINE_LANES.map((name, i) =>
-    `<div class="timeline-lane-label" style="height: ${maxSubRows[i] * LANE_HEIGHT}px">${name}</div>`
+  elements.timelineLanes.innerHTML = TIMELINE_LANES.map(
+    (name, i) => `<div class="timeline-lane-label" style="height: ${maxSubRows[i] * LANE_HEIGHT}px">${name}</div>`
   ).join('');
 
   // Add lane row backgrounds
@@ -145,7 +152,7 @@ function renderTimeline() {
 
     eventEl.style.left = `${startFrame * state.timelineScale}px`;
     eventEl.style.top = `${laneOffsets[lane] + subRow * LANE_HEIGHT + 1}px`;
-    const minWidth = (evt.type === 'showText' || evt.type === 'erasePicture') ? 50 : 20;
+    const minWidth = evt.type === 'showText' || evt.type === 'erasePicture' ? 50 : 20;
     eventEl.style.width = `${Math.max(duration * state.timelineScale, minWidth)}px`;
 
     eventEl.textContent = getTimelineEventLabel(evt);

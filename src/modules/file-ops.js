@@ -28,7 +28,7 @@ function initDragDrop() {
     e.stopPropagation();
 
     const files = Array.from(e.dataTransfer.files);
-    const mzsceneFile = files.find(f => f.name.endsWith('.mzscene'));
+    const mzsceneFile = files.find((f) => f.name.endsWith('.mzscene'));
 
     if (mzsceneFile) {
       if (await checkUnsavedChanges()) {
@@ -63,9 +63,8 @@ async function loadSceneFromFile(file) {
 }
 
 async function newScene() {
-  if (!await checkUnsavedChanges()) return;
+  if (!(await checkUnsavedChanges())) return;
 
-  const elements = getElements();
   state.events = [];
   state.selectedEventIndex = -1;
   state.currentFrame = 0;
@@ -90,7 +89,7 @@ async function saveScene() {
 }
 
 async function loadScene() {
-  if (!await checkUnsavedChanges()) return;
+  if (!(await checkUnsavedChanges())) return;
 
   const elements = getElements();
   const sceneData = await api.invoke('load-scene');

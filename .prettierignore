@@ -1,0 +1,8 @@
+node_modules/
+dist/
+coverage/
+inspections/
+assets/
+screenshots/
+docs/
+package-lock.json

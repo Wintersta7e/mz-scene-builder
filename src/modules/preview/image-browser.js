@@ -15,18 +15,21 @@ const { eventBus, Events } = require('../event-bus');
 let thumbnailObserver = null;
 function getThumbnailObserver() {
   if (!thumbnailObserver) {
-    thumbnailObserver = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          const el = entry.target;
-          if (!el.dataset.thumbLoaded) {
-            el.dataset.thumbLoaded = 'true';
-            loadThumbnail(el, el.dataset.path);
+    thumbnailObserver = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const el = entry.target;
+            if (!el.dataset.thumbLoaded) {
+              el.dataset.thumbLoaded = 'true';
+              loadThumbnail(el, el.dataset.path);
+            }
+            thumbnailObserver.unobserve(el);
           }
-          thumbnailObserver.unobserve(el);
-        }
-      });
-    }, { rootMargin: '100px' }); // Load slightly before visible
+        });
+      },
+      { rootMargin: '100px' }
+    ); // Load slightly before visible
   }
   return thumbnailObserver;
 }
@@ -125,8 +128,8 @@ function handleImageClick(el, path, e) {
     }
   } else if (e.shiftKey && state.lastClickedImage) {
     const allItems = Array.from(elements.imageBrowser.querySelectorAll('.image-item'));
-    const startIndex = allItems.findIndex(item => item.dataset.path === state.lastClickedImage);
-    const endIndex = allItems.findIndex(item => item.dataset.path === path);
+    const startIndex = allItems.findIndex((item) => item.dataset.path === state.lastClickedImage);
+    const endIndex = allItems.findIndex((item) => item.dataset.path === path);
 
     if (startIndex !== -1 && endIndex !== -1) {
       const min = Math.min(startIndex, endIndex);
@@ -153,8 +156,8 @@ function addSelectedImagesAsEvents() {
   const elements = getElements();
   const allItems = Array.from(elements.imageBrowser.querySelectorAll('.image-item'));
   const orderedPaths = allItems
-    .filter(item => state.selectedImages.has(item.dataset.path))
-    .map(item => item.dataset.path);
+    .filter((item) => state.selectedImages.has(item.dataset.path))
+    .map((item) => item.dataset.path);
 
   if (orderedPaths.length === 0) return;
 
@@ -164,15 +167,15 @@ function addSelectedImagesAsEvents() {
   const DEFAULT_DURATION = 30;
 
   // Find the end of existing showPicture events and reuse their picture number
-  const existingPictures = state.events.filter(e => e.type === 'showPicture');
+  const existingPictures = state.events.filter((e) => e.type === 'showPicture');
   let startFrame;
   let pictureNumber;
 
   if (existingPictures.length > 0) {
     // Find the latest end frame among existing pictures
-    const lastEndFrame = Math.max(...existingPictures.map(e =>
-      (e.startFrame || 0) + (e.duration || DEFAULT_DURATION)
-    ));
+    const lastEndFrame = Math.max(
+      ...existingPictures.map((e) => (e.startFrame || 0) + (e.duration || DEFAULT_DURATION))
+    );
     startFrame = lastEndFrame;
     // Reuse the picture number from the last picture (sequential images can share a slot)
     pictureNumber = existingPictures[existingPictures.length - 1].pictureNumber || 1;
@@ -186,7 +189,7 @@ function addSelectedImagesAsEvents() {
     const evt = createDefaultEvent('showPicture');
     evt.pictureNumber = pictureNumber;
     evt.imageName = imagePath;
-    evt.startFrame = startFrame + (index * FRAME_SPACING);
+    evt.startFrame = startFrame + index * FRAME_SPACING;
     state.events.push(evt);
     addedEvents.push(evt);
   });
@@ -211,10 +214,10 @@ function filterImages() {
   const folders = elements.imageBrowser.querySelectorAll('.folder-item');
 
   if (!query) {
-    items.forEach(item => item.style.display = '');
-    folders.forEach(folder => folder.style.display = '');
+    items.forEach((item) => (item.style.display = ''));
+    folders.forEach((folder) => (folder.style.display = ''));
 
-    folders.forEach(folder => {
+    folders.forEach((folder) => {
       folder.classList.remove('expanded');
       const icon = folder.querySelector('.folder-icon');
       if (icon) icon.textContent = '📁';
@@ -227,15 +230,13 @@ function filterImages() {
     return;
   }
 
-  items.forEach(item => {
+  items.forEach((item) => {
     const name = item.querySelector('.image-name').textContent.toLowerCase();
     item.style.display = name.includes(query) ? '' : 'none';
   });
 
-  folders.forEach(folder => {
-    const hasVisible = Array.from(folder.querySelectorAll('.image-item')).some(
-      item => item.style.display !== 'none'
-    );
+  folders.forEach((folder) => {
+    const hasVisible = Array.from(folder.querySelectorAll('.image-item')).some((item) => item.style.display !== 'none');
     folder.style.display = hasVisible ? '' : 'none';
     if (hasVisible) {
       folder.classList.add('expanded');

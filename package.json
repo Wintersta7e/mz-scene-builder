@@ -12,7 +12,11 @@
     "build:mac": "node node_modules/electron-builder/out/cli/cli.js --mac",
     "test": "node node_modules/jest/bin/jest.js",
     "test:watch": "node node_modules/jest/bin/jest.js --watch",
-    "test:coverage": "node node_modules/jest/bin/jest.js --coverage"
+    "test:coverage": "node node_modules/jest/bin/jest.js --coverage",
+    "lint": "node node_modules/eslint/bin/eslint.js .",
+    "lint:fix": "node node_modules/eslint/bin/eslint.js . --fix",
+    "format": "node node_modules/prettier/bin/prettier.cjs --write .",
+    "format:check": "node node_modules/prettier/bin/prettier.cjs --check ."
   },
   "keywords": [
     "timeline",
@@ -24,9 +28,14 @@
   "author": "W1nterstale",
   "license": "SEE LICENSE IN LICENSE.txt",
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "electron": "^40.1.0",
     "electron-builder": "^26.7.0",
-    "jest": "^30.2.0"
+    "eslint": "^10.0.2",
+    "eslint-config-prettier": "^10.1.8",
+    "globals": "^17.3.0",
+    "jest": "^30.2.0",
+    "prettier": "^3.8.1"
   },
   "build": {
     "appId": "com.w1nterstale.timeline-scene-builder",

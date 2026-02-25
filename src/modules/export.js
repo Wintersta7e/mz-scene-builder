@@ -32,7 +32,7 @@ function initExportDropdowns() {
     container: elements.exportMapSelect,
     placeholder: '-- Select Map --',
     searchable: true,
-    onSelect: (value, item) => {
+    onSelect: (value, _item) => {
       selectedMapId = value;
       onMapSelected();
     }
@@ -68,7 +68,7 @@ function initExportDropdowns() {
 function prerenderMapsDropdown() {
   if (!state.cachedMaps || !mapDropdown) return;
 
-  const items = state.cachedMaps.map(m => ({
+  const items = state.cachedMaps.map((m) => ({
     value: m.id,
     label: `${m.id}: ${m.name}`
   }));
@@ -82,7 +82,7 @@ function prerenderEventsDropdown(mapId) {
   const mapEvents = state.cachedMapEvents[mapId];
   if (!mapEvents || !eventDropdown) return;
 
-  const items = mapEvents.map(e => ({
+  const items = mapEvents.map((e) => ({
     value: e.id,
     label: `${e.id}: ${e.name || '(unnamed)'}`,
     pages: e.pages
@@ -240,7 +240,9 @@ async function doExportToMap() {
   } else {
     // Save last export settings for quick export
     saveLastExport(selectedMapId, selectedEventId, selectedPageIndex);
-    showSuccess(`Exported ${result.commandCount} commands to Map ${selectedMapId}, Event ${selectedEventId}, Page ${selectedPageIndex + 1}. Reload the map in RPG Maker to see the changes.`);
+    showSuccess(
+      `Exported ${result.commandCount} commands to Map ${selectedMapId}, Event ${selectedEventId}, Page ${selectedPageIndex + 1}. Reload the map in RPG Maker to see the changes.`
+    );
     closeExportModal();
   }
 }
@@ -265,7 +267,7 @@ function getLastExport() {
   try {
     const data = localStorage.getItem(LAST_EXPORT_KEY);
     return data ? JSON.parse(data) : null;
-  } catch (e) {
+  } catch {
     return null;
   }
 }
@@ -310,7 +312,9 @@ async function quickExport() {
   if (result.error) {
     showError('Quick export failed: ' + result.error);
   } else {
-    showSuccess(`Quick exported ${result.commandCount} commands to Map ${mapId}, Event ${eventId}, Page ${pageIndex + 1}`);
+    showSuccess(
+      `Quick exported ${result.commandCount} commands to Map ${mapId}, Event ${eventId}, Page ${pageIndex + 1}`
+    );
   }
 }
 

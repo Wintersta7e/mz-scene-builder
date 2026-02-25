@@ -3,9 +3,9 @@
 // High-performance dropdown with virtual scrolling
 // ============================================
 
-const ITEM_HEIGHT = 28;       // Fixed height per item (px)
-const VIEWPORT_HEIGHT = 250;  // Max visible height
-const BUFFER_SIZE = 3;        // Extra items above/below viewport
+const ITEM_HEIGHT = 28; // Fixed height per item (px)
+const VIEWPORT_HEIGHT = 250; // Max visible height
+const BUFFER_SIZE = 3; // Extra items above/below viewport
 const VISIBLE_COUNT = Math.ceil(VIEWPORT_HEIGHT / ITEM_HEIGHT) + BUFFER_SIZE * 2;
 
 class VirtualDropdown {
@@ -16,8 +16,8 @@ class VirtualDropdown {
     this.onSelect = options.onSelect || (() => {});
 
     // Data
-    this.items = [];           // Full data array [{value, label, ...}]
-    this.filteredItems = [];   // After search filter
+    this.items = []; // Full data array [{value, label, ...}]
+    this.filteredItems = []; // After search filter
     this.selectedValue = null;
     this.selectedLabel = null;
 
@@ -125,13 +125,17 @@ class VirtualDropdown {
     });
 
     // Scroll with passive listener for best performance
-    this.viewport.addEventListener('scroll', () => {
-      if (this.rafId) return;
-      this.rafId = requestAnimationFrame(() => {
-        this.rafId = null;
-        this._onScroll();
-      });
-    }, { passive: true });
+    this.viewport.addEventListener(
+      'scroll',
+      () => {
+        if (this.rafId) return;
+        this.rafId = requestAnimationFrame(() => {
+          this.rafId = null;
+          this._onScroll();
+        });
+      },
+      { passive: true }
+    );
 
     // Keyboard
     this.viewport.addEventListener('keydown', (e) => this._handleKeydown(e));
@@ -216,10 +220,10 @@ class VirtualDropdown {
     if (!q) {
       this.filteredItems = this.items;
     } else {
-      this.filteredItems = this.items.filter(item => item.label.toLowerCase().includes(q));
+      this.filteredItems = this.items.filter((item) => item.label.toLowerCase().includes(q));
     }
     this.focusedIndex = this.filteredItems.length > 0 ? 0 : -1;
-    this.content.style.height = (this.filteredItems.length * ITEM_HEIGHT) + 'px';
+    this.content.style.height = this.filteredItems.length * ITEM_HEIGHT + 'px';
     this.viewport.scrollTop = 0;
     this.startIndex = 0;
     this._render();
@@ -292,7 +296,7 @@ class VirtualDropdown {
     this.filteredItems = this.items;
     this.focusedIndex = -1;
     this.startIndex = 0;
-    this.content.style.height = (this.filteredItems.length * ITEM_HEIGHT) + 'px';
+    this.content.style.height = this.filteredItems.length * ITEM_HEIGHT + 'px';
     this._render();
     this.emptyMsg.style.display = this.items.length === 0 ? '' : 'none';
   }
@@ -300,7 +304,7 @@ class VirtualDropdown {
   setSelected(value, label) {
     this.selectedValue = value;
     if (value !== null && value !== undefined) {
-      this.selectedLabel = label || (this.items.find(i => i.value === value)?.label) || String(value);
+      this.selectedLabel = label || this.items.find((i) => i.value === value)?.label || String(value);
       this.trigger.textContent = this.selectedLabel;
       this.trigger.classList.add('has-value');
     } else {
@@ -337,7 +341,7 @@ class VirtualDropdown {
 
     // Sync filteredItems with items (clears any previous filter)
     this.filteredItems = this.items;
-    this.content.style.height = (this.filteredItems.length * ITEM_HEIGHT) + 'px';
+    this.content.style.height = this.filteredItems.length * ITEM_HEIGHT + 'px';
     this.emptyMsg.style.display = this.filteredItems.length === 0 ? '' : 'none';
     this.focusedIndex = this.filteredItems.length > 0 ? 0 : -1;
 
@@ -348,7 +352,7 @@ class VirtualDropdown {
 
     // Scroll to selected if any
     if (this.selectedValue !== null) {
-      const idx = this.filteredItems.findIndex(i => i.value === this.selectedValue);
+      const idx = this.filteredItems.findIndex((i) => i.value === this.selectedValue);
       if (idx >= 0) {
         this.focusedIndex = idx;
         this.viewport.scrollTop = Math.max(0, idx * ITEM_HEIGHT - VIEWPORT_HEIGHT / 2);

@@ -3,7 +3,7 @@
 // ============================================
 
 const { state } = require('./state');
-const { initElements, getElements } = require('./elements');
+const { initElements } = require('./elements');
 const { logger } = require('./logger');
 const { eventBus, Events } = require('./event-bus');
 const { addEvent, deleteSelectedEvent, clearScene } = require('./events');
@@ -22,7 +22,14 @@ const { closeImagePicker } = require('./preview/image-picker');
 const { filterImages } = require('./preview/image-browser');
 const { togglePlayback, stopPlayback } = require('./playback');
 const { handleKeyboardMove, setSaveCallback } = require('./keyboard');
-const { openExportModal, doExportToMap, initExportDropdowns, closeExportModal, quickExport, updateQuickExportButton } = require('./export');
+const {
+  openExportModal,
+  doExportToMap,
+  initExportDropdowns,
+  closeExportModal,
+  quickExport,
+  updateQuickExportButton
+} = require('./export');
 
 function render() {
   renderTimeline();
@@ -143,15 +150,42 @@ function init() {
   elements.quickExport.addEventListener('click', quickExport);
 
   // Event buttons
-  elements.addPicture.addEventListener('click', () => { addEvent('showPicture'); renderProperties(); });
-  elements.addMove.addEventListener('click', () => { addEvent('movePicture'); renderProperties(); });
-  elements.addRotate.addEventListener('click', () => { addEvent('rotatePicture'); renderProperties(); });
-  elements.addTint.addEventListener('click', () => { addEvent('tintPicture'); renderProperties(); });
-  elements.addErase.addEventListener('click', () => { addEvent('erasePicture'); renderProperties(); });
-  elements.addText.addEventListener('click', () => { addEvent('showText'); renderProperties(); });
-  elements.addWait.addEventListener('click', () => { addEvent('wait'); renderProperties(); });
-  elements.addFlash.addEventListener('click', () => { addEvent('screenFlash'); renderProperties(); });
-  elements.deleteEvent.addEventListener('click', () => { deleteSelectedEvent(); renderProperties(); });
+  elements.addPicture.addEventListener('click', () => {
+    addEvent('showPicture');
+    renderProperties();
+  });
+  elements.addMove.addEventListener('click', () => {
+    addEvent('movePicture');
+    renderProperties();
+  });
+  elements.addRotate.addEventListener('click', () => {
+    addEvent('rotatePicture');
+    renderProperties();
+  });
+  elements.addTint.addEventListener('click', () => {
+    addEvent('tintPicture');
+    renderProperties();
+  });
+  elements.addErase.addEventListener('click', () => {
+    addEvent('erasePicture');
+    renderProperties();
+  });
+  elements.addText.addEventListener('click', () => {
+    addEvent('showText');
+    renderProperties();
+  });
+  elements.addWait.addEventListener('click', () => {
+    addEvent('wait');
+    renderProperties();
+  });
+  elements.addFlash.addEventListener('click', () => {
+    addEvent('screenFlash');
+    renderProperties();
+  });
+  elements.deleteEvent.addEventListener('click', () => {
+    deleteSelectedEvent();
+    renderProperties();
+  });
   elements.clearScene.addEventListener('click', clearScene);
 
   // Timeline controls

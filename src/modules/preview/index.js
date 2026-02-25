@@ -71,7 +71,7 @@ function applyPictureState(img, pictureState) {
 
   if (tint.r !== 0 || tint.g !== 0 || tint.b !== 0 || tint.gray !== 0) {
     const avgRgb = (tint.r + tint.g + tint.b) / 3;
-    const brightness = 1 + (avgRgb / 255);
+    const brightness = 1 + avgRgb / 255;
     filters.push(`brightness(${brightness.toFixed(2)})`);
 
     if (tint.gray > 0) {
@@ -92,13 +92,13 @@ function applyPictureState(img, pictureState) {
         hueShift = 90;
       }
 
-      const sepiaAmount = Math.abs(maxColor - minColor) / 255 * 0.5;
+      const sepiaAmount = (Math.abs(maxColor - minColor) / 255) * 0.5;
       if (sepiaAmount > 0.05) {
         filters.push(`sepia(${sepiaAmount.toFixed(2)})`);
         filters.push(`hue-rotate(${hueShift}deg)`);
       }
 
-      const saturation = 1 + Math.abs(maxColor - minColor) / 255 * 0.5;
+      const saturation = 1 + (Math.abs(maxColor - minColor) / 255) * 0.5;
       filters.push(`saturate(${saturation.toFixed(2)})`);
     }
 
@@ -262,12 +262,13 @@ async function renderPreviewAtFrame(frame) {
     textBox.dataset.background = bgStyles[evt.background] || 'window';
 
     // Escape HTML to prevent XSS, then convert newlines to <br>
-    const escapeHtml = (text) => text
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#039;');
+    const escapeHtml = (text) =>
+      text
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
     const safeText = escapeHtml(evt.text || '').replace(/\n/g, '<br>');
     const waitHint = state.waitingForTextClick ? '<div class="text-continue-hint">▼ Click to continue</div>' : '';
     textBox.innerHTML = `<div class="preview-text-content">${safeText}${waitHint}</div>`;

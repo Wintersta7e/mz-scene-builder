@@ -20,7 +20,12 @@ function renderProperties() {
   const { renderMoveProperties } = require('./move');
   const { renderTintProperties } = require('./tint');
   const { renderTextProperties } = require('./text');
-  const { renderRotateProperties, renderEraseProperties, renderWaitProperties, renderFlashProperties } = require('./other');
+  const {
+    renderRotateProperties,
+    renderEraseProperties,
+    renderWaitProperties,
+    renderFlashProperties
+  } = require('./other');
 
   switch (evt.type) {
     case 'showPicture':

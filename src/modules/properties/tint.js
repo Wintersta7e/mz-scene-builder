@@ -102,7 +102,7 @@ function renderTintProperties(evt) {
   });
 
   // Color presets
-  document.querySelectorAll('.color-preset').forEach(btn => {
+  document.querySelectorAll('.color-preset').forEach((btn) => {
     btn.addEventListener('click', () => {
       evt.red = parseInt(btn.dataset.r);
       evt.green = parseInt(btn.dataset.g);

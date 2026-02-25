@@ -2,13 +2,12 @@
 // Settings & Recent Projects
 // ============================================
 
-const { state, SETTINGS_KEY, MAX_RECENT_PROJECTS } = require('./state');
+const { SETTINGS_KEY, MAX_RECENT_PROJECTS } = require('./state');
 
 // Simple path.basename replacement for browser context
 function basename(p) {
   return p.split(/[/\\]/).pop() || p;
 }
-const { getElements } = require('./elements');
 const { logger } = require('./logger');
 const { showError, showWarning } = require('./notifications');
 
@@ -16,7 +15,7 @@ function getSettings() {
   try {
     const data = localStorage.getItem(SETTINGS_KEY);
     return data ? JSON.parse(data) : {};
-  } catch (e) {
+  } catch {
     return {};
   }
 }
@@ -34,7 +33,7 @@ function addRecentProject(projPath) {
   const settings = getSettings();
   let recent = settings.recentProjects || [];
 
-  recent = recent.filter(p => p !== projPath);
+  recent = recent.filter((p) => p !== projPath);
   recent.unshift(projPath);
   recent = recent.slice(0, MAX_RECENT_PROJECTS);
 
@@ -91,7 +90,9 @@ function initRecentProjectsDropdown() {
 
   if (!container || !dropdown || !openBtn) {
     logger.warn('Recent projects elements not found', {
-      container: !!container, dropdown: !!dropdown, openBtn: !!openBtn
+      container: !!container,
+      dropdown: !!dropdown,
+      openBtn: !!openBtn
     });
     return;
   }

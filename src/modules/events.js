@@ -40,9 +40,7 @@ function getEventDuration(type, evt) {
 }
 
 function getNextPictureNumber() {
-  const usedNumbers = state.events
-    .filter(e => e.type === 'showPicture')
-    .map(e => e.pictureNumber);
+  const usedNumbers = state.events.filter((e) => e.type === 'showPicture').map((e) => e.pictureNumber);
   for (let i = 1; i <= 100; i++) {
     if (!usedNumbers.includes(i)) return i;
   }
@@ -204,10 +202,9 @@ function duplicateSelectedEvent() {
   const duplicate = JSON.parse(JSON.stringify(original));
 
   if (duplicate.type === 'showText') {
-    const textEvents = state.events.filter(e => e.type === 'showText');
-    const lastTextFrame = textEvents.length > 0
-      ? Math.max(...textEvents.map(e => e.startFrame || 0))
-      : state.currentFrame;
+    const textEvents = state.events.filter((e) => e.type === 'showText');
+    const lastTextFrame =
+      textEvents.length > 0 ? Math.max(...textEvents.map((e) => e.startFrame || 0)) : state.currentFrame;
     duplicate.startFrame = lastTextFrame + 10;
   } else {
     duplicate.startFrame = (original.startFrame || 0) + 1;
@@ -223,7 +220,7 @@ function duplicateSelectedEvent() {
 function clearImageSelection() {
   const elements = getElements();
   state.selectedImages.clear();
-  elements.imageBrowser.querySelectorAll('.image-item.selected').forEach(item => {
+  elements.imageBrowser.querySelectorAll('.image-item.selected').forEach((item) => {
     item.classList.remove('selected');
   });
 }

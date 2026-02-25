@@ -51,33 +51,33 @@ Select a target Map, Event, and Page — commands are inserted at the end of the
 
 ## Event Types
 
-| Type | RPG Maker Code | Description |
-|------|----------------|-------------|
-| Show Picture | 231 | Display an image with position, scale, opacity, blend mode |
-| Move Picture | 232 | Animate position, scale, opacity over duration with easing |
-| Rotate Picture | 233 | Set continuous rotation speed |
-| Tint Picture | 234 | Color adjustment with presets (Sunset, Night, Sepia, etc.) |
-| Erase Picture | 235 | Remove a picture from screen |
-| Show Text | 101/401 | Display text with background and position options |
-| Wait | 230 | Pause for a number of frames |
-| Screen Flash | 224 | Flash the screen with color and intensity |
+| Type           | RPG Maker Code | Description                                                |
+| -------------- | -------------- | ---------------------------------------------------------- |
+| Show Picture   | 231            | Display an image with position, scale, opacity, blend mode |
+| Move Picture   | 232            | Animate position, scale, opacity over duration with easing |
+| Rotate Picture | 233            | Set continuous rotation speed                              |
+| Tint Picture   | 234            | Color adjustment with presets (Sunset, Night, Sepia, etc.) |
+| Erase Picture  | 235            | Remove a picture from screen                               |
+| Show Text      | 101/401        | Display text with background and position options          |
+| Wait           | 230            | Pause for a number of frames                               |
+| Screen Flash   | 224            | Flash the screen with color and intensity                  |
 
 ## Keyboard Shortcuts
 
-| Shortcut | Action |
-|----------|--------|
-| Ctrl+Z | Undo |
-| Ctrl+Shift+Z / Ctrl+Y | Redo |
-| Ctrl+S | Save scene |
-| Ctrl+P | Insert picture at playhead |
-| Ctrl+T | Insert text at playhead |
-| Ctrl+C | Copy selected event |
-| Ctrl+V | Paste event at current frame |
-| Ctrl+D | Duplicate selected event |
-| Delete | Delete selected event |
-| Arrow Keys | Move selected image by 1px |
-| Shift+Arrow Keys | Move selected image by 10px |
-| F1 | Show keyboard shortcuts help |
+| Shortcut              | Action                       |
+| --------------------- | ---------------------------- |
+| Ctrl+Z                | Undo                         |
+| Ctrl+Shift+Z / Ctrl+Y | Redo                         |
+| Ctrl+S                | Save scene                   |
+| Ctrl+P                | Insert picture at playhead   |
+| Ctrl+T                | Insert text at playhead      |
+| Ctrl+C                | Copy selected event          |
+| Ctrl+V                | Paste event at current frame |
+| Ctrl+D                | Duplicate selected event     |
+| Delete                | Delete selected event        |
+| Arrow Keys            | Move selected image by 1px   |
+| Shift+Arrow Keys      | Move selected image by 10px  |
+| F1                    | Show keyboard shortcuts help |
 
 ## Tech Stack
 
@@ -140,4 +140,4 @@ See [LICENSE.txt](LICENSE.txt) for terms of use.
 
 ---
 
-*"RPG Maker" is a trademark of Gotcha Gotcha Games Inc. This project is not affiliated with or endorsed by Gotcha Gotcha Games.*
+_"RPG Maker" is a trademark of Gotcha Gotcha Games Inc. This project is not affiliated with or endorsed by Gotcha Gotcha Games._

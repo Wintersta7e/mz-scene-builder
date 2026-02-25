@@ -46,10 +46,10 @@ window.api = {
     const allowedHosts = ['itch.io', 'github.com'];
     try {
       const urlObj = new URL(url);
-      if (allowedHosts.some(host => urlObj.hostname.endsWith(host))) {
+      if (allowedHosts.some((host) => urlObj.hostname.endsWith(host))) {
         return shell.openExternal(url);
       }
-    } catch (e) {
+    } catch {
       // Invalid URL
     }
     console.warn('Blocked attempt to open URL:', url);

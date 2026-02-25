@@ -54,7 +54,10 @@ function renderPickerFolders(items, container = null) {
           children.innerHTML = '';
           if (contents && !contents.error) {
             item.children = contents;
-            renderPickerFolders(contents.filter(c => c.type === 'folder'), children);
+            renderPickerFolders(
+              contents.filter((c) => c.type === 'folder'),
+              children
+            );
           }
         }
 
@@ -62,7 +65,10 @@ function renderPickerFolders(items, container = null) {
       });
 
       if (item.children) {
-        renderPickerFolders(item.children.filter(c => c.type === 'folder'), children);
+        renderPickerFolders(
+          item.children.filter((c) => c.type === 'folder'),
+          children
+        );
       }
 
       container.appendChild(folderEl);
@@ -80,7 +86,7 @@ async function loadPickerImages(folderPath) {
     return;
   }
 
-  const images = contents.filter(item => item.type === 'file');
+  const images = contents.filter((item) => item.type === 'file');
   if (images.length === 0) {
     elements.pickerImages.innerHTML = '<p class="placeholder">No images in this folder</p>';
     return;
