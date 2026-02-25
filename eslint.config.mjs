@@ -69,7 +69,7 @@ export default [
 
   // Logger and event-bus — console is their purpose
   {
-    files: ['src/modules/logger.js', 'src/modules/event-bus.js'],
+    files: ['src/modules/logger.js', 'src/modules/event-bus.js', 'src/lib/main-logger.js'],
     rules: {
       'no-console': 'off'
     }

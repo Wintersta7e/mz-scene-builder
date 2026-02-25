@@ -165,6 +165,7 @@ async function onMapSelected() {
 
   // Check if events are cached
   if (state.cachedMapEvents[selectedMapId]) {
+    logger.debug('Map events cache hit:', selectedMapId);
     prerenderEventsDropdown(selectedMapId);
     eventDropdown.clear();
     eventDropdown.setPlaceholder('-- Select Event --');
@@ -228,6 +229,8 @@ async function doExportToMap() {
     return;
   }
 
+  logger.info('Export to map:', { mapId: selectedMapId, eventId: selectedEventId, page: selectedPageIndex + 1 });
+
   const result = await api.invoke('export-to-map', {
     events: state.events,
     mapId: selectedMapId,
@@ -268,6 +271,7 @@ function getLastExport() {
     const data = localStorage.getItem(LAST_EXPORT_KEY);
     return data ? JSON.parse(data) : null;
   } catch {
+    logger.warn('Failed to parse last export settings');
     return null;
   }
 }
@@ -301,6 +305,7 @@ async function quickExport() {
   }
 
   const { mapId, eventId, pageIndex } = lastExport;
+  logger.info('Quick export to:', { mapId, eventId, page: pageIndex + 1 });
 
   const result = await api.invoke('export-to-map', {
     events: state.events,

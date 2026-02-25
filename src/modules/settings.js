@@ -16,6 +16,7 @@ function getSettings() {
     const data = localStorage.getItem(SETTINGS_KEY);
     return data ? JSON.parse(data) : {};
   } catch {
+    logger.warn('Failed to parse settings from localStorage');
     return {};
   }
 }

@@ -3,6 +3,7 @@ const path = require('path');
 const fs = require('fs');
 const fsPromises = fs.promises;
 const { convertToMZFormat, isPathSafe } = require('./src/lib/mz-converter');
+const { logger, isDev } = require('./src/lib/main-logger');
 
 // Async helper to check if path exists
 async function pathExists(p) {
@@ -49,6 +50,7 @@ function createWindow() {
     mainWindow.show();
   });
 
+  logger.info('Window created');
   mainWindow.loadFile('src/index.html');
 
   // Allow manual zoom with Ctrl+Plus/Minus
@@ -74,6 +76,7 @@ function createWindow() {
 }
 
 app.whenReady().then(() => {
+  logger.info('App ready', isDev ? '(dev mode)' : '(production mode)');
   Menu.setApplicationMenu(null); // Hide default menu bar
   createWindow();
 });
@@ -105,9 +108,11 @@ ipcMain.handle('open-project', async () => {
     // Verify it's an MZ project
     const gameFile = path.join(projectPath, 'game.rmmzproject');
     if (!(await pathExists(gameFile))) {
+      logger.warn('Invalid MZ project folder (game.rmmzproject not found):', projectPath);
       return { error: 'Not a valid RPG Maker MZ project folder (game.rmmzproject not found)' };
     }
 
+    logger.info('Project opened:', projectPath);
     return { path: projectPath };
   }
   return null;
@@ -120,10 +125,12 @@ ipcMain.handle('set-project-path', async (event, projPath) => {
   // Verify it's a valid RPG Maker MZ project
   const gameFile = path.join(projPath, 'game.rmmzproject');
   if (!(await pathExists(gameFile))) {
+    logger.warn('set-project-path: invalid MZ project folder:', projPath);
     return { error: 'Not a valid RPG Maker MZ project folder' };
   }
 
   projectPath = projPath;
+  logger.info('Project path set:', projectPath);
   return { success: true, path: projectPath };
 });
 
@@ -140,8 +147,10 @@ ipcMain.handle('get-screen-resolution', async () => {
     const data = JSON.parse(await fsPromises.readFile(systemPath, 'utf8'));
     const width = data.advanced?.screenWidth || 816;
     const height = data.advanced?.screenHeight || 624;
+    logger.debug('Screen resolution:', width, 'x', height);
     return { width, height };
   } catch {
+    logger.debug('Failed to read System.json, using defaults');
     return { width: 816, height: 624 }; // Default on error
   }
 });
@@ -152,9 +161,11 @@ ipcMain.handle('get-pictures-folders', async () => {
 
   const picturesPath = path.join(projectPath, 'img', 'pictures');
   if (!(await pathExists(picturesPath))) {
+    logger.warn('Pictures folder not found:', picturesPath);
     return { error: 'Pictures folder not found' };
   }
 
+  logger.debug('Scanning pictures folders:', picturesPath);
   return await scanDirectory(picturesPath, picturesPath);
 });
 
@@ -194,13 +205,17 @@ ipcMain.handle('get-folder-contents', async (event, folderPath) => {
 
   const picturesBase = path.join(projectPath, 'img', 'pictures');
   if (!isPathSafe(picturesBase, folderPath)) {
+    logger.warn('Blocked unsafe folder path:', folderPath);
     return { error: 'Invalid folder path' };
   }
 
   const fullPath = path.join(picturesBase, folderPath);
   if (!(await pathExists(fullPath))) {
+    logger.warn('Folder not found:', fullPath);
     return { error: 'Folder not found' };
   }
+
+  logger.debug('Loading folder contents:', folderPath);
 
   const items = [];
   const entries = await fsPromises.readdir(fullPath, { withFileTypes: true });
@@ -236,6 +251,7 @@ ipcMain.handle('get-thumbnail', async (event, imagePath) => {
 
   const picturesBase = path.join(projectPath, 'img', 'pictures');
   if (!isPathSafe(picturesBase, imagePath + '.png')) {
+    logger.warn('Blocked unsafe thumbnail path:', imagePath);
     return null;
   }
 
@@ -246,6 +262,7 @@ ipcMain.handle('get-thumbnail', async (event, imagePath) => {
     const data = await fsPromises.readFile(fullPath);
     return `data:image/png;base64,${data.toString('base64')}`;
   } catch {
+    logger.debug('Failed to read thumbnail:', imagePath);
     return null;
   }
 });
@@ -256,6 +273,7 @@ ipcMain.handle('get-image-path', async (event, imagePath) => {
 
   const picturesBase = path.join(projectPath, 'img', 'pictures');
   if (!isPathSafe(picturesBase, imagePath + '.png')) {
+    logger.warn('Blocked unsafe image path:', imagePath);
     return null;
   }
 
@@ -273,6 +291,8 @@ ipcMain.handle('export-to-map', async (event, { events: evtList, mapId, eventId,
   if (!(await pathExists(mapFile))) {
     return { error: `Map file not found: Map${String(mapId).padStart(3, '0')}.json` };
   }
+
+  logger.info('Export to map:', { mapId, eventId, pageIndex });
 
   try {
     const mapData = JSON.parse(await fsPromises.readFile(mapFile, 'utf-8'));
@@ -296,8 +316,10 @@ ipcMain.handle('export-to-map', async (event, { events: evtList, mapId, eventId,
     // Save the map file
     await fsPromises.writeFile(mapFile, JSON.stringify(mapData, null, 2));
 
+    logger.info('Export success:', mzCommands.length, 'commands written');
     return { success: true, commandCount: mzCommands.length };
   } catch (e) {
+    logger.error('Export failed:', e.message);
     return { error: e.message };
   }
 });
@@ -313,7 +335,9 @@ ipcMain.handle('get-maps', async () => {
 
   try {
     const mapInfos = JSON.parse(await fsPromises.readFile(mapInfoFile, 'utf-8'));
-    return mapInfos.filter((m) => m).map((m) => ({ id: m.id, name: m.name }));
+    const maps = mapInfos.filter((m) => m).map((m) => ({ id: m.id, name: m.name }));
+    logger.debug('Loaded', maps.length, 'maps');
+    return maps;
   } catch (e) {
     return { error: e.message };
   }
@@ -330,7 +354,9 @@ ipcMain.handle('get-map-events', async (event, mapId) => {
 
   try {
     const mapData = JSON.parse(await fsPromises.readFile(mapFile, 'utf-8'));
-    return mapData.events.filter((e) => e).map((e) => ({ id: e.id, name: e.name, pages: e.pages.length }));
+    const events = mapData.events.filter((e) => e).map((e) => ({ id: e.id, name: e.name, pages: e.pages.length }));
+    logger.debug('Map', mapId, ':', events.length, 'events');
+    return events;
   } catch (e) {
     return { error: e.message };
   }
@@ -346,6 +372,7 @@ ipcMain.handle('save-scene', async (event, sceneData) => {
 
   if (!result.canceled && result.filePath) {
     await fsPromises.writeFile(result.filePath, JSON.stringify(sceneData, null, 2));
+    logger.info('Scene saved:', result.filePath);
     return result.filePath;
   }
   return null;
@@ -361,6 +388,7 @@ ipcMain.handle('load-scene', async () => {
 
   if (!result.canceled && result.filePaths.length > 0) {
     const data = await fsPromises.readFile(result.filePaths[0], 'utf-8');
+    logger.info('Scene loaded:', result.filePaths[0]);
     return JSON.parse(data);
   }
   return null;
@@ -381,6 +409,7 @@ ipcMain.handle('autosave-write', async (event, sceneData) => {
   try {
     await ensureAutosaveDir();
     await fsPromises.writeFile(AUTOSAVE_PATH, JSON.stringify(sceneData, null, 2));
+    logger.debug('Autosave written');
     return { success: true };
   } catch (e) {
     return { error: e.message };
@@ -391,8 +420,10 @@ ipcMain.handle('autosave-read', async () => {
   try {
     if (!(await pathExists(AUTOSAVE_PATH))) return null;
     const data = await fsPromises.readFile(AUTOSAVE_PATH, 'utf-8');
+    logger.debug('Autosave read');
     return JSON.parse(data);
   } catch {
+    logger.debug('Failed to read autosave');
     return null;
   }
 });
@@ -401,6 +432,7 @@ ipcMain.handle('autosave-delete', async () => {
   try {
     if (await pathExists(AUTOSAVE_PATH)) {
       await fsPromises.unlink(AUTOSAVE_PATH);
+      logger.debug('Autosave deleted');
     }
     return { success: true };
   } catch (e) {

@@ -10,6 +10,7 @@ const { saveState, markDirty } = require('../undo-redo');
 const { sortEvents } = require('../utils');
 const { createDefaultEvent, clearImageSelection } = require('../events');
 const { eventBus, Events } = require('../event-bus');
+const { logger } = require('../logger');
 
 // IntersectionObserver for lazy-loading thumbnails when visible
 let thumbnailObserver = null;
@@ -77,6 +78,8 @@ function renderFolderTree(container, items, isRoot = true) {
           if (contents && !contents.error) {
             item.children = contents;
             renderFolderTree(children, contents, false);
+          } else {
+            logger.warn('Failed to load folder:', item.path, contents?.error);
           }
         }
       });
@@ -183,6 +186,8 @@ function addSelectedImagesAsEvents() {
     startFrame = state.currentFrame;
     pictureNumber = 1;
   }
+
+  logger.debug('Inserting', orderedPaths.length, 'images at frame', startFrame);
 
   const addedEvents = [];
   orderedPaths.forEach((imagePath, index) => {

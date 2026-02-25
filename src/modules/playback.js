@@ -6,6 +6,7 @@ const { state } = require('./state');
 const { getElements } = require('./elements');
 const { getEventDuration } = require('./events');
 const { eventBus, Events } = require('./event-bus');
+const { logger } = require('./logger');
 
 function emitRender() {
   eventBus.emit(Events.RENDER_TIMELINE);
@@ -21,6 +22,7 @@ function togglePlayback() {
 }
 
 function startPlayback() {
+  logger.debug('Playback started at frame', state.currentFrame);
   const elements = getElements();
   state.isPlaying = true;
   state.waitingForTextClick = false;
@@ -50,6 +52,7 @@ function startPlayback() {
     );
 
     if (textEventIndex !== -1) {
+      logger.debug('Text pause at frame', state.currentFrame, '(event', textEventIndex, ')');
       state.waitingForTextClick = true;
       state.processedTextEvents.add(textEventIndex);
       emitRender();
@@ -95,6 +98,7 @@ function pausePlayback() {
 }
 
 function stopPlayback() {
+  logger.debug('Playback stopped');
   pausePlayback();
   state.currentFrame = 0;
   state.processedTextEvents.clear();

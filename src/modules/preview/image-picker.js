@@ -7,6 +7,7 @@ const api = window.api;
 const { state } = require('../state');
 const { getElements } = require('../elements');
 const { eventBus, Events } = require('../event-bus');
+const { logger } = require('../logger');
 
 async function openImagePicker() {
   if (!state.folderStructure) return;
@@ -52,7 +53,9 @@ function renderPickerFolders(items, container = null) {
           children.innerHTML = '<p class="placeholder">Loading...</p>';
           const contents = await api.invoke('get-folder-contents', item.path);
           children.innerHTML = '';
-          if (contents && !contents.error) {
+          if (contents && contents.error) {
+            logger.warn('Failed to load picker subfolder:', item.path, contents.error);
+          } else if (contents && !contents.error) {
             item.children = contents;
             renderPickerFolders(
               contents.filter((c) => c.type === 'folder'),
@@ -82,6 +85,7 @@ async function loadPickerImages(folderPath) {
 
   const contents = await api.invoke('get-folder-contents', folderPath);
   if (!contents || contents.error) {
+    logger.warn('Failed to load picker folder:', folderPath, contents?.error);
     elements.pickerImages.innerHTML = '<p class="placeholder">No images found</p>';
     return;
   }

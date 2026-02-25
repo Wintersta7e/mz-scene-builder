@@ -7,6 +7,7 @@ const { saveState, markDirty } = require('../undo-redo');
 const { sortEvents } = require('../utils');
 const { selectEvent } = require('../events');
 const { eventBus, Events } = require('../event-bus');
+const { logger } = require('../logger');
 
 function startTimelineDrag(e, evt, index) {
   if (e.button !== 0) return;
@@ -61,6 +62,7 @@ function stopTimelineDrag(onDrag, onStop) {
       (evt, idx) => idx !== draggedIdx && evt.type === 'showText' && Math.abs((evt.startFrame || 0) - draggedStart) < 10
     );
     if (overlappingText) {
+      logger.debug('Text event overlap detected, reverting to frame', originalFrame);
       overlappingText.startFrame = originalFrame;
     }
   }

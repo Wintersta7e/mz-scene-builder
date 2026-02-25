@@ -21,6 +21,8 @@ function resizePreviewCanvas() {
   const canvas = elements.previewCanvas;
   if (!container || !canvas) return;
 
+  logger.debug('Canvas resize:', container.clientWidth, 'x', container.clientHeight);
+
   const availWidth = container.clientWidth - 40;
   const availHeight = container.clientHeight - 40;
 
@@ -207,7 +209,9 @@ async function renderPreviewAtFrame(frame) {
 
   for (const [pictureNumber, pictureState] of sortedPictures) {
     const imgPath = await api.invoke('get-image-path', pictureState.imageName);
-    if (imgPath) {
+    if (!imgPath) {
+      logger.warn('Image not found for picture #' + pictureNumber + ':', pictureState.imageName);
+    } else {
       const img = document.createElement('img');
       img.className = 'preview-image';
       img.dataset.eventIndex = pictureState.eventIndex;

@@ -2,11 +2,12 @@
 // Event Management
 // ============================================
 
-const { state } = require('./state');
+const { state, MAX_PICTURE_NUMBER } = require('./state');
 const { getElements } = require('./elements');
 const { saveState } = require('./undo-redo');
 const { sortEvents, getNextInsertOrder } = require('./utils');
 const { eventBus, Events } = require('./event-bus');
+const { logger } = require('./logger');
 
 function getEventLane(type) {
   switch (type) {
@@ -41,9 +42,10 @@ function getEventDuration(type, evt) {
 
 function getNextPictureNumber() {
   const usedNumbers = state.events.filter((e) => e.type === 'showPicture').map((e) => e.pictureNumber);
-  for (let i = 1; i <= 100; i++) {
+  for (let i = 1; i <= MAX_PICTURE_NUMBER; i++) {
     if (!usedNumbers.includes(i)) return i;
   }
+  logger.warn('All picture numbers (1-' + MAX_PICTURE_NUMBER + ') in use, reusing #1');
   return 1;
 }
 
@@ -152,6 +154,7 @@ function createDefaultEvent(type) {
 function addEvent(type) {
   saveState('add ' + type);
   const evt = createDefaultEvent(type);
+  logger.debug('Add event:', type, 'at frame', state.currentFrame);
   const insertFrame = state.currentFrame;
   const insertLane = getEventLane(type);
 
@@ -181,6 +184,8 @@ function addPictureEvent(imagePath) {
 
 function deleteSelectedEvent() {
   if (state.selectedEventIndex >= 0) {
+    const evt = state.events[state.selectedEventIndex];
+    logger.debug('Delete event:', evt.type, 'at index', state.selectedEventIndex);
     saveState('delete event');
     state.events.splice(state.selectedEventIndex, 1);
     state.selectedEventIndex = Math.min(state.selectedEventIndex, state.events.length - 1);

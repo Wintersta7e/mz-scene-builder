@@ -31,6 +31,7 @@ function initDragDrop() {
     const mzsceneFile = files.find((f) => f.name.endsWith('.mzscene'));
 
     if (mzsceneFile) {
+      logger.debug('Drag-drop detected .mzscene file:', mzsceneFile.name);
       if (await checkUnsavedChanges()) {
         loadSceneFromFile(mzsceneFile);
       }
@@ -65,6 +66,7 @@ async function loadSceneFromFile(file) {
 async function newScene() {
   if (!(await checkUnsavedChanges())) return;
 
+  logger.info('New scene created');
   state.events = [];
   state.selectedEventIndex = -1;
   state.currentFrame = 0;
@@ -84,6 +86,7 @@ async function saveScene() {
   const result = await api.invoke('save-scene', sceneData);
   if (result) {
     state.currentScenePath = result;
+    logger.info('Scene saved:', result);
     markClean();
   }
 }

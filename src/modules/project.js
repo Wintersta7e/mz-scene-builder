@@ -44,6 +44,7 @@ async function openProjectPath(projPath) {
   markClean();
 
   state.projectPath = projPath;
+  logger.info('Project opened:', projPath);
   elements.projectName.textContent = projPath.split(/[/\\]/).pop();
   enableButtons(true);
   await loadFolderStructure();
@@ -97,6 +98,8 @@ async function loadFolderStructure() {
   if (result && !result.error) {
     state.folderStructure = result;
     renderFolderTree(elements.imageBrowser, result);
+  } else {
+    logger.warn('Failed to load folder structure:', result?.error);
   }
 }
 
@@ -105,6 +108,7 @@ async function loadScreenResolution() {
   if (result) {
     state.screenWidth = result.width;
     state.screenHeight = result.height;
+    logger.debug('Screen resolution:', result.width, 'x', result.height);
 
     const previewHeader = document.querySelector('.preview-header h3');
     if (previewHeader) {

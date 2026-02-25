@@ -2,6 +2,8 @@
 // Event Bus - Centralized Event Emitter
 // ============================================
 
+const { logger } = require('./logger');
+
 const listeners = new Map();
 
 const eventBus = {
@@ -51,11 +53,12 @@ const eventBus = {
   emit(event, ...args) {
     const eventListeners = listeners.get(event);
     if (eventListeners) {
+      logger.debug('emit', event, `(${eventListeners.size} listeners)`);
       for (const callback of eventListeners) {
         try {
           callback(...args);
         } catch (err) {
-          console.error(`Error in event handler for "${event}":`, err);
+          logger.error(`Error in event handler for "${event}":`, err);
         }
       }
     }
@@ -71,6 +74,23 @@ const eventBus = {
     } else {
       listeners.clear();
     }
+  },
+
+  /**
+   * Get the number of listeners for an event
+   * @param {string} event - Event name
+   * @returns {number} Number of listeners
+   */
+  listenerCount(event) {
+    return listeners.get(event)?.size || 0;
+  },
+
+  /**
+   * Get all event names that have listeners registered
+   * @returns {string[]} Array of event names
+   */
+  getRegisteredEvents() {
+    return Array.from(listeners.keys()).filter((key) => listeners.get(key).size > 0);
   }
 };
 
