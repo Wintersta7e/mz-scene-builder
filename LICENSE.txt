@@ -1,0 +1,23 @@
+Timeline Scene Builder
+Copyright (c) 2026 W1nterstale
+
+TERMS OF USE
+
+1. LICENSE GRANT
+   This software is licensed for personal use only. You may install and use
+   this software on any computers you personally own or control.
+
+2. RESTRICTIONS
+   - You may NOT redistribute, share, or resell this software
+   - You may NOT modify, decompile, or reverse engineer this software
+   - You may NOT use this software for commercial purposes without a
+     separate commercial license
+
+3. DISCLAIMER
+   This software is provided "as is" without warranty of any kind. The author
+   is not liable for any damages arising from the use of this software.
+
+4. CONTACT
+   For commercial licensing inquiries or support, visit the itch.io page.
+
+By using this software, you agree to these terms.

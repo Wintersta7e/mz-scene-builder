@@ -1,0 +1,76 @@
+{
+  "name": "timeline-scene-builder",
+  "productName": "Timeline Scene Builder",
+  "version": "1.2.2",
+  "description": "Visual timeline editor for creating cutscenes and picture sequences",
+  "main": "main.js",
+  "scripts": {
+    "start": "node node_modules/electron/cli.js . --no-sandbox",
+    "dev": "node node_modules/electron/cli.js . --no-sandbox --dev",
+    "build": "node node_modules/electron-builder/out/cli/cli.js",
+    "build:win": "node node_modules/electron-builder/out/cli/cli.js --win",
+    "build:mac": "node node_modules/electron-builder/out/cli/cli.js --mac",
+    "test": "node node_modules/jest/bin/jest.js",
+    "test:watch": "node node_modules/jest/bin/jest.js --watch",
+    "test:coverage": "node node_modules/jest/bin/jest.js --coverage"
+  },
+  "keywords": [
+    "timeline",
+    "scene-builder",
+    "cutscene",
+    "electron",
+    "gamedev"
+  ],
+  "author": "W1nterstale",
+  "license": "SEE LICENSE IN LICENSE.txt",
+  "devDependencies": {
+    "electron": "^40.1.0",
+    "electron-builder": "^26.7.0",
+    "jest": "^30.2.0"
+  },
+  "build": {
+    "appId": "com.w1nterstale.timeline-scene-builder",
+    "productName": "Timeline Scene Builder",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "src/**/*",
+      "assets/**/*"
+    ],
+    "win": {
+      "target": [
+        "nsis",
+        "portable"
+      ],
+      "icon": "assets/icon.ico"
+    },
+    "mac": {
+      "target": [
+        "dmg",
+        "zip"
+      ],
+      "icon": "assets/icon.icns",
+      "category": "public.app-category.developer-tools"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    },
+    "portable": {
+      "artifactName": "${productName}-${version}-win-portable.${ext}"
+    },
+    "fileAssociations": [
+      {
+        "ext": "mzscene",
+        "name": "Timeline Scene",
+        "description": "Timeline Scene Builder Project",
+        "role": "Editor"
+      }
+    ]
+  }
+}
