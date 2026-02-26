@@ -43,7 +43,7 @@ contextBridge.exposeInMainWorld('api', {
   // Shell operations (limited)
   openExternal: (url) => {
     // Only allow specific URLs
-    const allowedHosts = ['itch.io', 'github.com'];
+    const allowedHosts = ['github.com'];
     try {
       const urlObj = new URL(url);
       if (allowedHosts.some((host) => urlObj.hostname.endsWith(host))) {

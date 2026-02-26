@@ -17,10 +17,10 @@ function showAboutModal() {
           <img src="../assets/icon.png" alt="Timeline Scene Builder" width="64" height="64">
         </div>
         <div class="about-title">Timeline Scene Builder</div>
-        <div class="about-version">Version 1.2.0</div>
+        <div class="about-version">Version 1.3.0</div>
         <div class="about-author">By W1nterstale</div>
         <div class="about-links">
-          <a href="#" class="about-itch-link">itch.io</a>
+          <a href="#" class="about-github-link">GitHub</a>
         </div>
       </div>
     </div>
@@ -30,11 +30,11 @@ function showAboutModal() {
     btn.addEventListener('click', () => modal.remove());
   });
 
-  const itchLink = modal.querySelector('.about-itch-link');
-  if (itchLink) {
-    itchLink.addEventListener('click', (e) => {
+  const githubLink = modal.querySelector('.about-github-link');
+  if (githubLink) {
+    githubLink.addEventListener('click', (e) => {
       e.preventDefault();
-      window.api.openExternal('https://itch.io');
+      window.api.openExternal('https://github.com/Wintersta7e/mz-scene-builder');
     });
   }
 

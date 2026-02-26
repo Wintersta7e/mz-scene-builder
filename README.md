@@ -4,7 +4,7 @@ A visual timeline editor for creating cutscenes and picture sequences for RPG Ma
 
 ![Electron](https://img.shields.io/badge/Electron-40-47848F?logo=electron)
 ![JavaScript](https://img.shields.io/badge/JavaScript-ES2020-F7DF1E?logo=javascript)
-[![License](https://img.shields.io/badge/License-Proprietary-red.svg)](./LICENSE.txt)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE.txt)
 
 ## Features
 
@@ -82,9 +82,9 @@ Select a target Map, Event, and Page — commands are inserted at the end of the
 ## Tech Stack
 
 - **Runtime**: Electron 40
-- **Language**: Vanilla JavaScript (CommonJS)
-- **Architecture**: Event bus with centralized state
-- **Testing**: Jest (59 tests, 100% coverage on critical functions)
+- **Language**: Vanilla JavaScript (ES Modules in renderer, CJS in main/preload)
+- **Architecture**: Event bus with centralized state, contextIsolation enabled
+- **Testing**: Jest (121 tests across 5 suites)
 - **Build**: electron-builder (NSIS + portable)
 
 ## Project Structure
@@ -135,8 +135,7 @@ npm run build:mac
 
 ## License
 
-Copyright (c) 2026 W1nterstale. All rights reserved.
-See [LICENSE.txt](LICENSE.txt) for terms of use.
+MIT License. See [LICENSE.txt](LICENSE.txt) for details.
 
 ---
 
