@@ -29,7 +29,7 @@
           <button id="btn-quick-export" class="btn" disabled title="Export to last used location">Quick Export</button>
         </div>
         <div class="toolbar-group" style="margin-left: auto">
-          <button id="btn-help" class="btn" title="Keyboard Shortcuts (F1)">?</button>
+          <button id="btn-help" class="btn" title="Keyboard Shortcuts (F1)" aria-label="Keyboard Shortcuts">?</button>
           <button id="btn-about" class="btn" title="About">About</button>
         </div>
       </header>
@@ -39,7 +39,7 @@
         <aside class="panel panel-left" id="panel-left">
           <h3>Pictures</h3>
           <div class="search-box">
-            <input type="text" id="image-search" placeholder="Search images..." disabled />
+            <input type="text" id="image-search" placeholder="Search images..." disabled aria-label="Search images" />
           </div>
           <div id="image-browser" class="image-browser">
             <p class="placeholder">Open a project to browse images</p>
@@ -57,7 +57,7 @@
             </div>
           </div>
           <div class="preview-container">
-            <div id="preview-canvas" class="preview-canvas">
+            <div id="preview-canvas" class="preview-canvas" role="img" aria-label="Scene preview">
               <div id="preview-grid" class="preview-grid"></div>
               <!-- Images will be positioned here -->
             </div>
@@ -79,8 +79,8 @@
         <div class="resize-handle-horizontal" id="resize-timeline"></div>
         <div class="timeline-header">
           <div class="timeline-controls">
-            <button id="btn-play" class="btn btn-sm" disabled title="Play">▶</button>
-            <button id="btn-stop" class="btn btn-sm" disabled title="Stop">■</button>
+            <button id="btn-play" class="btn btn-sm" disabled title="Play" aria-label="Play">▶</button>
+            <button id="btn-stop" class="btn btn-sm" disabled title="Stop" aria-label="Stop">■</button>
             <span class="timeline-position">Frame: <span id="current-frame">0</span></span>
             <span class="timeline-length-control">
               Length:
@@ -133,11 +133,11 @@
     </div>
 
     <!-- Image Picker Modal -->
-    <div id="image-picker-modal" class="modal" style="display: none">
+    <div id="image-picker-modal" class="modal" style="display: none" role="dialog" aria-modal="true" aria-label="Select Image">
       <div class="modal-content modal-large">
         <div class="modal-header">
           <h3>Select Image</h3>
-          <button class="btn-close" id="btn-close-image-picker">&times;</button>
+          <button class="btn-close" id="btn-close-image-picker" aria-label="Close">&times;</button>
         </div>
         <div class="modal-body">
           <div class="image-picker-layout">
@@ -149,11 +149,11 @@
     </div>
 
     <!-- Export to Map Modal -->
-    <div id="export-modal" class="modal" style="display: none">
+    <div id="export-modal" class="modal" style="display: none" role="dialog" aria-modal="true" aria-label="Export to Map">
       <div class="modal-content" style="width: 500px">
         <div class="modal-header">
           <h3>Export to Map</h3>
-          <button class="btn-close" id="btn-close-export-modal">&times;</button>
+          <button class="btn-close" id="btn-close-export-modal" aria-label="Close">&times;</button>
         </div>
         <div class="modal-body" style="padding: 16px">
           <div class="property-group">

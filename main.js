@@ -64,7 +64,7 @@ function createWindow() {
         mainWindow.webContents.setZoomFactor(Math.max(0.5, mainWindow.webContents.getZoomFactor() - 0.1));
         event.preventDefault();
       } else if (input.key === '0') {
-        mainWindow.webContents.setZoomFactor(1.5);
+        mainWindow.webContents.setZoomFactor(1.0);
         event.preventDefault();
       }
     }
