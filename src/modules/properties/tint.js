@@ -2,11 +2,11 @@
 // Tint Picture Properties
 // ============================================
 
-const { getElements } = require('../elements');
-const { state } = require('../state');
-const { rgbToHex, hexToRgb } = require('../utils');
-const { bindInput } = require('./bind-input');
-const { eventBus, Events } = require('../event-bus');
+import { getElements } from '../elements.js';
+import { state } from '../state.js';
+import { rgbToHex, hexToRgb } from '../utils.js';
+import { bindInput } from './bind-input.js';
+import { eventBus, Events } from '../event-bus.js';
 
 function emitRender() {
   eventBus.emit(Events.RENDER_TIMELINE);
@@ -113,4 +113,4 @@ function renderTintProperties(evt) {
   });
 }
 
-module.exports = { renderTintProperties };
+export { renderTintProperties };

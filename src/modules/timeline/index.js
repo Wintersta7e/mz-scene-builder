@@ -2,11 +2,12 @@
 // Timeline Dispatcher
 // ============================================
 
-const { state, TIMELINE_LANES, LANE_HEIGHT } = require('../state');
-const { getElements } = require('../elements');
-const { getEventLane, getEventDuration, selectEvent } = require('../events');
-const { renderMinimap } = require('./minimap');
-const { startTimelineDrag } = require('./drag');
+import { state, TIMELINE_LANES, LANE_HEIGHT } from '../state.js';
+import { getElements } from '../elements.js';
+import { getEventLane, getEventDuration, selectEvent } from '../events.js';
+import { renderMinimap } from './minimap.js';
+import { startTimelineDrag } from './drag.js';
+import { renderProperties } from '../properties/index.js';
 
 function initTimeline() {
   const elements = getElements();
@@ -163,7 +164,6 @@ function renderTimeline() {
       selectEvent(index);
       renderTimeline();
       // Re-render properties through callback
-      const { renderProperties } = require('../properties/index');
       renderProperties();
     });
 
@@ -193,7 +193,7 @@ function onTimelineClick(e) {
   renderTimeline();
 }
 
-module.exports = {
+export {
   initTimeline,
   renderTimeline,
   onTimelineClick,

@@ -62,4 +62,4 @@ function getElements() {
   return elements;
 }
 
-module.exports = { initElements, getElements };
+export { initElements, getElements };

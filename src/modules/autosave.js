@@ -2,12 +2,12 @@
 // Autosave System
 // ============================================
 
-const { state, AUTOSAVE_INTERVAL } = require('./state');
-const { getElements } = require('./elements');
-const { showConfirmDialog, markDirty } = require('./undo-redo');
-const { logger } = require('./logger');
-const { eventBus, Events } = require('./event-bus');
-const { resetInsertOrderCounter } = require('./utils');
+import { state, AUTOSAVE_INTERVAL } from './state.js';
+import { getElements } from './elements.js';
+import { showConfirmDialog, markDirty } from './undo-redo.js';
+import { logger } from './logger.js';
+import { eventBus, Events } from './event-bus.js';
+import { resetInsertOrderCounter } from './utils.js';
 
 function startAutosave() {
   stopAutosave();
@@ -92,7 +92,7 @@ async function checkAutosaveRecovery(openProjectPath) {
   }
 }
 
-module.exports = {
+export {
   startAutosave,
   stopAutosave,
   performAutosave,

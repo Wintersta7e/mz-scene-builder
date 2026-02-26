@@ -2,34 +2,34 @@
 // Initialization & Event Binding
 // ============================================
 
-const { state } = require('./state');
-const { initElements } = require('./elements');
-const { logger } = require('./logger');
-const { eventBus, Events } = require('./event-bus');
-const { addEvent, deleteSelectedEvent, clearScene } = require('./events');
-const { initDragDrop, newScene, loadScene, saveScene } = require('./file-ops');
-const { openProject } = require('./project');
-const { updateRecentProjectsDropdown, initRecentProjectsDropdown } = require('./settings');
-const { toggleGrid, toggleSnapToGrid } = require('./grid');
-const { showAboutModal, showShortcutsModal } = require('./modals');
-const { startAutosave, stopAutosave, checkAutosaveRecovery } = require('./autosave');
-const { initTimeline, renderTimeline, onTimelineClick } = require('./timeline/index');
-const { initMinimapEvents } = require('./timeline/minimap');
-const { renderProperties } = require('./properties/index');
-const { setupPropertyDelegation } = require('./properties/bind-input');
-const { renderPreviewAtFrame, resizePreviewCanvas } = require('./preview/index');
-const { closeImagePicker } = require('./preview/image-picker');
-const { filterImages } = require('./preview/image-browser');
-const { togglePlayback, stopPlayback } = require('./playback');
-const { handleKeyboardMove, setSaveCallback } = require('./keyboard');
-const {
+import { state } from './state.js';
+import { initElements } from './elements.js';
+import { logger } from './logger.js';
+import { eventBus, Events } from './event-bus.js';
+import { addEvent, deleteSelectedEvent, clearScene } from './events.js';
+import { initDragDrop, newScene, loadScene, saveScene } from './file-ops.js';
+import { openProject, openProjectPath } from './project.js';
+import { updateRecentProjectsDropdown, initRecentProjectsDropdown } from './settings.js';
+import { toggleGrid, toggleSnapToGrid } from './grid.js';
+import { showAboutModal, showShortcutsModal } from './modals.js';
+import { startAutosave, stopAutosave, checkAutosaveRecovery } from './autosave.js';
+import { initTimeline, renderTimeline, onTimelineClick } from './timeline/index.js';
+import { initMinimapEvents } from './timeline/minimap.js';
+import { renderProperties } from './properties/index.js';
+import { setupPropertyDelegation } from './properties/bind-input.js';
+import { renderPreviewAtFrame, resizePreviewCanvas } from './preview/index.js';
+import { closeImagePicker } from './preview/image-picker.js';
+import { filterImages } from './preview/image-browser.js';
+import { togglePlayback, stopPlayback } from './playback.js';
+import { handleKeyboardMove, setSaveCallback } from './keyboard.js';
+import {
   openExportModal,
   doExportToMap,
   initExportDropdowns,
   closeExportModal,
   quickExport,
   updateQuickExportButton
-} = require('./export');
+} from './export.js';
 
 function render() {
   renderTimeline();
@@ -57,6 +57,11 @@ function setupEventBusListeners() {
 
   // Scene loaded - full render
   eventBus.on(Events.SCENE_LOADED, render);
+
+  // Recent project opened (mediator for settings -> project circular dependency)
+  eventBus.on(Events.OPEN_RECENT_PROJECT, (path) => {
+    openProjectPath(path);
+  });
 }
 
 function initResizeHandles() {
@@ -248,7 +253,6 @@ function init() {
   startAutosave();
 
   // Check for autosave recovery on startup
-  const { openProjectPath } = require('./project');
   setTimeout(() => checkAutosaveRecovery(openProjectPath), 500);
 
   // Clean up on close
@@ -259,4 +263,4 @@ function init() {
   logger.info('Timeline Scene Builder initialized');
 }
 
-module.exports = { init, render };
+export { init, render };

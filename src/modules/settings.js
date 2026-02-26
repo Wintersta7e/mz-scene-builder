@@ -2,14 +2,15 @@
 // Settings & Recent Projects
 // ============================================
 
-const { SETTINGS_KEY, MAX_RECENT_PROJECTS } = require('./state');
+import { SETTINGS_KEY, MAX_RECENT_PROJECTS } from './state.js';
 
 // Simple path.basename replacement for browser context
 function basename(p) {
   return p.split(/[/\\]/).pop() || p;
 }
-const { logger } = require('./logger');
-const { showError, showWarning } = require('./notifications');
+import { logger } from './logger.js';
+import { showError, showWarning } from './notifications.js';
+import { eventBus, Events } from './event-bus.js';
 
 function getSettings() {
   try {
@@ -48,15 +49,15 @@ function updateRecentProjectsDropdown() {
   const dropdown = document.getElementById('recent-projects-dropdown');
   if (!dropdown) return;
 
-  dropdown.innerHTML = '';
+  dropdown.textContent = '';
 
   if (recent.length === 0) {
-    dropdown.innerHTML = '<div class="dropdown-item disabled">No recent projects</div>';
+    const placeholder = document.createElement('div');
+    placeholder.className = 'dropdown-item disabled';
+    placeholder.textContent = 'No recent projects';
+    dropdown.appendChild(placeholder);
     return;
   }
-
-  // Import openProjectPath dynamically to avoid circular dependency
-  const { openProjectPath } = require('./project');
 
   recent.forEach((p) => {
     const item = document.createElement('div');
@@ -74,7 +75,7 @@ function updateRecentProjectsDropdown() {
           showWarning('Project folder not found or invalid: ' + p);
           return;
         }
-        await openProjectPath(p);
+        eventBus.emit(Events.OPEN_RECENT_PROJECT, p);
       } catch (err) {
         logger.error('Error opening project:', err);
         showError('Error opening project: ' + err.message);
@@ -106,7 +107,7 @@ function initRecentProjectsDropdown() {
   });
 }
 
-module.exports = {
+export {
   getSettings,
   saveSettings,
   getRecentProjects,

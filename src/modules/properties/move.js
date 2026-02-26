@@ -2,8 +2,8 @@
 // Move Picture Properties
 // ============================================
 
-const { getElements } = require('../elements');
-const { bindInput } = require('./bind-input');
+import { getElements } from '../elements.js';
+import { bindInput } from './bind-input.js';
 
 function renderMoveProperties(evt) {
   const elements = getElements();
@@ -118,4 +118,4 @@ function renderMoveProperties(evt) {
   bindInput('prop-wait', 'wait', 'boolean');
 }
 
-module.exports = { renderMoveProperties };
+export { renderMoveProperties };

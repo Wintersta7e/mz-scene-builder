@@ -2,7 +2,7 @@
 // Event Bus - Centralized Event Emitter
 // ============================================
 
-const { logger } = require('./logger');
+import { logger } from './logger.js';
 
 const listeners = new Map();
 
@@ -110,7 +110,10 @@ const Events = {
   // Project events
   PROJECT_LOADED: 'project:loaded', // Project was loaded
   SCENE_LOADED: 'scene:loaded', // Scene was loaded
-  SCENE_SAVED: 'scene:saved' // Scene was saved
+  SCENE_SAVED: 'scene:saved', // Scene was saved
+
+  // Recent project events
+  OPEN_RECENT_PROJECT: 'project:open-recent'
 };
 
-module.exports = { eventBus, Events };
+export { eventBus, Events };

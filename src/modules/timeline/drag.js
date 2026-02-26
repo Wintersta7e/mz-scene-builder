@@ -2,12 +2,13 @@
 // Timeline Event Dragging
 // ============================================
 
-const { state } = require('../state');
-const { saveState, markDirty } = require('../undo-redo');
-const { sortEvents } = require('../utils');
-const { selectEvent } = require('../events');
-const { eventBus, Events } = require('../event-bus');
-const { logger } = require('../logger');
+import { state } from '../state.js';
+import { saveState, markDirty } from '../undo-redo.js';
+import { sortEvents } from '../utils.js';
+import { selectEvent } from '../events.js';
+import { eventBus, Events } from '../event-bus.js';
+import { logger } from '../logger.js';
+import { renderProperties } from '../properties/index.js';
 
 function startTimelineDrag(e, evt, index) {
   if (e.button !== 0) return;
@@ -78,8 +79,7 @@ function stopTimelineDrag(onDrag, onStop) {
   eventBus.emit(Events.RENDER_TIMELINE);
 
   // Update properties
-  const { renderProperties } = require('../properties/index');
   renderProperties();
 }
 
-module.exports = { startTimelineDrag };
+export { startTimelineDrag };

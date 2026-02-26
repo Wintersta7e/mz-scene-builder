@@ -2,10 +2,10 @@
 // Other Property Panels (Rotate, Erase, Wait, Flash)
 // ============================================
 
-const { getElements } = require('../elements');
-const { rgbToHex, hexToRgb } = require('../utils');
-const { bindInput } = require('./bind-input');
-const { eventBus, Events } = require('../event-bus');
+import { getElements } from '../elements.js';
+import { rgbToHex, hexToRgb } from '../utils.js';
+import { bindInput } from './bind-input.js';
+import { eventBus, Events } from '../event-bus.js';
 
 function renderRotateProperties(evt) {
   const elements = getElements();
@@ -167,7 +167,7 @@ function renderFlashProperties(evt) {
   });
 }
 
-module.exports = {
+export {
   renderRotateProperties,
   renderEraseProperties,
   renderWaitProperties,

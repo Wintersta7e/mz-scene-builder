@@ -10,7 +10,7 @@ function showAboutModal() {
     <div class="modal-content modal-about">
       <div class="modal-header">
         <h3>About</h3>
-        <button class="btn-close" onclick="this.closest('.modal').remove()">&times;</button>
+        <button class="btn-close">&times;</button>
       </div>
       <div class="about-content">
         <div class="about-icon">
@@ -20,11 +20,23 @@ function showAboutModal() {
         <div class="about-version">Version 1.2.0</div>
         <div class="about-author">By W1nterstale</div>
         <div class="about-links">
-          <a href="#" onclick="window.api.openExternal('https://itch.io'); return false;">itch.io</a>
+          <a href="#" class="about-itch-link">itch.io</a>
         </div>
       </div>
     </div>
   `;
+
+  modal.querySelectorAll('.btn-close').forEach((btn) => {
+    btn.addEventListener('click', () => modal.remove());
+  });
+
+  const itchLink = modal.querySelector('.about-itch-link');
+  if (itchLink) {
+    itchLink.addEventListener('click', (e) => {
+      e.preventDefault();
+      window.api.openExternal('https://itch.io');
+    });
+  }
 
   modal.addEventListener('click', (e) => {
     if (e.target === modal) modal.remove();
@@ -41,7 +53,7 @@ function showShortcutsModal() {
     <div class="modal-content modal-shortcuts">
       <div class="modal-header">
         <h3>Keyboard Shortcuts</h3>
-        <button class="btn-close" onclick="this.closest('.modal').remove()">&times;</button>
+        <button class="btn-close">&times;</button>
       </div>
       <div class="shortcuts-content">
         <div class="shortcut-group">
@@ -124,6 +136,10 @@ function showShortcutsModal() {
     </div>
   `;
 
+  modal.querySelectorAll('.btn-close').forEach((btn) => {
+    btn.addEventListener('click', () => modal.remove());
+  });
+
   modal.addEventListener('click', (e) => {
     if (e.target === modal) modal.remove();
   });
@@ -131,4 +147,4 @@ function showShortcutsModal() {
   document.body.appendChild(modal);
 }
 
-module.exports = { showAboutModal, showShortcutsModal };
+export { showAboutModal, showShortcutsModal };

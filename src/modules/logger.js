@@ -49,4 +49,4 @@ const logger = {
   }
 };
 
-module.exports = { logger, LOG_LEVELS, isDev };
+export { logger, LOG_LEVELS, isDev };

@@ -1,10 +1,10 @@
 // ============================================
 // Preload Script - IPC Bridge
 // ============================================
-// With contextIsolation: false, we attach directly to window
-// instead of using contextBridge.
+// With contextIsolation: true, we use contextBridge
+// to safely expose APIs to the renderer.
 
-const { ipcRenderer, shell } = require('electron');
+const { contextBridge, ipcRenderer, shell } = require('electron');
 
 // Whitelist of allowed IPC channels
 const ALLOWED_CHANNELS = [
@@ -29,15 +29,15 @@ const ALLOWED_CHANNELS = [
 // Check if dev mode
 const isDev = process.argv.includes('--dev');
 
-// Expose APIs to renderer via window object
-window.api = {
+// Expose APIs to renderer via contextBridge
+contextBridge.exposeInMainWorld('api', {
   isDev,
   // IPC invoke with channel validation
   invoke: (channel, ...args) => {
     if (ALLOWED_CHANNELS.includes(channel)) {
       return ipcRenderer.invoke(channel, ...args);
     }
-    throw new Error(`IPC channel "${channel}" is not allowed`);
+    return Promise.reject(new Error(`IPC channel "${channel}" is not allowed`));
   },
 
   // Shell operations (limited)
@@ -55,4 +55,4 @@ window.api = {
     console.warn('Blocked attempt to open URL:', url);
     return Promise.resolve();
   }
-};
+});

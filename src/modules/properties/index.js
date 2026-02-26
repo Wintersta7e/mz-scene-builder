@@ -2,8 +2,18 @@
 // Properties Panel Dispatcher
 // ============================================
 
-const { state } = require('../state');
-const { getElements } = require('../elements');
+import { state } from '../state.js';
+import { getElements } from '../elements.js';
+import { renderPictureProperties } from './picture.js';
+import { renderMoveProperties } from './move.js';
+import { renderTintProperties } from './tint.js';
+import { renderTextProperties } from './text.js';
+import {
+  renderRotateProperties,
+  renderEraseProperties,
+  renderWaitProperties,
+  renderFlashProperties
+} from './other.js';
 
 function renderProperties() {
   const elements = getElements();
@@ -14,18 +24,6 @@ function renderProperties() {
   }
 
   const evt = state.events[state.selectedEventIndex];
-
-  // Lazy load to avoid circular dependencies
-  const { renderPictureProperties } = require('./picture');
-  const { renderMoveProperties } = require('./move');
-  const { renderTintProperties } = require('./tint');
-  const { renderTextProperties } = require('./text');
-  const {
-    renderRotateProperties,
-    renderEraseProperties,
-    renderWaitProperties,
-    renderFlashProperties
-  } = require('./other');
 
   switch (evt.type) {
     case 'showPicture':
@@ -55,4 +53,4 @@ function renderProperties() {
   }
 }
 
-module.exports = { renderProperties };
+export { renderProperties };

@@ -4,8 +4,8 @@
 // Uses event delegation on the properties panel to avoid memory leaks
 // from repeatedly adding listeners to replaced elements.
 
-const { state } = require('../state');
-const { eventBus, Events } = require('../event-bus');
+import { state } from '../state.js';
+import { eventBus, Events } from '../event-bus.js';
 
 let _delegationSetup = false;
 
@@ -60,4 +60,4 @@ function bindInput(elementId, property, type) {
   el.dataset.boundIndex = state.selectedEventIndex;
 }
 
-module.exports = { bindInput, setupPropertyDelegation };
+export { bindInput, setupPropertyDelegation };

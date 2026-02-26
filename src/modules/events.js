@@ -2,12 +2,12 @@
 // Event Management
 // ============================================
 
-const { state, MAX_PICTURE_NUMBER } = require('./state');
-const { getElements } = require('./elements');
-const { saveState } = require('./undo-redo');
-const { sortEvents, getNextInsertOrder } = require('./utils');
-const { eventBus, Events } = require('./event-bus');
-const { logger } = require('./logger');
+import { state, MAX_PICTURE_NUMBER } from './state.js';
+import { getElements } from './elements.js';
+import { saveState } from './undo-redo.js';
+import { sortEvents, getNextInsertOrder } from './utils.js';
+import { eventBus, Events } from './event-bus.js';
+import { logger } from './logger.js';
 
 function getEventLane(type) {
   switch (type) {
@@ -244,7 +244,7 @@ function clearScene() {
   eventBus.emit(Events.RENDER);
 }
 
-module.exports = {
+export {
   getEventLane,
   getEventDuration,
   getNextPictureNumber,

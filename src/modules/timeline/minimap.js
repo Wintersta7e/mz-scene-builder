@@ -2,10 +2,10 @@
 // Timeline Minimap
 // ============================================
 
-const { state } = require('../state');
-const { getElements } = require('../elements');
-const { getEventLane, getEventDuration } = require('../events');
-const { eventBus, Events } = require('../event-bus');
+import { state } from '../state.js';
+import { getElements } from '../elements.js';
+import { getEventLane, getEventDuration } from '../events.js';
+import { eventBus, Events } from '../event-bus.js';
 
 const MINIMAP_COLORS = {
   showPicture: '#22c55e',
@@ -172,7 +172,7 @@ function handleMinimapClick(e) {
   eventBus.emit(Events.RENDER_PREVIEW, state.currentFrame);
 }
 
-module.exports = {
+export {
   renderMinimap,
   updateMinimapViewport,
   initMinimapEvents,

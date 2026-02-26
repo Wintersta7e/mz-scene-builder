@@ -56,4 +56,4 @@ function resetInsertOrderCounter(maxOrder = 0) {
   insertOrderCounter = maxOrder;
 }
 
-module.exports = { rgbToHex, hexToRgb, sortEvents, TYPE_PRIORITY, getNextInsertOrder, resetInsertOrderCounter };
+export { rgbToHex, hexToRgb, sortEvents, TYPE_PRIORITY, getNextInsertOrder, resetInsertOrderCounter };

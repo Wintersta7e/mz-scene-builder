@@ -2,8 +2,9 @@
 // Show Picture Properties
 // ============================================
 
-const { getElements } = require('../elements');
-const { bindInput } = require('./bind-input');
+import { getElements } from '../elements.js';
+import { bindInput } from './bind-input.js';
+import { openImagePicker } from '../preview/image-picker.js';
 
 function renderPictureProperties(evt) {
   const elements = getElements();
@@ -16,7 +17,7 @@ function renderPictureProperties(evt) {
         <span class="property-label">Image:</span>
         <span class="property-input">${imageName}</span>
       </div>
-      <button class="btn btn-sm btn-pick-image" onclick="openImagePicker()">Select Image...</button>
+      <button class="btn btn-sm btn-pick-image">Select Image...</button>
     </div>
     <div class="property-group">
       <h4>Display</h4>
@@ -88,6 +89,9 @@ function renderPictureProperties(evt) {
     </div>
   `;
 
+  const pickBtn = elements.propertiesPanel.querySelector('.btn-pick-image');
+  if (pickBtn) pickBtn.addEventListener('click', openImagePicker);
+
   bindInput('prop-picture-number', 'pictureNumber', 'number');
   bindInput('prop-origin', 'origin', 'number');
   bindInput('prop-x', 'x', 'number');
@@ -98,4 +102,4 @@ function renderPictureProperties(evt) {
   bindInput('prop-blend', 'blend', 'number');
 }
 
-module.exports = { renderPictureProperties };
+export { renderPictureProperties };

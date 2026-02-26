@@ -111,7 +111,7 @@ function getState() {
   return state;
 }
 
-module.exports = {
+export {
   state,
   get,
   set,

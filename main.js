@@ -36,8 +36,9 @@ function createWindow() {
     show: false, // Don't show until maximized
     icon: path.join(__dirname, 'assets', 'icon.png'),
     webPreferences: {
-      nodeIntegration: true, // Required for CommonJS require() in renderer
-      contextIsolation: false, // Disabled to allow require() in renderer scripts
+      nodeIntegration: false,
+      contextIsolation: true,
+      sandbox: true,
       preload: path.join(__dirname, 'preload.js'),
       zoomFactor: 1.0 // No auto-scaling - user can adjust with Ctrl+/Ctrl-
     },

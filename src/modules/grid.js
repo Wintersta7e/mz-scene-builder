@@ -2,7 +2,7 @@
 // Grid Overlay
 // ============================================
 
-const { state, GRID_SIZE } = require('./state');
+import { state, GRID_SIZE } from './state.js';
 
 function toggleGrid() {
   state.gridVisible = !state.gridVisible;
@@ -37,7 +37,7 @@ function snapPosition(value) {
   return Math.round(value / GRID_SIZE) * GRID_SIZE;
 }
 
-module.exports = {
+export {
   toggleGrid,
   toggleSnapToGrid,
   updateGridButton,

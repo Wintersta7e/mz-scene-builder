@@ -8,7 +8,7 @@ const VIEWPORT_HEIGHT = 250; // Max visible height
 const BUFFER_SIZE = 3; // Extra items above/below viewport
 const VISIBLE_COUNT = Math.ceil(VIEWPORT_HEIGHT / ITEM_HEIGHT) + BUFFER_SIZE * 2;
 
-class VirtualDropdown {
+export class VirtualDropdown {
   constructor(options) {
     this.container = options.container;
     this.placeholder = options.placeholder || '-- Select --';
@@ -390,4 +390,3 @@ class VirtualDropdown {
   }
 }
 
-module.exports = { VirtualDropdown };

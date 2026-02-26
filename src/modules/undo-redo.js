@@ -2,9 +2,9 @@
 // Undo/Redo System
 // ============================================
 
-const { state, MAX_UNDO_STACK } = require('./state');
-const { logger } = require('./logger');
-const { eventBus, Events } = require('./event-bus');
+import { state, MAX_UNDO_STACK } from './state.js';
+import { logger } from './logger.js';
+import { eventBus, Events } from './event-bus.js';
 
 function saveState(actionName) {
   const stateSnapshot = {
@@ -130,7 +130,7 @@ function showConfirmDialog(title, message, buttons) {
   });
 }
 
-module.exports = {
+export {
   saveState,
   undo,
   redo,

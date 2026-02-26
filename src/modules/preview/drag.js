@@ -2,11 +2,11 @@
 // Preview Image Dragging
 // ============================================
 
-const { state } = require('../state');
-const { getElements } = require('../elements');
-const { saveState, markDirty } = require('../undo-redo');
-const { snapPosition } = require('../grid');
-const { eventBus, Events } = require('../event-bus');
+import { state } from '../state.js';
+import { getElements } from '../elements.js';
+import { saveState, markDirty } from '../undo-redo.js';
+import { snapPosition } from '../grid.js';
+import { eventBus, Events } from '../event-bus.js';
 
 function getPreviewScale() {
   const elements = getElements();
@@ -113,7 +113,7 @@ function stopDrag() {
   eventBus.emit(Events.RENDER_TIMELINE);
 }
 
-module.exports = {
+export {
   findImagesAtPoint,
   updateImagePosition,
   highlightSelectedImage,

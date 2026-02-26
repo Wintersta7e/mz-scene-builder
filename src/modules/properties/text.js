@@ -2,8 +2,8 @@
 // Show Text Properties
 // ============================================
 
-const { getElements } = require('../elements');
-const { bindInput } = require('./bind-input');
+import { getElements } from '../elements.js';
+import { bindInput } from './bind-input.js';
 
 function renderTextProperties(evt) {
   const elements = getElements();
@@ -45,4 +45,4 @@ function renderTextProperties(evt) {
   bindInput('prop-position', 'position', 'number');
 }
 
-module.exports = { renderTextProperties };
+export { renderTextProperties };

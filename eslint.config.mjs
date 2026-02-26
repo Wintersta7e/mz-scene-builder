@@ -53,17 +53,14 @@ export default [
     }
   },
 
-  // Renderer modules (nodeIntegration: true — has both browser + Node globals)
+  // Renderer modules (contextIsolation: true — browser globals only, window.api from preload)
   {
     files: ['src/renderer.js', 'src/modules/**/*.js'],
     languageOptions: {
       globals: {
-        ...globals.browser,
-        ...globals.node,
-        // Electron preload-exposed API
-        api: 'readonly'
+        ...globals.browser
       },
-      sourceType: 'commonjs'
+      sourceType: 'module'
     }
   },
 

@@ -2,14 +2,15 @@
 // Keyboard Shortcuts
 // ============================================
 
-const { state } = require('./state');
-const { getElements } = require('./elements');
-const { sortEvents } = require('./utils');
-const { undo, redo, saveState } = require('./undo-redo');
-const { selectEvent, duplicateSelectedEvent, deleteSelectedEvent, addEvent } = require('./events');
-const { showShortcutsModal } = require('./modals');
-const { logger } = require('./logger');
-const { eventBus, Events } = require('./event-bus');
+import { state } from './state.js';
+import { getElements } from './elements.js';
+import { sortEvents } from './utils.js';
+import { undo, redo, saveState } from './undo-redo.js';
+import { selectEvent, duplicateSelectedEvent, deleteSelectedEvent, addEvent } from './events.js';
+import { showShortcutsModal } from './modals.js';
+import { logger } from './logger.js';
+import { eventBus, Events } from './event-bus.js';
+import { getPreviewScale } from './preview/index.js';
 
 let saveSceneCallback = null;
 
@@ -163,7 +164,6 @@ function handleKeyboardMove(e) {
   }
 
   // Update image position directly
-  const { getPreviewScale } = require('./preview/index');
   const scale = getPreviewScale();
   const imgEl = elements.previewCanvas.querySelector(`img[data-event-index="${state.selectedEventIndex}"]`);
   if (imgEl) {
@@ -178,4 +178,4 @@ function handleKeyboardMove(e) {
   if (yInput) yInput.value = evt.y;
 }
 
-module.exports = { handleKeyboardMove, setSaveCallback };
+export { handleKeyboardMove, setSaveCallback };
