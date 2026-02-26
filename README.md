@@ -6,6 +6,8 @@ A visual timeline editor for creating cutscenes and picture sequences for RPG Ma
 ![JavaScript](https://img.shields.io/badge/JavaScript-ES2020-F7DF1E?logo=javascript)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE.txt)
 
+<img src="screenshots/01-main-editor.png" alt="Timeline Scene Builder — main editor view" width="720" />
+
 ## Features
 
 - **Timeline Editor** - Visual timeline with lanes for Pictures, Effects, and Text
@@ -41,11 +43,29 @@ npm start
 5. Edit properties in the right panel
 6. Use **Export to Map** to write directly to a map file
 
+### Preview
+
+Drag and drop images directly on the 16:9 preview canvas. The grid overlay snaps to 64px increments.
+
+<img src="screenshots/02-preview-closeup.png" alt="Preview with multiple pictures and text" width="580" />
+
+### Timeline
+
+Events are organized into lanes — Pictures, Effects, and Text — with color-coded blocks and a minimap for navigation.
+
+<img src="screenshots/03-timeline.png" alt="Timeline with picture and text events" width="580" />
+
+### Properties
+
+Select any event to edit its properties in the right panel.
+
+<img src="screenshots/04-properties.png" alt="Text event properties panel" width="280" />
+
 ### Exporting
 
-<img src="screenshots/06-export-dialog.png" alt="Export to Map dialog" width="380" />
+<img src="screenshots/06-export-dialog.png" alt="Export to Map dialog" width="340" />
 
-<img src="screenshots/07-export-map-selection.png" alt="Map selection dropdown" width="380" />
+<img src="screenshots/07-export-map-selection.png" alt="Map selection dropdown" width="340" />
 
 Select a target Map, Event, and Page — commands are inserted at the end of the selected event page.
 
