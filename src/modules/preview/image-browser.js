@@ -4,13 +4,13 @@
 
 // Use secure API exposed via preload script
 const api = window.api;
-const { state } = require('../state');
-const { getElements } = require('../elements');
-const { saveState, markDirty } = require('../undo-redo');
-const { sortEvents } = require('../utils');
-const { createDefaultEvent, clearImageSelection } = require('../events');
-const { eventBus, Events } = require('../event-bus');
-const { logger } = require('../logger');
+import { state } from '../state.js';
+import { getElements } from '../elements.js';
+import { saveState, markDirty } from '../undo-redo.js';
+import { sortEvents } from '../utils.js';
+import { createDefaultEvent, clearImageSelection } from '../events.js';
+import { eventBus, Events } from '../event-bus.js';
+import { logger } from '../logger.js';
 
 // IntersectionObserver for lazy-loading thumbnails when visible
 let thumbnailObserver = null;
@@ -36,13 +36,17 @@ function getThumbnailObserver() {
 }
 
 async function loadThumbnail(el, path) {
-  const thumb = await api.invoke('get-thumbnail', path);
-  if (thumb) {
-    const thumbEl = el.querySelector('.image-thumb');
-    thumbEl.style.backgroundImage = `url(${thumb})`;
-    thumbEl.style.backgroundSize = 'contain';
-    thumbEl.style.backgroundRepeat = 'no-repeat';
-    thumbEl.style.backgroundPosition = 'center';
+  try {
+    const thumb = await api.invoke('get-thumbnail', path);
+    if (thumb) {
+      const thumbEl = el.querySelector('.image-thumb');
+      thumbEl.style.backgroundImage = `url(${thumb})`;
+      thumbEl.style.backgroundSize = 'contain';
+      thumbEl.style.backgroundRepeat = 'no-repeat';
+      thumbEl.style.backgroundPosition = 'center';
+    }
+  } catch (err) {
+    logger.error('Failed to load thumbnail:', path, err);
   }
 }
 
@@ -67,11 +71,14 @@ function renderFolderTree(container, items, isRoot = true) {
       const children = folderEl.querySelector('.folder-children');
 
       header.addEventListener('click', async () => {
+        if (folderEl.dataset.loading === 'true') return;
+
         const wasExpanded = folderEl.classList.contains('expanded');
         folderEl.classList.toggle('expanded');
         header.querySelector('.folder-icon').textContent = wasExpanded ? '📁' : '📂';
 
         if (!wasExpanded && item.children === null) {
+          folderEl.dataset.loading = 'true';
           children.innerHTML = '<p class="placeholder">Loading...</p>';
           const contents = await api.invoke('get-folder-contents', item.path);
           children.innerHTML = '';
@@ -81,6 +88,7 @@ function renderFolderTree(container, items, isRoot = true) {
           } else {
             logger.warn('Failed to load folder:', item.path, contents?.error);
           }
+          folderEl.dataset.loading = '';
         }
       });
 
@@ -274,7 +282,7 @@ function expandToPath(imagePath) {
   }
 }
 
-module.exports = {
+export {
   renderFolderTree,
   createImageItem,
   handleImageClick,

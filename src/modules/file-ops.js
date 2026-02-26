@@ -4,12 +4,13 @@
 
 // Use secure API exposed via preload script
 const api = window.api;
-const { state } = require('./state');
-const { getElements } = require('./elements');
-const { markClean, checkUnsavedChanges } = require('./undo-redo');
-const { logger } = require('./logger');
-const { eventBus, Events } = require('./event-bus');
-const { resetInsertOrderCounter } = require('./utils');
+import { state } from './state.js';
+import { getElements } from './elements.js';
+import { markClean, checkUnsavedChanges } from './undo-redo.js';
+import { logger } from './logger.js';
+import { showError } from './notifications.js';
+import { eventBus, Events } from './event-bus.js';
+import { resetInsertOrderCounter } from './utils.js';
 
 // Reset insert order counter based on loaded events
 function syncInsertOrderCounter(events) {
@@ -78,39 +79,49 @@ async function newScene() {
 }
 
 async function saveScene() {
-  const sceneData = {
-    version: 1,
-    timelineLength: state.timelineLength,
-    events: state.events
-  };
-  const result = await api.invoke('save-scene', sceneData);
-  if (result) {
-    state.currentScenePath = result;
-    logger.info('Scene saved:', result);
-    markClean();
+  try {
+    const sceneData = {
+      version: 1,
+      timelineLength: state.timelineLength,
+      events: state.events
+    };
+    const result = await api.invoke('save-scene', sceneData);
+    if (result) {
+      state.currentScenePath = result;
+      logger.info('Scene saved:', result);
+      markClean();
+    }
+  } catch (err) {
+    logger.error('Failed to save scene:', err);
+    showError('Failed to save scene: ' + err.message);
   }
 }
 
 async function loadScene() {
   if (!(await checkUnsavedChanges())) return;
 
-  const elements = getElements();
-  const sceneData = await api.invoke('load-scene');
-  if (sceneData) {
-    state.events = sceneData.events || [];
-    syncInsertOrderCounter(state.events);
-    state.timelineLength = sceneData.timelineLength || 300;
-    elements.timelineLengthInput.value = state.timelineLength;
-    state.selectedEventIndex = state.events.length > 0 ? 0 : -1;
-    state.currentFrame = 0;
-    state.undoStack = [];
-    state.redoStack = [];
-    eventBus.emit(Events.RENDER);
-    markClean();
+  try {
+    const elements = getElements();
+    const sceneData = await api.invoke('load-scene');
+    if (sceneData) {
+      state.events = sceneData.events || [];
+      syncInsertOrderCounter(state.events);
+      state.timelineLength = sceneData.timelineLength || 300;
+      elements.timelineLengthInput.value = state.timelineLength;
+      state.selectedEventIndex = state.events.length > 0 ? 0 : -1;
+      state.currentFrame = 0;
+      state.undoStack = [];
+      state.redoStack = [];
+      eventBus.emit(Events.RENDER);
+      markClean();
+    }
+  } catch (err) {
+    logger.error('Failed to load scene:', err);
+    showError('Failed to load scene: ' + err.message);
   }
 }
 
-module.exports = {
+export {
   initDragDrop,
   loadSceneFromFile,
   newScene,

@@ -43,8 +43,16 @@
 //       image-browser.js - Folder tree, image selection
 // ============================================
 
-const { logger } = require('./modules/logger');
-const { init } = require('./modules/init');
+import { logger } from './modules/logger.js';
+import { init } from './modules/init.js';
+
+// Global error boundaries
+window.addEventListener('unhandledrejection', (event) => {
+  logger.error('[Unhandled Promise Rejection]', event.reason);
+});
+window.addEventListener('error', (event) => {
+  logger.error('[Uncaught Error]', event.error || event.message);
+});
 
 // Log startup
 logger.info('Timeline Scene Builder starting...');

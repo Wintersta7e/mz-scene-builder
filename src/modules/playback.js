@@ -2,11 +2,11 @@
 // Animation Playback Control
 // ============================================
 
-const { state } = require('./state');
-const { getElements } = require('./elements');
-const { getEventDuration } = require('./events');
-const { eventBus, Events } = require('./event-bus');
-const { logger } = require('./logger');
+import { state } from './state.js';
+import { getElements } from './elements.js';
+import { getEventDuration } from './events.js';
+import { eventBus, Events } from './event-bus.js';
+import { logger } from './logger.js';
 
 function emitRender() {
   eventBus.emit(Events.RENDER_TIMELINE);
@@ -22,6 +22,11 @@ function togglePlayback() {
 }
 
 function startPlayback() {
+  if (state.playbackInterval) {
+    clearInterval(state.playbackInterval);
+    state.playbackInterval = null;
+  }
+
   logger.debug('Playback started at frame', state.currentFrame);
   const elements = getElements();
   state.isPlaying = true;
@@ -111,7 +116,7 @@ function continueFromText() {
   }
 }
 
-module.exports = {
+export {
   togglePlayback,
   startPlayback,
   pausePlayback,

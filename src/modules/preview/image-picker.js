@@ -4,10 +4,10 @@
 
 // Use secure API exposed via preload script
 const api = window.api;
-const { state } = require('../state');
-const { getElements } = require('../elements');
-const { eventBus, Events } = require('../event-bus');
-const { logger } = require('../logger');
+import { state } from '../state.js';
+import { getElements } from '../elements.js';
+import { eventBus, Events } from '../event-bus.js';
+import { logger } from '../logger.js';
 
 async function openImagePicker() {
   if (!state.folderStructure) return;
@@ -45,11 +45,14 @@ function renderPickerFolders(items, container = null) {
       const children = folderEl.querySelector('.folder-children');
 
       header.addEventListener('click', async () => {
+        if (folderEl.dataset.loading === 'true') return;
+
         const wasExpanded = folderEl.classList.contains('expanded');
         folderEl.classList.toggle('expanded');
         header.querySelector('.folder-icon').textContent = wasExpanded ? '📁' : '📂';
 
         if (!wasExpanded && item.children === null) {
+          folderEl.dataset.loading = 'true';
           children.innerHTML = '<p class="placeholder">Loading...</p>';
           const contents = await api.invoke('get-folder-contents', item.path);
           children.innerHTML = '';
@@ -62,6 +65,7 @@ function renderPickerFolders(items, container = null) {
               children
             );
           }
+          folderEl.dataset.loading = '';
         }
 
         await loadPickerImages(item.path);
@@ -83,52 +87,61 @@ async function loadPickerImages(folderPath) {
   const elements = getElements();
   elements.pickerImages.innerHTML = '<p class="placeholder">Loading...</p>';
 
-  const contents = await api.invoke('get-folder-contents', folderPath);
-  if (!contents || contents.error) {
-    logger.warn('Failed to load picker folder:', folderPath, contents?.error);
-    elements.pickerImages.innerHTML = '<p class="placeholder">No images found</p>';
-    return;
-  }
+  try {
+    const contents = await api.invoke('get-folder-contents', folderPath);
+    if (!contents || contents.error) {
+      logger.warn('Failed to load picker folder:', folderPath, contents?.error);
+      elements.pickerImages.innerHTML = '<p class="placeholder">No images found</p>';
+      return;
+    }
 
-  const images = contents.filter((item) => item.type === 'file');
-  if (images.length === 0) {
-    elements.pickerImages.innerHTML = '<p class="placeholder">No images in this folder</p>';
-    return;
-  }
+    const images = contents.filter((item) => item.type === 'file');
+    if (images.length === 0) {
+      elements.pickerImages.innerHTML = '<p class="placeholder">No images in this folder</p>';
+      return;
+    }
 
-  elements.pickerImages.innerHTML = '';
+    elements.pickerImages.innerHTML = '';
 
-  for (const img of images) {
-    const el = document.createElement('div');
-    el.className = 'grid-image-item';
-    el.innerHTML = `
-      <div class="grid-image-thumb" data-path="${img.path}"></div>
-      <div class="grid-image-name">${img.name}</div>
-    `;
+    for (const img of images) {
+      const el = document.createElement('div');
+      el.className = 'grid-image-item';
+      el.innerHTML = `
+        <div class="grid-image-thumb" data-path="${img.path}"></div>
+        <div class="grid-image-name">${img.name}</div>
+      `;
 
-    const loadThumb = async () => {
-      const thumb = await api.invoke('get-thumbnail', img.path);
-      if (thumb) {
-        el.querySelector('.grid-image-thumb').style.backgroundImage = `url(${thumb})`;
-        el.querySelector('.grid-image-thumb').style.backgroundSize = 'contain';
-        el.querySelector('.grid-image-thumb').style.backgroundRepeat = 'no-repeat';
-        el.querySelector('.grid-image-thumb').style.backgroundPosition = 'center';
-      }
-    };
+      const loadThumb = async () => {
+        try {
+          const thumb = await api.invoke('get-thumbnail', img.path);
+          if (thumb) {
+            el.querySelector('.grid-image-thumb').style.backgroundImage = `url(${thumb})`;
+            el.querySelector('.grid-image-thumb').style.backgroundSize = 'contain';
+            el.querySelector('.grid-image-thumb').style.backgroundRepeat = 'no-repeat';
+            el.querySelector('.grid-image-thumb').style.backgroundPosition = 'center';
+          }
+        } catch (err) {
+          logger.error('Failed to load picker thumbnail:', img.path, err);
+        }
+      };
 
-    const observer = new IntersectionObserver((entries) => {
-      if (entries[0].isIntersecting) {
-        loadThumb();
-        observer.disconnect();
-      }
-    });
-    observer.observe(el);
+      const observer = new IntersectionObserver((entries) => {
+        if (entries[0].isIntersecting) {
+          loadThumb();
+          observer.disconnect();
+        }
+      });
+      observer.observe(el);
 
-    el.addEventListener('click', () => {
-      selectPickerImage(img.path);
-    });
+      el.addEventListener('click', () => {
+        selectPickerImage(img.path);
+      });
 
-    elements.pickerImages.appendChild(el);
+      elements.pickerImages.appendChild(el);
+    }
+  } catch (err) {
+    logger.error('Failed to load picker images:', err);
+    elements.pickerImages.innerHTML = '<p class="placeholder">Failed to load images</p>';
   }
 }
 
@@ -140,10 +153,7 @@ function selectPickerImage(imagePath) {
   closeImagePicker();
 }
 
-// Export openImagePicker to window for dynamic template in properties/picture.js
-window.openImagePicker = openImagePicker;
-
-module.exports = {
+export {
   openImagePicker,
   closeImagePicker,
   renderPickerFolders,

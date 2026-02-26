@@ -4,11 +4,11 @@
 
 // Use secure API exposed via preload script
 const api = window.api;
-const { state, SETTINGS_KEY } = require('./state');
-const { getElements } = require('./elements');
-const { VirtualDropdown } = require('./components/virtual-dropdown');
-const { logger } = require('./logger');
-const { showError, showWarning, showSuccess } = require('./notifications');
+import { state, SETTINGS_KEY } from './state.js';
+import { getElements } from './elements.js';
+import { VirtualDropdown } from './components/virtual-dropdown.js';
+import { logger } from './logger.js';
+import { showError, showWarning, showSuccess } from './notifications.js';
 
 // Last export settings storage key
 const LAST_EXPORT_KEY = SETTINGS_KEY + '_lastExport';
@@ -109,48 +109,53 @@ async function openExportModal() {
     return;
   }
 
-  const elements = getElements();
+  try {
+    const elements = getElements();
 
-  // Reset selections
-  selectedMapId = null;
-  selectedEventId = null;
-  selectedPageIndex = 0;
+    // Reset selections
+    selectedMapId = null;
+    selectedEventId = null;
+    selectedPageIndex = 0;
 
-  // Reset UI
-  mapDropdown.clear();
-  mapDropdown.setPlaceholder('-- Select Map --');
-  eventDropdown.clear();
-  eventDropdown.setPlaceholder('-- Select Event --');
-  eventDropdown.setDisabled(true);
-  pageDropdown.clear();
-  pageDropdown.setPlaceholder('-- Select Page --');
-  pageDropdown.setDisabled(true);
-  pageDropdown.setItems([]);
-  elements.doExport.disabled = true;
-
-  // Check if maps are ready (pre-rendered on project load)
-  if (state.cachedMaps) {
-    mapDropdown.setDisabled(false);
-  } else {
-    // Fetch maps (fallback - shouldn't happen normally)
-    mapDropdown.setPlaceholder('Loading maps...');
-    mapDropdown.setDisabled(true);
-
-    const maps = await api.invoke('get-maps');
-    if (maps.error) {
-      showError('Error loading maps: ' + maps.error);
-      mapDropdown.setPlaceholder('Error loading maps');
-      elements.exportModal.style.display = 'flex';
-      return;
-    }
-    state.cachedMaps = maps;
-    prerenderMapsDropdown();
+    // Reset UI
+    mapDropdown.clear();
     mapDropdown.setPlaceholder('-- Select Map --');
-    mapDropdown.setDisabled(false);
-  }
+    eventDropdown.clear();
+    eventDropdown.setPlaceholder('-- Select Event --');
+    eventDropdown.setDisabled(true);
+    pageDropdown.clear();
+    pageDropdown.setPlaceholder('-- Select Page --');
+    pageDropdown.setDisabled(true);
+    pageDropdown.setItems([]);
+    elements.doExport.disabled = true;
 
-  // Show modal
-  elements.exportModal.style.display = 'flex';
+    // Check if maps are ready (pre-rendered on project load)
+    if (state.cachedMaps) {
+      mapDropdown.setDisabled(false);
+    } else {
+      // Fetch maps (fallback - shouldn't happen normally)
+      mapDropdown.setPlaceholder('Loading maps...');
+      mapDropdown.setDisabled(true);
+
+      const maps = await api.invoke('get-maps');
+      if (maps.error) {
+        showError('Error loading maps: ' + maps.error);
+        mapDropdown.setPlaceholder('Error loading maps');
+        elements.exportModal.style.display = 'flex';
+        return;
+      }
+      state.cachedMaps = maps;
+      prerenderMapsDropdown();
+      mapDropdown.setPlaceholder('-- Select Map --');
+      mapDropdown.setDisabled(false);
+    }
+
+    // Show modal
+    elements.exportModal.style.display = 'flex';
+  } catch (err) {
+    logger.error('Failed to open export modal:', err);
+    showError('Failed to open export: ' + err.message);
+  }
 }
 
 async function onMapSelected() {
@@ -163,37 +168,42 @@ async function onMapSelected() {
     return;
   }
 
-  // Check if events are cached
-  if (state.cachedMapEvents[selectedMapId]) {
-    logger.debug('Map events cache hit:', selectedMapId);
-    prerenderEventsDropdown(selectedMapId);
-    eventDropdown.clear();
-    eventDropdown.setPlaceholder('-- Select Event --');
-    eventDropdown.setDisabled(false);
-  } else {
-    // Fetch events
-    eventDropdown.setPlaceholder('Loading events...');
-    eventDropdown.setDisabled(true);
+  try {
+    // Check if events are cached
+    if (state.cachedMapEvents[selectedMapId]) {
+      logger.debug('Map events cache hit:', selectedMapId);
+      prerenderEventsDropdown(selectedMapId);
+      eventDropdown.clear();
+      eventDropdown.setPlaceholder('-- Select Event --');
+      eventDropdown.setDisabled(false);
+    } else {
+      // Fetch events
+      eventDropdown.setPlaceholder('Loading events...');
+      eventDropdown.setDisabled(true);
 
-    const mapEvents = await api.invoke('get-map-events', selectedMapId);
-    if (mapEvents.error) {
-      showError('Error loading events: ' + mapEvents.error);
-      eventDropdown.setPlaceholder('Error loading events');
-      return;
+      const mapEvents = await api.invoke('get-map-events', selectedMapId);
+      if (mapEvents.error) {
+        showError('Error loading events: ' + mapEvents.error);
+        eventDropdown.setPlaceholder('Error loading events');
+        return;
+      }
+      state.cachedMapEvents[selectedMapId] = mapEvents;
+      prerenderEventsDropdown(selectedMapId);
+      eventDropdown.setPlaceholder('-- Select Event --');
+      eventDropdown.setDisabled(false);
     }
-    state.cachedMapEvents[selectedMapId] = mapEvents;
-    prerenderEventsDropdown(selectedMapId);
-    eventDropdown.setPlaceholder('-- Select Event --');
-    eventDropdown.setDisabled(false);
-  }
 
-  // Reset event and page selection
-  selectedEventId = null;
-  eventDropdown.clear();
-  pageDropdown.setDisabled(true);
-  pageDropdown.clear();
-  pageDropdown.setItems([]);
-  elements.doExport.disabled = true;
+    // Reset event and page selection
+    selectedEventId = null;
+    eventDropdown.clear();
+    pageDropdown.setDisabled(true);
+    pageDropdown.clear();
+    pageDropdown.setItems([]);
+    elements.doExport.disabled = true;
+  } catch (err) {
+    logger.error('Failed to load map events:', err);
+    showError('Failed to load events: ' + err.message);
+  }
 }
 
 function onEventSelected() {
@@ -229,24 +239,29 @@ async function doExportToMap() {
     return;
   }
 
-  logger.info('Export to map:', { mapId: selectedMapId, eventId: selectedEventId, page: selectedPageIndex + 1 });
+  try {
+    logger.info('Export to map:', { mapId: selectedMapId, eventId: selectedEventId, page: selectedPageIndex + 1 });
 
-  const result = await api.invoke('export-to-map', {
-    events: state.events,
-    mapId: selectedMapId,
-    eventId: selectedEventId,
-    pageIndex: selectedPageIndex
-  });
+    const result = await api.invoke('export-to-map', {
+      events: state.events,
+      mapId: selectedMapId,
+      eventId: selectedEventId,
+      pageIndex: selectedPageIndex
+    });
 
-  if (result.error) {
-    showError('Export failed: ' + result.error);
-  } else {
-    // Save last export settings for quick export
-    saveLastExport(selectedMapId, selectedEventId, selectedPageIndex);
-    showSuccess(
-      `Exported ${result.commandCount} commands to Map ${selectedMapId}, Event ${selectedEventId}, Page ${selectedPageIndex + 1}. Reload the map in RPG Maker to see the changes.`
-    );
-    closeExportModal();
+    if (result.error) {
+      showError('Export failed: ' + result.error);
+    } else {
+      // Save last export settings for quick export
+      saveLastExport(selectedMapId, selectedEventId, selectedPageIndex);
+      showSuccess(
+        `Exported ${result.commandCount} commands to Map ${selectedMapId}, Event ${selectedEventId}, Page ${selectedPageIndex + 1}. Reload the map in RPG Maker to see the changes.`
+      );
+      closeExportModal();
+    }
+  } catch (err) {
+    logger.error('Failed to export to map:', err);
+    showError('Export failed: ' + err.message);
   }
 }
 
@@ -304,26 +319,31 @@ async function quickExport() {
     return;
   }
 
-  const { mapId, eventId, pageIndex } = lastExport;
-  logger.info('Quick export to:', { mapId, eventId, page: pageIndex + 1 });
+  try {
+    const { mapId, eventId, pageIndex } = lastExport;
+    logger.info('Quick export to:', { mapId, eventId, page: pageIndex + 1 });
 
-  const result = await api.invoke('export-to-map', {
-    events: state.events,
-    mapId,
-    eventId,
-    pageIndex
-  });
+    const result = await api.invoke('export-to-map', {
+      events: state.events,
+      mapId,
+      eventId,
+      pageIndex
+    });
 
-  if (result.error) {
-    showError('Quick export failed: ' + result.error);
-  } else {
-    showSuccess(
-      `Quick exported ${result.commandCount} commands to Map ${mapId}, Event ${eventId}, Page ${pageIndex + 1}`
-    );
+    if (result.error) {
+      showError('Quick export failed: ' + result.error);
+    } else {
+      showSuccess(
+        `Quick exported ${result.commandCount} commands to Map ${mapId}, Event ${eventId}, Page ${pageIndex + 1}`
+      );
+    }
+  } catch (err) {
+    logger.error('Failed to quick export:', err);
+    showError('Quick export failed: ' + err.message);
   }
 }
 
-module.exports = {
+export {
   openExportModal,
   closeExportModal,
   doExportToMap,
