@@ -72,12 +72,21 @@ export default [
     }
   },
 
-  // Tests
+  // Tests (CJS)
   {
     files: ['__tests__/**/*.js'],
     languageOptions: {
       globals: { ...globals.node, ...globals.jest },
       sourceType: 'commonjs'
+    }
+  },
+
+  // Tests (ESM) — some tests set up globalThis.document for DOM-dependent modules
+  {
+    files: ['__tests__/**/*.mjs'],
+    languageOptions: {
+      globals: { ...globals.node, ...globals.jest, document: 'writable' },
+      sourceType: 'module'
     }
   },
 
