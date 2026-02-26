@@ -1,11 +1,9 @@
-const {
-  rgbToHex,
-  hexToRgb,
-  sortEvents,
-  TYPE_PRIORITY,
-  getNextInsertOrder,
-  resetInsertOrderCounter
-} = require('../src/modules/utils');
+let rgbToHex, hexToRgb, sortEvents, TYPE_PRIORITY, getNextInsertOrder, resetInsertOrderCounter;
+
+beforeAll(async () => {
+  const mod = await import('../src/modules/utils.js');
+  ({ rgbToHex, hexToRgb, sortEvents, TYPE_PRIORITY, getNextInsertOrder, resetInsertOrderCounter } = mod);
+});
 
 describe('rgbToHex', () => {
   it('converts standard RGB values', () => {
