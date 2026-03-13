@@ -40,6 +40,9 @@ function renderTextProperties(evt) {
     </div>
   `;
 
+  // Set textarea value programmatically to prevent HTML injection
+  const textArea = document.getElementById('prop-text');
+  if (textArea) textArea.value = evt.text || '';
   bindInput('prop-text', 'text', 'string');
   bindInput('prop-background', 'background', 'number');
   bindInput('prop-position', 'position', 'number');

@@ -97,36 +97,75 @@ async function checkUnsavedChanges() {
 
 function showConfirmDialog(title, message, buttons) {
   return new Promise((resolve) => {
+    const previousFocus = document.activeElement;
     const modal = document.createElement('div');
     modal.className = 'modal';
-    modal.innerHTML = `
-      <div class="modal-content" style="width: 400px;">
-        <div class="modal-header">
-          <h3>${title}</h3>
-        </div>
-        <div class="modal-body" style="padding: 20px;">
-          <p>${message}</p>
-          <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
-            ${buttons
-              .map(
-                (btn, i) => `
-              <button class="btn ${i === 0 ? 'btn-primary' : ''}" data-result="${btn}">${btn}</button>
-            `
-              )
-              .join('')}
-          </div>
-        </div>
-      </div>
-    `;
 
-    modal.querySelectorAll('button').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        document.body.removeChild(modal);
-        resolve(btn.dataset.result);
-      });
+    // Build DOM safely (no innerHTML with parameters)
+    const content = document.createElement('div');
+    content.className = 'modal-content';
+    content.style.width = '400px';
+
+    const header = document.createElement('div');
+    header.className = 'modal-header';
+    const h3 = document.createElement('h3');
+    h3.textContent = title;
+    header.appendChild(h3);
+
+    const body = document.createElement('div');
+    body.className = 'modal-body';
+    body.style.padding = '20px';
+    const p = document.createElement('p');
+    p.textContent = message;
+    body.appendChild(p);
+
+    const btnContainer = document.createElement('div');
+    btnContainer.style.cssText = 'display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;';
+
+    const closeModal = (result) => {
+      modal.remove();
+      if (previousFocus) previousFocus.focus();
+      resolve(result);
+    };
+
+    buttons.forEach((btnText, i) => {
+      const btn = document.createElement('button');
+      btn.className = 'btn' + (i === 0 ? ' btn-primary' : '');
+      btn.textContent = btnText;
+      btn.addEventListener('click', () => closeModal(btnText));
+      btnContainer.appendChild(btn);
+    });
+
+    body.appendChild(btnContainer);
+    content.appendChild(header);
+    content.appendChild(body);
+    modal.appendChild(content);
+
+    // Escape to close (resolve last button = cancel)
+    modal.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        closeModal(buttons[buttons.length - 1]);
+      }
+      // Trap focus within modal
+      if (e.key === 'Tab') {
+        const focusable = modal.querySelectorAll('button');
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
     });
 
     document.body.appendChild(modal);
+    // Focus first button
+    const firstBtn = modal.querySelector('button');
+    if (firstBtn) firstBtn.focus();
   });
 }
 
