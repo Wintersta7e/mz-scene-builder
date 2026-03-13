@@ -7,11 +7,7 @@ import { getElements } from '../elements.js';
 import { saveState, markDirty } from '../undo-redo.js';
 import { snapPosition } from '../grid.js';
 import { eventBus, Events } from '../event-bus.js';
-
-function getPreviewScale() {
-  const elements = getElements();
-  return elements.previewCanvas.offsetWidth / state.screenWidth;
-}
+import { getPreviewScale } from './index.js';
 
 function findImagesAtPoint(clientX, clientY) {
   const elements = getElements();

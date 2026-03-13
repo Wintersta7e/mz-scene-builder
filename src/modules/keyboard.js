@@ -5,7 +5,7 @@
 import { state } from './state.js';
 import { getElements } from './elements.js';
 import { sortEvents } from './utils.js';
-import { undo, redo, saveState } from './undo-redo.js';
+import { undo, redo, saveState, markDirty } from './undo-redo.js';
 import { selectEvent, duplicateSelectedEvent, deleteSelectedEvent, addEvent } from './events.js';
 import { showShortcutsModal } from './modals.js';
 import { logger } from './logger.js';
@@ -79,8 +79,7 @@ function handleKeyboardMove(e) {
   if (e.key === 'Delete') {
     if (state.selectedEventIndex >= 0) {
       e.preventDefault();
-      deleteSelectedEvent();
-      eventBus.emit(Events.RENDER);
+      deleteSelectedEvent(); // already emits Events.RENDER
     }
     return;
   }
@@ -146,6 +145,18 @@ function handleKeyboardMove(e) {
 
   e.preventDefault();
 
+  // Save undo state on first arrow press (debounce via flag)
+  if (!state._arrowKeyUndoSaved) {
+    saveState('move image with arrow keys');
+    state._arrowKeyUndoSaved = true;
+    // Clear the flag after a pause in arrow key input
+    clearTimeout(state._arrowKeyUndoTimer);
+  }
+  clearTimeout(state._arrowKeyUndoTimer);
+  state._arrowKeyUndoTimer = setTimeout(() => {
+    state._arrowKeyUndoSaved = false;
+  }, 500);
+
   const step = e.shiftKey ? 10 : 1;
 
   switch (e.key) {
@@ -162,6 +173,7 @@ function handleKeyboardMove(e) {
       evt.x += step;
       break;
   }
+  markDirty();
 
   // Update image position directly
   const scale = getPreviewScale();

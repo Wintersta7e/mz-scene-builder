@@ -80,7 +80,6 @@ export class VirtualDropdown {
       el.style.left = '0';
       el.style.right = '0';
       el.style.height = ITEM_HEIGHT + 'px';
-      el.style.willChange = 'transform';
       this.content.appendChild(el);
       this.pool[i] = { el, index: -1 };
     }
