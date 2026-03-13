@@ -2,7 +2,7 @@
 
 A visual timeline editor for creating cutscenes and picture sequences for RPG Maker MZ. Arrange pictures, effects, and text on a frame-based timeline, then export directly to RPG Maker event commands.
 
-![Electron](https://img.shields.io/badge/Electron-40-47848F?logo=electron)
+![Electron](https://img.shields.io/badge/Electron-41-47848F?logo=electron)
 ![JavaScript](https://img.shields.io/badge/JavaScript-ES2020-F7DF1E?logo=javascript)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE.txt)
 
@@ -101,9 +101,9 @@ Select a target Map, Event, and Page — commands are inserted at the end of the
 
 ## Tech Stack
 
-- **Runtime**: Electron 40
+- **Runtime**: Electron 41
 - **Language**: Vanilla JavaScript (ES Modules in renderer, CJS in main/preload)
-- **Architecture**: Event bus with centralized state, contextIsolation enabled
+- **Architecture**: Event bus with centralized state, contextIsolation + sandbox + CSP
 - **Testing**: Jest (121 tests across 5 suites)
 - **Build**: electron-builder (NSIS + portable)
 
@@ -152,6 +152,48 @@ npm run build:win
 # Build for macOS
 npm run build:mac
 ```
+
+## Changelog
+
+### v1.3.1 (unreleased)
+
+**Bug Fixes**
+- Fixed timeline drag reverting the wrong event on text overlap
+- Fixed autosave recovery losing events (were overwritten by project load)
+- Fixed `||` coercing valid falsy values across all event types in export — opacity 0, scale 0, duration 0 now export correctly
+- Fixed property inputs zeroing mid-keystroke during editing
+- Fixed double render on Delete key
+- Fixed `processedTextEvents` not cleared on scene change
+
+**Security**
+- Added Content-Security-Policy meta tag
+- Fixed innerHTML injection vectors in confirm dialog, image browser, image picker, and properties panel
+- Fixed `openExternal` hostname check allowing domain suffix collisions
+- Added explicit `webSecurity: true` to Electron window preferences
+
+**Performance**
+- Timeline playback no longer rebuilds the entire DOM at 60fps — uses lightweight cursor-only updates
+- Minimap uses cursor-only updates during playback
+- Eliminated O(n^2) indexOf in preview rendering
+- Debounced window resize and image search handlers
+
+**Error Handling**
+- Added try/catch to save-scene, load-scene, and directory scanning IPC handlers
+- User notification on drag-drop load failure, folder structure errors, and repeated autosave failures
+- Protected localStorage operations against QuotaExceededError
+
+**Accessibility**
+- Added focus trap, Escape-to-close, and focus restore to confirm dialogs
+- Added aria-labels to toolbar buttons and minimap canvas
+- Replaced unconditional `outline: none` with `focus-visible` pattern
+- Changed semantic `<footer>` to `<section>` for timeline
+
+**Cleanup**
+- Removed 5 unused event bus constants and 1 orphan listener
+- Deduplicated `getPreviewScale()` function
+- Added debounced undo state for arrow key image movement
+- Moved notification keyframes from JS to CSS
+- Removed dead CSS rules and consolidated duplicate selectors
 
 ## License
 
