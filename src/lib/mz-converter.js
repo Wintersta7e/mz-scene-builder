@@ -36,16 +36,16 @@ function convertToMZFormat(events) {
           code: 231,
           indent: 0,
           parameters: [
-            evt.pictureNumber || 1, // Picture Number
-            evt.imageName || '', // Image path
-            evt.origin || 0, // Origin (0=upper-left, 1=center)
-            evt.positionType || 0, // Position type (0=direct, 1=variables)
-            evt.x || 0, // X position
-            evt.y || 0, // Y position
-            evt.scaleX || 100, // Scale X %
-            evt.scaleY || 100, // Scale Y %
-            evt.opacity || 255, // Opacity
-            evt.blend || 0 // Blend mode
+            evt.pictureNumber ?? 1, // Picture Number
+            evt.imageName ?? '', // Image path
+            evt.origin ?? 0, // Origin (0=upper-left, 1=center)
+            evt.positionType ?? 0, // Position type (0=direct, 1=variables)
+            evt.x ?? 0, // X position
+            evt.y ?? 0, // Y position
+            evt.scaleX ?? 100, // Scale X %
+            evt.scaleY ?? 100, // Scale Y %
+            evt.opacity ?? 255, // Opacity
+            evt.blend ?? 0 // Blend mode
           ]
         });
         break;
@@ -55,19 +55,19 @@ function convertToMZFormat(events) {
           code: 232,
           indent: 0,
           parameters: [
-            evt.pictureNumber || 1,
+            evt.pictureNumber ?? 1,
             0, // unused
-            evt.origin || 0,
-            evt.positionType || 0,
-            evt.x || 0,
-            evt.y || 0,
-            evt.scaleX || 100,
-            evt.scaleY || 100,
-            evt.opacity || 255,
-            evt.blend || 0,
-            evt.duration || 60,
-            evt.wait || false,
-            evt.easingType || 0
+            evt.origin ?? 0,
+            evt.positionType ?? 0,
+            evt.x ?? 0,
+            evt.y ?? 0,
+            evt.scaleX ?? 100,
+            evt.scaleY ?? 100,
+            evt.opacity ?? 255,
+            evt.blend ?? 0,
+            evt.duration ?? 60,
+            evt.wait ?? false,
+            evt.easingType ?? 0
           ]
         });
         break;
@@ -76,7 +76,7 @@ function convertToMZFormat(events) {
         mzCommands.push({
           code: 233,
           indent: 0,
-          parameters: [evt.pictureNumber || 1, evt.speed || 0]
+          parameters: [evt.pictureNumber ?? 1, evt.speed ?? 0]
         });
         break;
 
@@ -85,10 +85,10 @@ function convertToMZFormat(events) {
           code: 234,
           indent: 0,
           parameters: [
-            evt.pictureNumber || 1,
-            [evt.red || 0, evt.green || 0, evt.blue || 0, evt.gray || 0],
-            evt.duration || 60,
-            evt.wait !== false
+            evt.pictureNumber ?? 1,
+            [evt.red ?? 0, evt.green ?? 0, evt.blue ?? 0, evt.gray ?? 0],
+            evt.duration ?? 60,
+            evt.wait ?? true
           ]
         });
         break;
@@ -97,7 +97,7 @@ function convertToMZFormat(events) {
         mzCommands.push({
           code: 235,
           indent: 0,
-          parameters: [evt.pictureNumber || 1]
+          parameters: [evt.pictureNumber ?? 1]
         });
         break;
 
@@ -129,7 +129,7 @@ function convertToMZFormat(events) {
         mzCommands.push({
           code: 230,
           indent: 0,
-          parameters: [evt.frames || 60]
+          parameters: [evt.frames ?? 60]
         });
         break;
 
@@ -139,7 +139,7 @@ function convertToMZFormat(events) {
           indent: 0,
           parameters: [
             [evt.red ?? 255, evt.green ?? 255, evt.blue ?? 255, evt.intensity ?? 170],
-            evt.duration || 8,
+            evt.duration ?? 8,
             evt.wait ?? true
           ]
         });
