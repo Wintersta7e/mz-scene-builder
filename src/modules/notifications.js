@@ -60,6 +60,7 @@ function showNotification(message, type = 'info', duration = 5000) {
 
   const closeBtn = document.createElement('button');
   closeBtn.textContent = '×';
+  closeBtn.setAttribute('aria-label', 'Close notification');
   closeBtn.style.cssText = `
     background: none;
     border: none;
@@ -111,31 +112,7 @@ function showInfo(message) {
   return showNotification(message, 'info', 5000);
 }
 
-// Add CSS animations
-const style = document.createElement('style');
-style.textContent = `
-  @keyframes slideIn {
-    from {
-      transform: translateX(100%);
-      opacity: 0;
-    }
-    to {
-      transform: translateX(0);
-      opacity: 1;
-    }
-  }
-  @keyframes slideOut {
-    from {
-      transform: translateX(0);
-      opacity: 1;
-    }
-    to {
-      transform: translateX(100%);
-      opacity: 0;
-    }
-  }
-`;
-document.head.appendChild(style);
+// Note: slideIn/slideOut keyframes are defined in styles.css
 
 export {
   showNotification,

@@ -16,14 +16,18 @@ function getSettings() {
   try {
     const data = localStorage.getItem(SETTINGS_KEY);
     return data ? JSON.parse(data) : {};
-  } catch {
-    logger.warn('Failed to parse settings from localStorage');
+  } catch (e) {
+    logger.warn('Failed to parse settings from localStorage:', e.message);
     return {};
   }
 }
 
 function saveSettings(settings) {
-  localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+  try {
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+  } catch (e) {
+    logger.warn('Failed to save settings to localStorage:', e.message);
+  }
 }
 
 function getRecentProjects() {

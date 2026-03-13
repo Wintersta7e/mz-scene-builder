@@ -172,9 +172,9 @@ async function onMapSelected() {
     // Check if events are cached
     if (state.cachedMapEvents[selectedMapId]) {
       logger.debug('Map events cache hit:', selectedMapId);
-      prerenderEventsDropdown(selectedMapId);
       eventDropdown.clear();
       eventDropdown.setPlaceholder('-- Select Event --');
+      prerenderEventsDropdown(selectedMapId);
       eventDropdown.setDisabled(false);
     } else {
       // Fetch events
@@ -285,8 +285,8 @@ function getLastExport() {
   try {
     const data = localStorage.getItem(LAST_EXPORT_KEY);
     return data ? JSON.parse(data) : null;
-  } catch {
-    logger.warn('Failed to parse last export settings');
+  } catch (e) {
+    logger.warn('Failed to parse last export settings:', e.message);
     return null;
   }
 }

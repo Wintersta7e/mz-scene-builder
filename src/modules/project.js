@@ -115,6 +115,8 @@ async function loadFolderStructure() {
       renderFolderTree(elements.imageBrowser, result);
     } else {
       logger.warn('Failed to load folder structure:', result?.error);
+      const { showWarning } = await import('./notifications.js');
+      showWarning('No pictures folder found or failed to load images.');
     }
   } catch (err) {
     logger.error('Failed to load folder structure:', err);

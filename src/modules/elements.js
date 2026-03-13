@@ -52,6 +52,15 @@ function initElements() {
     exportEventSelect: document.getElementById('export-event-select'),
     exportPageSelect: document.getElementById('export-page-select')
   };
+
+  // Warn about missing critical elements
+  const critical = ['previewCanvas', 'timelineEvents', 'timelineCursor', 'propertiesPanel', 'timelineTrack'];
+  for (const key of critical) {
+    if (!elements[key]) {
+      console.error(`Critical DOM element missing: ${key}. App may not function correctly.`);
+    }
+  }
+
   return elements;
 }
 
