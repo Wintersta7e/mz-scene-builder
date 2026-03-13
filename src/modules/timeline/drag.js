@@ -64,7 +64,7 @@ function stopTimelineDrag(onDrag, onStop) {
     );
     if (overlappingText) {
       logger.debug('Text event overlap detected, reverting to frame', originalFrame);
-      overlappingText.startFrame = originalFrame;
+      draggedEvt.startFrame = originalFrame;
     }
   }
 

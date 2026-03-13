@@ -55,12 +55,11 @@ function setupEventBusListeners() {
     updateQuickExportButton();
   });
 
-  // Scene loaded - full render
-  eventBus.on(Events.SCENE_LOADED, render);
-
   // Recent project opened (mediator for settings -> project circular dependency)
   eventBus.on(Events.OPEN_RECENT_PROJECT, (path) => {
-    openProjectPath(path);
+    openProjectPath(path).catch((err) => {
+      logger.error('Failed to open recent project:', err);
+    });
   });
 }
 
@@ -209,8 +208,12 @@ function init() {
   // Initialize timeline
   initTimeline();
 
-  // Search
-  elements.imageSearch.addEventListener('input', filterImages);
+  // Search (debounced for large image sets)
+  let searchTimer = null;
+  elements.imageSearch.addEventListener('input', () => {
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(filterImages, 150);
+  });
 
   // Keyboard controls
   document.addEventListener('keydown', handleKeyboardMove);

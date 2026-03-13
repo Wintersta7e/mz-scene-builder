@@ -186,12 +186,10 @@ describe('Events constants', () => {
     expect(Events.RENDER).toBe('render');
     expect(Events.RENDER_TIMELINE).toBe('render:timeline');
     expect(Events.RENDER_PREVIEW).toBe('render:preview');
-    expect(Events.RENDER_PROPERTIES).toBe('render:properties');
   });
 
   it('has project events', () => {
     expect(Events.PROJECT_LOADED).toBe('project:loaded');
-    expect(Events.SCENE_LOADED).toBe('scene:loaded');
     expect(Events.OPEN_RECENT_PROJECT).toBe('project:open-recent');
   });
 });

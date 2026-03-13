@@ -8,9 +8,18 @@ import { state } from '../state.js';
 import { getElements } from '../elements.js';
 import { saveState, markDirty } from '../undo-redo.js';
 import { sortEvents } from '../utils.js';
-import { createDefaultEvent, clearImageSelection } from '../events.js';
+import { createDefaultEvent, clearImageSelection, getEventDuration } from '../events.js';
 import { eventBus, Events } from '../event-bus.js';
 import { logger } from '../logger.js';
+
+function escapeHtml(text) {
+  return String(text)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
 
 // IntersectionObserver for lazy-loading thumbnails when visible
 let thumbnailObserver = null;
@@ -80,13 +89,19 @@ function renderFolderTree(container, items, isRoot = true) {
         if (!wasExpanded && item.children === null) {
           folderEl.dataset.loading = 'true';
           children.innerHTML = '<p class="placeholder">Loading...</p>';
-          const contents = await api.invoke('get-folder-contents', item.path);
-          children.innerHTML = '';
-          if (contents && !contents.error) {
-            item.children = contents;
-            renderFolderTree(children, contents, false);
-          } else {
-            logger.warn('Failed to load folder:', item.path, contents?.error);
+          try {
+            const contents = await api.invoke('get-folder-contents', item.path);
+            children.innerHTML = '';
+            if (contents && !contents.error) {
+              item.children = contents;
+              renderFolderTree(children, contents, false);
+            } else {
+              logger.warn('Failed to load folder:', item.path, contents?.error);
+              children.innerHTML = '<p class="placeholder">Failed to load</p>';
+            }
+          } catch (err) {
+            logger.error('Error loading folder:', item.path, err);
+            children.innerHTML = '<p class="placeholder">Failed to load</p>';
           }
           folderEl.dataset.loading = '';
         }
@@ -109,7 +124,7 @@ function createImageItem(item) {
   el.dataset.path = item.path;
   el.innerHTML = `
     <div class="image-thumb" style="background: var(--bg-input);"></div>
-    <span class="image-name">${item.name}</span>
+    <span class="image-name">${escapeHtml(item.name)}</span>
   `;
 
   // Observe for visibility-based thumbnail loading
@@ -175,7 +190,6 @@ function addSelectedImagesAsEvents() {
   saveState('add pictures');
 
   const FRAME_SPACING = 30;
-  const DEFAULT_DURATION = 30;
 
   // Find the end of existing showPicture events and reuse their picture number
   const existingPictures = state.events.filter((e) => e.type === 'showPicture');
@@ -185,7 +199,7 @@ function addSelectedImagesAsEvents() {
   if (existingPictures.length > 0) {
     // Find the latest end frame among existing pictures
     const lastEndFrame = Math.max(
-      ...existingPictures.map((e) => (e.startFrame || 0) + (e.duration || DEFAULT_DURATION))
+      ...existingPictures.map((e) => (e.startFrame || 0) + getEventDuration(e.type, e))
     );
     startFrame = lastEndFrame;
     // Reuse the picture number from the last picture (sequential images can share a slot)

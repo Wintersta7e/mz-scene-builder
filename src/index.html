@@ -3,6 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' file: data:; font-src 'self';" />
     <title>Timeline Scene Builder</title>
     <link rel="stylesheet" href="styles.css" />
   </head>
@@ -75,7 +76,7 @@
       </div>
 
       <!-- Bottom: Timeline -->
-      <footer class="timeline-container" id="panel-timeline">
+      <section class="timeline-container" id="panel-timeline" role="region" aria-label="Timeline">
         <div class="resize-handle-horizontal" id="resize-timeline"></div>
         <div class="timeline-header">
           <div class="timeline-controls">
@@ -83,7 +84,7 @@
             <button id="btn-stop" class="btn btn-sm" disabled title="Stop" aria-label="Stop">■</button>
             <span class="timeline-position">Frame: <span id="current-frame">0</span></span>
             <span class="timeline-length-control">
-              Length:
+              <label for="timeline-length">Length:</label>
               <input
                 type="number"
                 id="timeline-length"
@@ -92,23 +93,24 @@
                 max="9999"
                 step="60"
                 title="Timeline length in frames (60 = 1 second)"
+                aria-label="Timeline length in frames"
               />
               frames
             </span>
           </div>
           <div class="event-buttons">
-            <button id="btn-add-picture" class="btn btn-sm" disabled title="Add Show Picture">+ Show</button>
-            <button id="btn-add-move" class="btn btn-sm" disabled title="Add Move Picture">+ Move</button>
-            <button id="btn-add-rotate" class="btn btn-sm" disabled title="Add Rotate Picture">+ Rotate</button>
-            <button id="btn-add-tint" class="btn btn-sm" disabled title="Add Tint Picture">+ Tint</button>
-            <button id="btn-add-erase" class="btn btn-sm" disabled title="Add Erase Picture">+ Erase</button>
-            <button id="btn-add-text" class="btn btn-sm" disabled title="Add Show Text">+ Text</button>
-            <button id="btn-add-wait" class="btn btn-sm" disabled title="Add Wait">+ Wait</button>
-            <button id="btn-add-flash" class="btn btn-sm" disabled title="Add Screen Flash">+ Flash</button>
-            <button id="btn-delete-event" class="btn btn-sm btn-danger" disabled title="Delete Selected (Del)">
+            <button id="btn-add-picture" class="btn btn-sm" disabled title="Add Show Picture" aria-label="Add Show Picture event">+ Show</button>
+            <button id="btn-add-move" class="btn btn-sm" disabled title="Add Move Picture" aria-label="Add Move Picture event">+ Move</button>
+            <button id="btn-add-rotate" class="btn btn-sm" disabled title="Add Rotate Picture" aria-label="Add Rotate Picture event">+ Rotate</button>
+            <button id="btn-add-tint" class="btn btn-sm" disabled title="Add Tint Picture" aria-label="Add Tint Picture event">+ Tint</button>
+            <button id="btn-add-erase" class="btn btn-sm" disabled title="Add Erase Picture" aria-label="Add Erase Picture event">+ Erase</button>
+            <button id="btn-add-text" class="btn btn-sm" disabled title="Add Show Text" aria-label="Add Show Text event">+ Text</button>
+            <button id="btn-add-wait" class="btn btn-sm" disabled title="Add Wait" aria-label="Add Wait event">+ Wait</button>
+            <button id="btn-add-flash" class="btn btn-sm" disabled title="Add Screen Flash" aria-label="Add Screen Flash event">+ Flash</button>
+            <button id="btn-delete-event" class="btn btn-sm btn-danger" disabled title="Delete Selected (Del)" aria-label="Delete selected event">
               Del
             </button>
-            <button id="btn-clear-scene" class="btn btn-sm" disabled title="Clear all events">Clear</button>
+            <button id="btn-clear-scene" class="btn btn-sm" disabled title="Clear all events" aria-label="Clear all events">Clear</button>
           </div>
         </div>
         <div class="timeline-body">
@@ -125,11 +127,11 @@
         </div>
         <!-- Timeline Minimap -->
         <div class="timeline-minimap" id="timeline-minimap">
-          <canvas id="minimap-canvas"></canvas>
+          <canvas id="minimap-canvas" aria-label="Timeline minimap" role="img"></canvas>
           <div class="minimap-viewport" id="minimap-viewport"></div>
           <div class="minimap-cursor" id="minimap-cursor"></div>
         </div>
-      </footer>
+      </section>
     </div>
 
     <!-- Image Picker Modal -->

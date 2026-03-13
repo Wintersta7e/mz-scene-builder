@@ -140,8 +140,13 @@ function initMinimapEvents() {
     updateMinimapViewport();
   });
 
+  let resizeRaf = null;
   window.addEventListener('resize', () => {
-    renderMinimap();
+    if (resizeRaf) cancelAnimationFrame(resizeRaf);
+    resizeRaf = requestAnimationFrame(() => {
+      renderMinimap();
+      resizeRaf = null;
+    });
   });
 }
 
@@ -172,8 +177,28 @@ function handleMinimapClick(e) {
   eventBus.emit(Events.RENDER_PREVIEW, state.currentFrame);
 }
 
+// Lightweight cursor-only update for playback (avoids full canvas redraw)
+function updateMinimapCursor() {
+  const elements = getElements();
+  const container = elements.timelineMinimap;
+  if (!container) return;
+
+  let maxFrame = state.timelineLength;
+  state.events.forEach((evt) => {
+    const endFrame = (evt.startFrame || 0) + getEventDuration(evt.type, evt);
+    if (endFrame > maxFrame) maxFrame = endFrame + 30;
+  });
+
+  if (maxFrame <= 0) return;
+
+  const containerWidth = container.getBoundingClientRect().width;
+  const scale = containerWidth / maxFrame;
+  elements.minimapCursor.style.left = `${state.currentFrame * scale}px`;
+}
+
 export {
   renderMinimap,
+  updateMinimapCursor,
   updateMinimapViewport,
   initMinimapEvents,
   MINIMAP_COLORS

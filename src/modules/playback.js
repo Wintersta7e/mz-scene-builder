@@ -7,9 +7,15 @@ import { getElements } from './elements.js';
 import { getEventDuration } from './events.js';
 import { eventBus, Events } from './event-bus.js';
 import { logger } from './logger.js';
+import { updateTimelineCursor } from './timeline/index.js';
 
 function emitRender() {
-  eventBus.emit(Events.RENDER_TIMELINE);
+  // During playback, use lightweight cursor update instead of full timeline rebuild
+  if (state.isPlaying) {
+    updateTimelineCursor();
+  } else {
+    eventBus.emit(Events.RENDER_TIMELINE);
+  }
   eventBus.emit(Events.RENDER_PREVIEW, state.currentFrame);
 }
 

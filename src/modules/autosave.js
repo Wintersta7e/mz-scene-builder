@@ -37,6 +37,14 @@ async function performAutosave() {
     const result = await window.api.invoke('autosave-write', sceneData);
     if (result.success) {
       logger.debug('Autosaved');
+      state._autosaveFailCount = 0;
+    } else {
+      state._autosaveFailCount = (state._autosaveFailCount || 0) + 1;
+      logger.warn('Autosave returned error:', result.error);
+      if (state._autosaveFailCount === 3) {
+        const { showWarning } = await import('./notifications.js');
+        showWarning('Autosave is failing repeatedly. Your work may not be auto-saved.');
+      }
     }
   } catch (e) {
     logger.error('Autosave failed:', e);
@@ -67,20 +75,24 @@ async function checkAutosaveRecovery(openProjectPath) {
 
     if (result === 'Recover') {
       const elements = getElements();
-      state.events = data.events || [];
-      // Sync insert order counter so new events get higher numbers
-      const maxOrder = state.events.reduce((max, e) => Math.max(max, e._insertOrder || 0), 0);
-      resetInsertOrderCounter(maxOrder);
-      state.timelineLength = data.timelineLength || 300;
-      elements.timelineLengthInput.value = state.timelineLength;
 
       if (data.projectPath) {
         // Check if project path is still valid via IPC
         const projResult = await window.api.invoke('set-project-path', data.projectPath);
         if (projResult && projResult.success) {
           await openProjectPath(data.projectPath);
+        } else {
+          logger.warn('Autosave project path no longer valid:', data.projectPath);
         }
       }
+
+      // Set recovered events AFTER openProjectPath (which clears state.events)
+      state.events = data.events || [];
+      // Sync insert order counter so new events get higher numbers
+      const maxOrder = state.events.reduce((max, e) => Math.max(max, e._insertOrder || 0), 0);
+      resetInsertOrderCounter(maxOrder);
+      state.timelineLength = data.timelineLength || 300;
+      elements.timelineLengthInput.value = state.timelineLength;
 
       eventBus.emit(Events.RENDER);
       markDirty();

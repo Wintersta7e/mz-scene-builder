@@ -9,6 +9,18 @@ import { getElements } from '../elements.js';
 import { eventBus, Events } from '../event-bus.js';
 import { logger } from '../logger.js';
 
+// Track IntersectionObservers for cleanup
+const activeObservers = new Set();
+
+function escapeHtml(text) {
+  return String(text)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
 async function openImagePicker() {
   if (!state.folderStructure) return;
 
@@ -23,6 +35,11 @@ async function openImagePicker() {
 function closeImagePicker() {
   const elements = getElements();
   elements.imagePickerModal.style.display = 'none';
+  // Disconnect all pending IntersectionObservers
+  for (const obs of activeObservers) {
+    obs.disconnect();
+  }
+  activeObservers.clear();
 }
 
 function renderPickerFolders(items, container = null) {
@@ -54,16 +71,21 @@ function renderPickerFolders(items, container = null) {
         if (!wasExpanded && item.children === null) {
           folderEl.dataset.loading = 'true';
           children.innerHTML = '<p class="placeholder">Loading...</p>';
-          const contents = await api.invoke('get-folder-contents', item.path);
-          children.innerHTML = '';
-          if (contents && contents.error) {
-            logger.warn('Failed to load picker subfolder:', item.path, contents.error);
-          } else if (contents && !contents.error) {
-            item.children = contents;
-            renderPickerFolders(
-              contents.filter((c) => c.type === 'folder'),
-              children
-            );
+          try {
+            const contents = await api.invoke('get-folder-contents', item.path);
+            children.innerHTML = '';
+            if (contents && contents.error) {
+              logger.warn('Failed to load picker subfolder:', item.path, contents.error);
+            } else if (contents && !contents.error) {
+              item.children = contents;
+              renderPickerFolders(
+                contents.filter((c) => c.type === 'folder'),
+                children
+              );
+            }
+          } catch (err) {
+            logger.error('Error loading picker folder:', item.path, err);
+            children.innerHTML = '';
           }
           folderEl.dataset.loading = '';
         }
@@ -107,8 +129,8 @@ async function loadPickerImages(folderPath) {
       const el = document.createElement('div');
       el.className = 'grid-image-item';
       el.innerHTML = `
-        <div class="grid-image-thumb" data-path="${img.path}"></div>
-        <div class="grid-image-name">${img.name}</div>
+        <div class="grid-image-thumb" data-path="${escapeHtml(img.path)}"></div>
+        <div class="grid-image-name">${escapeHtml(img.name)}</div>
       `;
 
       const loadThumb = async () => {
@@ -129,8 +151,10 @@ async function loadPickerImages(folderPath) {
         if (entries[0].isIntersecting) {
           loadThumb();
           observer.disconnect();
+          activeObservers.delete(observer);
         }
       });
+      activeObservers.add(observer);
       observer.observe(el);
 
       el.addEventListener('click', () => {

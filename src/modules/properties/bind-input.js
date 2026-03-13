@@ -33,7 +33,8 @@ function setupPropertyDelegation(propertiesPanel) {
 
     // Update the property based on type
     if (type === 'number') {
-      evt[property] = parseInt(el.value) || 0;
+      const parsed = parseInt(el.value, 10);
+      evt[property] = Number.isNaN(parsed) ? 0 : parsed;
     } else if (type === 'boolean') {
       evt[property] = el.checked;
     } else {
