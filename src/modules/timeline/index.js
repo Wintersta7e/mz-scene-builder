@@ -5,7 +5,7 @@
 import { state, TIMELINE_LANES, LANE_HEIGHT } from '../state.js';
 import { getElements } from '../elements.js';
 import { getEventLane, getEventDuration, selectEvent } from '../events.js';
-import { renderMinimap } from './minimap.js';
+import { renderMinimap, updateMinimapCursor } from './minimap.js';
 import { startTimelineDrag } from './drag.js';
 import { renderProperties } from '../properties/index.js';
 
@@ -179,6 +179,26 @@ function renderTimeline() {
   renderMinimap();
 }
 
+// Lightweight cursor-only update for playback (avoids full DOM rebuild at 60fps)
+function updateTimelineCursor() {
+  const elements = getElements();
+  elements.timelineCursor.style.left = `${state.currentFrame * state.timelineScale}px`;
+  elements.currentFrameDisplay.textContent = state.currentFrame;
+
+  // Update selected highlight without full rebuild
+  const prevSelected = elements.timelineEvents.querySelector('.timeline-event.selected');
+  if (prevSelected) {
+    const prevIdx = parseInt(prevSelected.dataset.index, 10);
+    if (prevIdx !== state.selectedEventIndex) {
+      prevSelected.classList.remove('selected');
+      const newSelected = elements.timelineEvents.querySelector(`.timeline-event[data-index="${state.selectedEventIndex}"]`);
+      if (newSelected) newSelected.classList.add('selected');
+    }
+  }
+
+  updateMinimapCursor();
+}
+
 function onTimelineClick(e) {
   const elements = getElements();
   const rect = elements.timelineTrack.getBoundingClientRect();
@@ -196,6 +216,7 @@ function onTimelineClick(e) {
 export {
   initTimeline,
   renderTimeline,
+  updateTimelineCursor,
   onTimelineClick,
   getTimelineEventLabel
 };

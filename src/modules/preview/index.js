@@ -155,14 +155,15 @@ async function renderPreviewAtFrame(frame) {
     // Build picture states
     const pictureStates = {};
 
-    for (const evt of state.events) {
+    for (let evtIdx = 0; evtIdx < state.events.length; evtIdx++) {
+      const evt = state.events[evtIdx];
       const evtStart = evt.startFrame || 0;
       if (evtStart > frame) continue;
 
       switch (evt.type) {
         case 'showPicture':
           pictureStates[evt.pictureNumber] = {
-            eventIndex: state.events.indexOf(evt),
+            eventIndex: evtIdx,
             imageName: evt.imageName,
             origin: evt.origin,
             x: evt.x,
@@ -318,13 +319,14 @@ async function renderPreviewAtFrame(frame) {
         .replace(/'/g, '&#039;');
 
     // Render text events (reuse DOM elements where possible)
-    for (const evt of state.events) {
+    for (let textIdx = 0; textIdx < state.events.length; textIdx++) {
+      const evt = state.events[textIdx];
       if (evt.type !== 'showText' || !evt.text) continue;
       const evtStart = evt.startFrame || 0;
       const evtEnd = evtStart + getEventDuration(evt.type, evt);
       if (frame < evtStart || frame > evtEnd) continue;
 
-      const eventIndex = String(state.events.indexOf(evt));
+      const eventIndex = String(textIdx);
 
       const safeText = escapeHtml(evt.text || '').replace(/\n/g, '<br>');
       const waitHint = state.waitingForTextClick ? '<div class="text-continue-hint">▼ Click to continue</div>' : '';
