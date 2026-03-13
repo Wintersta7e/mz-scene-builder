@@ -55,12 +55,14 @@ async function loadSceneFromFile(file) {
     state.selectedEventIndex = -1;
     state.undoStack = [];
     state.redoStack = [];
+    state.processedTextEvents.clear();
 
     eventBus.emit(Events.RENDER);
     markClean();
     logger.info('Loaded scene from:', file.name);
   } catch (e) {
     logger.error('Failed to load scene:', e);
+    showError('Failed to load scene file: ' + e.message);
   }
 }
 
@@ -74,6 +76,7 @@ async function newScene() {
   state.currentScenePath = null;
   state.undoStack = [];
   state.redoStack = [];
+  state.processedTextEvents.clear();
   eventBus.emit(Events.RENDER);
   markClean();
 }
@@ -112,6 +115,7 @@ async function loadScene() {
       state.currentFrame = 0;
       state.undoStack = [];
       state.redoStack = [];
+      state.processedTextEvents.clear();
       eventBus.emit(Events.RENDER);
       markClean();
     }

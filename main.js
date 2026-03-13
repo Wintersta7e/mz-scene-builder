@@ -23,11 +23,6 @@ let mainWindow;
 let projectPath = null;
 
 function createWindow() {
-  // Get primary display scale factor for HiDPI support
-  const { screen } = require('electron');
-  const primaryDisplay = screen.getPrimaryDisplay();
-  const _scaleFactor = primaryDisplay.scaleFactor || 1;
-
   mainWindow = new BrowserWindow({
     width: 1600,
     height: 900,
@@ -39,6 +34,7 @@ function createWindow() {
       nodeIntegration: false,
       contextIsolation: true,
       sandbox: true,
+      webSecurity: true,
       preload: path.join(__dirname, 'preload.js'),
       zoomFactor: 1.0 // No auto-scaling - user can adjust with Ctrl+/Ctrl-
     },
@@ -146,12 +142,12 @@ ipcMain.handle('get-screen-resolution', async () => {
 
   try {
     const data = JSON.parse(await fsPromises.readFile(systemPath, 'utf8'));
-    const width = data.advanced?.screenWidth || 816;
-    const height = data.advanced?.screenHeight || 624;
+    const width = data.advanced?.screenWidth ?? 816;
+    const height = data.advanced?.screenHeight ?? 624;
     logger.debug('Screen resolution:', width, 'x', height);
     return { width, height };
-  } catch {
-    logger.debug('Failed to read System.json, using defaults');
+  } catch (e) {
+    logger.warn('Failed to read System.json, using defaults:', e.message);
     return { width: 816, height: 624 }; // Default on error
   }
 });
@@ -172,7 +168,13 @@ ipcMain.handle('get-pictures-folders', async () => {
 
 async function scanDirectory(dirPath, basePath, depth = 0) {
   const items = [];
-  const entries = await fsPromises.readdir(dirPath, { withFileTypes: true });
+  let entries;
+  try {
+    entries = await fsPromises.readdir(dirPath, { withFileTypes: true });
+  } catch (e) {
+    logger.warn('Failed to read directory, skipping:', dirPath, e.message);
+    return items;
+  }
 
   for (const entry of entries) {
     const fullPath = path.join(dirPath, entry.name);
@@ -219,7 +221,13 @@ ipcMain.handle('get-folder-contents', async (event, folderPath) => {
   logger.debug('Loading folder contents:', folderPath);
 
   const items = [];
-  const entries = await fsPromises.readdir(fullPath, { withFileTypes: true });
+  let entries;
+  try {
+    entries = await fsPromises.readdir(fullPath, { withFileTypes: true });
+  } catch (e) {
+    logger.error('Failed to read folder contents:', fullPath, e.message);
+    return { error: 'Failed to read folder: ' + e.message };
+  }
 
   for (const entry of entries) {
     // Skip claude_only folders
@@ -305,12 +313,15 @@ ipcMain.handle('export-to-map', async (event, { events: evtList, mapId, eventId,
       return { error: `Event ID ${eventId} not found in map` };
     }
 
-    const page = mapEvent.pages[pageIndex || 0];
+    const page = mapEvent.pages[pageIndex ?? 0];
     if (!page) {
-      return { error: `Page ${pageIndex || 0} not found in event` };
+      return { error: `Page ${pageIndex ?? 0} not found in event` };
     }
 
     // Insert commands before the terminating null command
+    if (page.list.length === 0 || page.list[page.list.length - 1]?.code !== 0) {
+      return { error: 'Invalid event page structure: missing terminating command' };
+    }
     const insertIndex = page.list.length - 1; // Before the {code: 0}
     page.list.splice(insertIndex, 0, ...mzCommands);
 
@@ -340,6 +351,7 @@ ipcMain.handle('get-maps', async () => {
     logger.debug('Loaded', maps.length, 'maps');
     return maps;
   } catch (e) {
+    logger.error('Failed to load maps:', e.message);
     return { error: e.message };
   }
 });
@@ -359,40 +371,51 @@ ipcMain.handle('get-map-events', async (event, mapId) => {
     logger.debug('Map', mapId, ':', events.length, 'events');
     return events;
   } catch (e) {
+    logger.error('Failed to load map events for map', mapId, ':', e.message);
     return { error: e.message };
   }
 });
 
 // Save scene to file
 ipcMain.handle('save-scene', async (event, sceneData) => {
-  const result = await dialog.showSaveDialog(mainWindow, {
-    title: 'Save Scene',
-    defaultPath: projectPath ? path.join(projectPath, 'scenes') : undefined,
-    filters: [{ name: 'Scene Files', extensions: ['mzscene'] }]
-  });
+  try {
+    const result = await dialog.showSaveDialog(mainWindow, {
+      title: 'Save Scene',
+      defaultPath: projectPath ? path.join(projectPath, 'scenes') : undefined,
+      filters: [{ name: 'Scene Files', extensions: ['mzscene'] }]
+    });
 
-  if (!result.canceled && result.filePath) {
-    await fsPromises.writeFile(result.filePath, JSON.stringify(sceneData, null, 2));
-    logger.info('Scene saved:', result.filePath);
-    return result.filePath;
+    if (!result.canceled && result.filePath) {
+      await fsPromises.writeFile(result.filePath, JSON.stringify(sceneData, null, 2));
+      logger.info('Scene saved:', result.filePath);
+      return result.filePath;
+    }
+    return null;
+  } catch (e) {
+    logger.error('Failed to save scene:', e.message);
+    return { error: e.message };
   }
-  return null;
 });
 
 // Load scene from file
 ipcMain.handle('load-scene', async () => {
-  const result = await dialog.showOpenDialog(mainWindow, {
-    title: 'Load Scene',
-    filters: [{ name: 'Scene Files', extensions: ['mzscene'] }],
-    properties: ['openFile']
-  });
+  try {
+    const result = await dialog.showOpenDialog(mainWindow, {
+      title: 'Load Scene',
+      filters: [{ name: 'Scene Files', extensions: ['mzscene'] }],
+      properties: ['openFile']
+    });
 
-  if (!result.canceled && result.filePaths.length > 0) {
-    const data = await fsPromises.readFile(result.filePaths[0], 'utf-8');
-    logger.info('Scene loaded:', result.filePaths[0]);
-    return JSON.parse(data);
+    if (!result.canceled && result.filePaths.length > 0) {
+      const data = await fsPromises.readFile(result.filePaths[0], 'utf-8');
+      logger.info('Scene loaded:', result.filePaths[0]);
+      return JSON.parse(data);
+    }
+    return null;
+  } catch (e) {
+    logger.error('Failed to load scene:', e.message);
+    return { error: e.message };
   }
-  return null;
 });
 
 // Autosave handlers
@@ -423,8 +446,8 @@ ipcMain.handle('autosave-read', async () => {
     const data = await fsPromises.readFile(AUTOSAVE_PATH, 'utf-8');
     logger.debug('Autosave read');
     return JSON.parse(data);
-  } catch {
-    logger.debug('Failed to read autosave');
+  } catch (e) {
+    logger.warn('Failed to read autosave file:', e.message);
     return null;
   }
 });
