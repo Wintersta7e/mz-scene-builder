@@ -2,6 +2,80 @@
 
 All notable changes to Timeline Scene Builder will be documented in this file.
 
+## [1.3.1] - Unreleased
+
+### Fixed
+
+- Timeline drag reverting the wrong event on text overlap
+- Autosave recovery losing events (were overwritten by project load)
+- `||` coercing valid falsy values across all event types in export — opacity 0, scale 0, duration 0 now export correctly
+- Property inputs zeroing mid-keystroke during editing
+- Double render on Delete key
+- `processedTextEvents` not cleared on scene change
+- Export dropdown ordering in cache-hit path
+- `DEFAULT_DURATION` inconsistency between image-browser and state.js
+
+### Security
+
+- Added Content-Security-Policy meta tag
+- Fixed innerHTML injection vectors in confirm dialog, image browser, image picker, and properties panel
+- Fixed `openExternal` hostname check allowing domain suffix collisions
+- Added explicit `webSecurity: true` to Electron window preferences
+
+### Performance
+
+- Timeline playback no longer rebuilds the entire DOM at 60fps — uses lightweight cursor-only updates
+- Minimap uses cursor-only updates during playback
+- Eliminated O(n^2) indexOf in preview rendering
+- Debounced window resize and image search handlers
+- Removed `will-change: transform` from virtual dropdown items
+
+### Improved
+
+- Added try/catch to save-scene, load-scene, and directory scanning IPC handlers
+- User notification on drag-drop load failure, folder structure errors, and repeated autosave failures
+- Protected localStorage operations against QuotaExceededError
+- Added focus trap, Escape-to-close, and focus restore to confirm dialogs
+- Added aria-labels to toolbar buttons and minimap canvas
+- Replaced unconditional `outline: none` with `focus-visible` pattern
+- Changed semantic `<footer>` to `<section>` for timeline
+- Added debounced undo state for arrow key image movement
+- Added critical DOM element null-checks at init
+
+### Removed
+
+- 5 unused event bus constants (STATE_CHANGED, EVENT_SELECTED, FRAME_CHANGED, SCENE_SAVED, SCENE_LOADED)
+- Orphan SCENE_LOADED event listener
+- Duplicate `getPreviewScale()` function (consolidated to preview/index.js)
+- Dead CSS rules (`.btn[title]`, duplicate selectors)
+- Notification keyframes from JS (moved to styles.css)
+
+## [1.3.0] - 2026-02-26
+
+### Added
+
+- Converted all 33 renderer modules from CommonJS to ES Modules
+- Jest ESM support with `--experimental-vm-modules`
+- New test suites: event-bus (20), undo-redo (15), events (27) — total 121 tests
+- Global `unhandledrejection` and `error` handlers in renderer
+- Image path cache for preview rendering
+- DOM reuse in preview (keyed by pictureNumber/eventIndex)
+- Stable grid element (not recreated every frame)
+
+### Changed
+
+- Enabled `contextIsolation: true`, `nodeIntegration: false`, `sandbox: true`
+- Rewrote `preload.js` to use `contextBridge.exposeInMainWorld()`
+- Resolved settings/project circular dependency via event bus mediator
+- Replaced inline `onclick` handlers with programmatic listeners
+- Parallel image fetching with `Promise.all()`
+
+### Fixed
+
+- Playback double-start guard prevents stacking intervals
+- Folder expansion race condition guards (`dataset.loading`) in image browser/picker
+- Try/catch wrapping on 15 async functions across 6 files with user-facing error notifications
+
 ## [1.2.1] - 2026-02-03
 
 ### Added
