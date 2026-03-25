@@ -20,6 +20,9 @@ inspections/
 .claude/
 CLAUDE.md
 
+# Local review artifacts
+CODE_REVIEW.md
+
 # Plans / internal docs
 docs/plans/
 
