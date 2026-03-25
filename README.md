@@ -3,7 +3,7 @@
 A visual timeline editor for creating cutscenes and picture sequences for RPG Maker MZ. Arrange pictures, effects, and text on a frame-based timeline, then export directly to RPG Maker event commands.
 
 ![Electron](https://img.shields.io/badge/Electron-41-47848F?logo=electron)
-![JavaScript](https://img.shields.io/badge/JavaScript-ES2020-F7DF1E?logo=javascript)
+![JavaScript](https://img.shields.io/badge/JavaScript-ES2022-F7DF1E?logo=javascript)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE.txt)
 
 <img src="screenshots/01-main-editor.png" alt="Timeline Scene Builder — main editor view" width="720" />
@@ -104,7 +104,8 @@ Select a target Map, Event, and Page — commands are inserted at the end of the
 - **Runtime**: Electron 41
 - **Language**: Vanilla JavaScript (ES Modules in renderer, CJS in main/preload)
 - **Architecture**: Event bus with centralized state, contextIsolation + sandbox + CSP
-- **Testing**: Jest (121 tests across 5 suites)
+- **Testing**: Jest (121 tests, per-file coverage thresholds)
+- **Linting**: ESLint (strict rules) + Prettier, enforced via husky pre-commit hooks
 - **Build**: electron-builder (NSIS + portable)
 
 ## Project Structure
@@ -137,21 +138,23 @@ src/
 # Run with DevTools
 npm run dev
 
+# Lint and format
+npm run lint          # ESLint check
+npm run lint:fix      # ESLint auto-fix
+npm run format        # Prettier write
+npm run format:check  # Prettier check
+
 # Run tests
-npm test
+npm test              # 121 tests
+npm run test:watch    # Watch mode
+npm run test:coverage # Coverage report
 
-# Run tests in watch mode
-npm run test:watch
-
-# Run tests with coverage
-npm run test:coverage
-
-# Build for Windows
+# Build for Windows / macOS
 npm run build:win
-
-# Build for macOS
 npm run build:mac
 ```
+
+Pre-commit hooks (husky + lint-staged) automatically run ESLint and Prettier on staged files.
 
 ## License
 

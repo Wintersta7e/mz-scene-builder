@@ -4,6 +4,14 @@ All notable changes to Timeline Scene Builder will be documented in this file.
 
 ## [1.3.1] - Unreleased
 
+### Developer Experience
+
+- Tightened ESLint: 11 new rules (curly, no-shadow, no-throw-literal, radix, prefer-template, object-shorthand, etc.), no-unused-vars escalated to error
+- Enabled `strict: true` in jsconfig.json for strict null checks and type inference
+- Added per-file Jest coverage thresholds on fully-tested modules (mz-converter, event-bus, utils)
+- CI now runs Prettier format check and `npm audit --omit=dev` security scan
+- Added husky + lint-staged pre-commit hooks (ESLint --fix + Prettier on staged files)
+
 ### Fixed
 
 - Timeline drag reverting the wrong event on text overlap

@@ -49,11 +49,14 @@ src/
 All checks must pass before submitting a PR:
 
 ```bash
-npm run lint        # ESLint
-npm test            # Jest unit tests (121 tests)
+npm run lint          # ESLint (strict rules)
+npm run format:check  # Prettier formatting
+npm test              # Jest unit tests (121 tests)
 ```
 
-CI runs these automatically on every pull request.
+CI runs these automatically on every pull request, along with `npm audit` for dependency vulnerabilities.
+
+Pre-commit hooks (husky + lint-staged) run ESLint and Prettier on staged files automatically, so most issues are caught before you commit.
 
 ## Submitting Changes
 
