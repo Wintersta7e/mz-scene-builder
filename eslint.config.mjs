@@ -14,12 +14,31 @@ export default [
   // Shared rule overrides for all files
   {
     rules: {
+      // --- Existing (tightened) ---
       'no-var': 'error',
       eqeqeq: 'error',
       'prefer-const': 'error',
       'no-duplicate-imports': 'error',
-      'no-unused-vars': ['warn', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
-      'no-console': 'warn'
+      'no-unused-vars': [
+        'error',
+        { argsIgnorePattern: '^_', varsIgnorePattern: '^_', caughtErrorsIgnorePattern: '^_' }
+      ],
+      'no-console': 'warn',
+
+      // --- New: correctness ---
+      curly: 'error',
+      'no-throw-literal': 'error',
+      'no-shadow': 'error',
+      'no-return-assign': 'error',
+      'no-param-reassign': 'warn',
+      'no-use-before-define': ['error', { functions: false, classes: true, variables: true }],
+      'no-implicit-coercion': 'error',
+      radix: 'error',
+
+      // --- New: style / clarity ---
+      'prefer-template': 'error',
+      'object-shorthand': 'error',
+      'no-else-return': 'error'
     }
   },
 
