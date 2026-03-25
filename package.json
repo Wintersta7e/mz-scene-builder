@@ -16,7 +16,8 @@
     "lint": "node node_modules/eslint/bin/eslint.js .",
     "lint:fix": "node node_modules/eslint/bin/eslint.js . --fix",
     "format": "node node_modules/prettier/bin/prettier.cjs --write .",
-    "format:check": "node node_modules/prettier/bin/prettier.cjs --check ."
+    "format:check": "node node_modules/prettier/bin/prettier.cjs --check .",
+    "prepare": "husky"
   },
   "keywords": [
     "rpg-maker",
@@ -48,8 +49,19 @@
     "eslint": "^10.0.3",
     "eslint-config-prettier": "^10.1.8",
     "globals": "^17.4.0",
+    "husky": "^9.1.7",
     "jest": "^30.3.0",
+    "lint-staged": "^16.4.0",
     "prettier": "^3.8.1"
+  },
+  "lint-staged": {
+    "*.{js,mjs}": [
+      "node node_modules/eslint/bin/eslint.js --fix",
+      "node node_modules/prettier/bin/prettier.cjs --write"
+    ],
+    "*.{json,css,html,md,yml,yaml}": [
+      "node node_modules/prettier/bin/prettier.cjs --write"
+    ]
   },
   "build": {
     "appId": "com.w1nterstale.timeline-scene-builder",
