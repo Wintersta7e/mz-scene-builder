@@ -23,7 +23,13 @@ jobs:
       - name: Lint
         run: npx eslint .
 
-      - name: Tests
-        run: npx jest
+      - name: Format check
+        run: npx prettier --check .
+
+      - name: Security audit
+        run: npm audit --omit=dev
+
+      - name: Tests with coverage
+        run: npx jest --coverage
         env:
           NODE_OPTIONS: --experimental-vm-modules
