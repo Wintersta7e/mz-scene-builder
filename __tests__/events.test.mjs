@@ -56,12 +56,8 @@ jest.unstable_mockModule('../src/modules/utils.js', () => ({
 }));
 
 const { state, MAX_PICTURE_NUMBER } = await import('../src/modules/state.js');
-const {
-  getEventLane,
-  getEventDuration,
-  createDefaultEvent,
-  getNextPictureNumber
-} = await import('../src/modules/events.js');
+const { getEventLane, getEventDuration, createDefaultEvent, getNextPictureNumber } =
+  await import('../src/modules/events.js');
 
 describe('events', () => {
   beforeEach(() => {

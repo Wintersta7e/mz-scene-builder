@@ -131,10 +131,7 @@ describe('eventBus', () => {
       eventBus.emit('test');
       expect(badHandler).toHaveBeenCalled();
       expect(goodHandler).toHaveBeenCalled();
-      expect(logger.error).toHaveBeenCalledWith(
-        expect.stringContaining('Error in event handler'),
-        expect.any(Error)
-      );
+      expect(logger.error).toHaveBeenCalledWith(expect.stringContaining('Error in event handler'), expect.any(Error));
     });
   });
 

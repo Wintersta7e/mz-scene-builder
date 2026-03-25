@@ -398,7 +398,7 @@ describe('isPathSafe', () => {
 
   describe('edge cases', () => {
     it('handles trailing slashes', () => {
-      expect(isPathSafe(basePath + '/', 'image')).toBe(true);
+      expect(isPathSafe(`${basePath}/`, 'image')).toBe(true);
     });
 
     it('handles Windows-style path separators on Windows', () => {

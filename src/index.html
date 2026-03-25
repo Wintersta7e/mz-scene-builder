@@ -3,7 +3,10 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' file: data:; font-src 'self';" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' file: data:; font-src 'self';"
+    />
     <title>Timeline Scene Builder</title>
     <link rel="stylesheet" href="styles.css" />
   </head>
@@ -99,18 +102,90 @@
             </span>
           </div>
           <div class="event-buttons">
-            <button id="btn-add-picture" class="btn btn-sm" disabled title="Add Show Picture" aria-label="Add Show Picture event">+ Show</button>
-            <button id="btn-add-move" class="btn btn-sm" disabled title="Add Move Picture" aria-label="Add Move Picture event">+ Move</button>
-            <button id="btn-add-rotate" class="btn btn-sm" disabled title="Add Rotate Picture" aria-label="Add Rotate Picture event">+ Rotate</button>
-            <button id="btn-add-tint" class="btn btn-sm" disabled title="Add Tint Picture" aria-label="Add Tint Picture event">+ Tint</button>
-            <button id="btn-add-erase" class="btn btn-sm" disabled title="Add Erase Picture" aria-label="Add Erase Picture event">+ Erase</button>
-            <button id="btn-add-text" class="btn btn-sm" disabled title="Add Show Text" aria-label="Add Show Text event">+ Text</button>
-            <button id="btn-add-wait" class="btn btn-sm" disabled title="Add Wait" aria-label="Add Wait event">+ Wait</button>
-            <button id="btn-add-flash" class="btn btn-sm" disabled title="Add Screen Flash" aria-label="Add Screen Flash event">+ Flash</button>
-            <button id="btn-delete-event" class="btn btn-sm btn-danger" disabled title="Delete Selected (Del)" aria-label="Delete selected event">
+            <button
+              id="btn-add-picture"
+              class="btn btn-sm"
+              disabled
+              title="Add Show Picture"
+              aria-label="Add Show Picture event"
+            >
+              + Show
+            </button>
+            <button
+              id="btn-add-move"
+              class="btn btn-sm"
+              disabled
+              title="Add Move Picture"
+              aria-label="Add Move Picture event"
+            >
+              + Move
+            </button>
+            <button
+              id="btn-add-rotate"
+              class="btn btn-sm"
+              disabled
+              title="Add Rotate Picture"
+              aria-label="Add Rotate Picture event"
+            >
+              + Rotate
+            </button>
+            <button
+              id="btn-add-tint"
+              class="btn btn-sm"
+              disabled
+              title="Add Tint Picture"
+              aria-label="Add Tint Picture event"
+            >
+              + Tint
+            </button>
+            <button
+              id="btn-add-erase"
+              class="btn btn-sm"
+              disabled
+              title="Add Erase Picture"
+              aria-label="Add Erase Picture event"
+            >
+              + Erase
+            </button>
+            <button
+              id="btn-add-text"
+              class="btn btn-sm"
+              disabled
+              title="Add Show Text"
+              aria-label="Add Show Text event"
+            >
+              + Text
+            </button>
+            <button id="btn-add-wait" class="btn btn-sm" disabled title="Add Wait" aria-label="Add Wait event">
+              + Wait
+            </button>
+            <button
+              id="btn-add-flash"
+              class="btn btn-sm"
+              disabled
+              title="Add Screen Flash"
+              aria-label="Add Screen Flash event"
+            >
+              + Flash
+            </button>
+            <button
+              id="btn-delete-event"
+              class="btn btn-sm btn-danger"
+              disabled
+              title="Delete Selected (Del)"
+              aria-label="Delete selected event"
+            >
               Del
             </button>
-            <button id="btn-clear-scene" class="btn btn-sm" disabled title="Clear all events" aria-label="Clear all events">Clear</button>
+            <button
+              id="btn-clear-scene"
+              class="btn btn-sm"
+              disabled
+              title="Clear all events"
+              aria-label="Clear all events"
+            >
+              Clear
+            </button>
           </div>
         </div>
         <div class="timeline-body">
@@ -135,7 +210,14 @@
     </div>
 
     <!-- Image Picker Modal -->
-    <div id="image-picker-modal" class="modal" style="display: none" role="dialog" aria-modal="true" aria-label="Select Image">
+    <div
+      id="image-picker-modal"
+      class="modal"
+      style="display: none"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Select Image"
+    >
       <div class="modal-content modal-large">
         <div class="modal-header">
           <h3>Select Image</h3>
@@ -151,7 +233,14 @@
     </div>
 
     <!-- Export to Map Modal -->
-    <div id="export-modal" class="modal" style="display: none" role="dialog" aria-modal="true" aria-label="Export to Map">
+    <div
+      id="export-modal"
+      class="modal"
+      style="display: none"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Export to Map"
+    >
       <div class="modal-content" style="width: 500px">
         <div class="modal-header">
           <h3>Export to Map</h3>
