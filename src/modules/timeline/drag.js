@@ -21,7 +21,7 @@ function startTimelineDrag(e, evt, index) {
   state.timelineDragStartX = e.clientX;
   state.timelineDragStartFrame = evt.startFrame || 0;
 
-  const onDrag = (e) => onTimelineDrag(e);
+  const onDrag = (ev) => onTimelineDrag(ev);
   const onStop = () => stopTimelineDrag(onDrag, onStop);
 
   document.addEventListener('mousemove', onDrag);

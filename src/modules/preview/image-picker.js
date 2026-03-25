@@ -177,10 +177,4 @@ function selectPickerImage(imagePath) {
   closeImagePicker();
 }
 
-export {
-  openImagePicker,
-  closeImagePicker,
-  renderPickerFolders,
-  loadPickerImages,
-  selectPickerImage
-};
+export { openImagePicker, closeImagePicker, renderPickerFolders, loadPickerImages, selectPickerImage };

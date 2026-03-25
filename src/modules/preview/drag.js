@@ -17,7 +17,7 @@ function findImagesAtPoint(clientX, clientY) {
   for (const img of images) {
     const rect = img.getBoundingClientRect();
     if (clientX >= rect.left && clientX <= rect.right && clientY >= rect.top && clientY <= rect.bottom) {
-      result.push(parseInt(img.dataset.eventIndex));
+      result.push(parseInt(img.dataset.eventIndex, 10));
     }
   }
 
@@ -27,8 +27,8 @@ function findImagesAtPoint(clientX, clientY) {
 function updateImagePosition(img, evt) {
   const scale = getPreviewScale();
 
-  img.style.left = evt.x * scale + 'px';
-  img.style.top = evt.y * scale + 'px';
+  img.style.left = `${evt.x * scale}px`;
+  img.style.top = `${evt.y * scale}px`;
   img.style.transform = `scale(${(evt.scaleX / 100) * scale}, ${(evt.scaleY / 100) * scale})`;
   img.style.transformOrigin = evt.origin === 1 ? 'center' : 'top left';
   img.style.opacity = evt.opacity / 255;
@@ -37,7 +37,7 @@ function updateImagePosition(img, evt) {
 
 function highlightSelectedImage() {
   document.querySelectorAll('.preview-image, .preview-text').forEach((el) => {
-    el.classList.toggle('selected', parseInt(el.dataset.eventIndex) === state.selectedEventIndex);
+    el.classList.toggle('selected', parseInt(el.dataset.eventIndex, 10) === state.selectedEventIndex);
   });
 }
 
@@ -109,9 +109,4 @@ function stopDrag() {
   eventBus.emit(Events.RENDER_TIMELINE);
 }
 
-export {
-  findImagesAtPoint,
-  updateImagePosition,
-  highlightSelectedImage,
-  startDrag
-};
+export { findImagesAtPoint, updateImagePosition, highlightSelectedImage, startDrag };

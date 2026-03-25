@@ -11,7 +11,7 @@ import { logger } from './logger.js';
 import { showError, showWarning, showSuccess } from './notifications.js';
 
 // Last export settings storage key
-const LAST_EXPORT_KEY = SETTINGS_KEY + '_lastExport';
+const LAST_EXPORT_KEY = `${SETTINGS_KEY}_lastExport`;
 
 // Selected values
 let selectedMapId = null;
@@ -139,7 +139,7 @@ async function openExportModal() {
 
       const maps = await api.invoke('get-maps');
       if (maps.error) {
-        showError('Error loading maps: ' + maps.error);
+        showError(`Error loading maps: ${maps.error}`);
         mapDropdown.setPlaceholder('Error loading maps');
         elements.exportModal.style.display = 'flex';
         return;
@@ -154,7 +154,7 @@ async function openExportModal() {
     elements.exportModal.style.display = 'flex';
   } catch (err) {
     logger.error('Failed to open export modal:', err);
-    showError('Failed to open export: ' + err.message);
+    showError(`Failed to open export: ${err.message}`);
   }
 }
 
@@ -183,7 +183,7 @@ async function onMapSelected() {
 
       const mapEvents = await api.invoke('get-map-events', selectedMapId);
       if (mapEvents.error) {
-        showError('Error loading events: ' + mapEvents.error);
+        showError(`Error loading events: ${mapEvents.error}`);
         eventDropdown.setPlaceholder('Error loading events');
         return;
       }
@@ -202,7 +202,7 @@ async function onMapSelected() {
     elements.doExport.disabled = true;
   } catch (err) {
     logger.error('Failed to load map events:', err);
-    showError('Failed to load events: ' + err.message);
+    showError(`Failed to load events: ${err.message}`);
   }
 }
 
@@ -250,7 +250,7 @@ async function doExportToMap() {
     });
 
     if (result.error) {
-      showError('Export failed: ' + result.error);
+      showError(`Export failed: ${result.error}`);
     } else {
       // Save last export settings for quick export
       saveLastExport(selectedMapId, selectedEventId, selectedPageIndex);
@@ -261,7 +261,7 @@ async function doExportToMap() {
     }
   } catch (err) {
     logger.error('Failed to export to map:', err);
-    showError('Export failed: ' + err.message);
+    showError(`Export failed: ${err.message}`);
   }
 }
 
@@ -331,7 +331,7 @@ async function quickExport() {
     });
 
     if (result.error) {
-      showError('Quick export failed: ' + result.error);
+      showError(`Quick export failed: ${result.error}`);
     } else {
       showSuccess(
         `Quick exported ${result.commandCount} commands to Map ${mapId}, Event ${eventId}, Page ${pageIndex + 1}`
@@ -339,7 +339,7 @@ async function quickExport() {
     }
   } catch (err) {
     logger.error('Failed to quick export:', err);
-    showError('Quick export failed: ' + err.message);
+    showError(`Quick export failed: ${err.message}`);
   }
 }
 

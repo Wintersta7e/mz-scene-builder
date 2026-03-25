@@ -104,9 +104,4 @@ async function checkAutosaveRecovery(openProjectPath) {
   }
 }
 
-export {
-  startAutosave,
-  stopAutosave,
-  performAutosave,
-  checkAutosaveRecovery
-};
+export { startAutosave, stopAutosave, performAutosave, checkAutosaveRecovery };

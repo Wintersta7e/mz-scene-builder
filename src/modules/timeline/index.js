@@ -56,7 +56,7 @@ function renderTimeline() {
   elements.timelineRuler.style.width = `${totalWidth}px`;
   for (let f = 0; f <= maxFrame; f += 10) {
     const mark = document.createElement('div');
-    mark.className = 'timeline-ruler-mark' + (f % 60 === 0 ? ' major' : '');
+    mark.className = `timeline-ruler-mark${f % 60 === 0 ? ' major' : ''}`;
     mark.style.left = `${f * state.timelineScale}px`;
     if (f % 60 === 0) {
       mark.textContent = `${f}`;
@@ -114,7 +114,7 @@ function renderTimeline() {
   for (let i = 0; i < TIMELINE_LANES.length; i++) {
     for (let sr = 0; sr < maxSubRows[i]; sr++) {
       const row = document.createElement('div');
-      row.className = 'timeline-lane-row' + (sr % 2 === 1 ? ' alt' : '');
+      row.className = `timeline-lane-row${sr % 2 === 1 ? ' alt' : ''}`;
       row.style.top = `${laneOffsets[i] + sr * LANE_HEIGHT}px`;
       row.style.width = `${totalWidth}px`;
       row.style.height = `${LANE_HEIGHT}px`;
@@ -133,7 +133,7 @@ function renderTimeline() {
   // Add grid lines
   for (let f = 0; f <= maxFrame; f += 30) {
     const gridLine = document.createElement('div');
-    gridLine.className = 'timeline-grid-line' + (f % 60 === 0 ? ' major' : '');
+    gridLine.className = `timeline-grid-line${f % 60 === 0 ? ' major' : ''}`;
     gridLine.style.left = `${f * state.timelineScale}px`;
     gridLine.style.height = `${totalHeight}px`;
     elements.timelineEvents.appendChild(gridLine);
@@ -142,7 +142,7 @@ function renderTimeline() {
   // Render events
   state.events.forEach((evt, index) => {
     const eventEl = document.createElement('div');
-    eventEl.className = 'timeline-event' + (index === state.selectedEventIndex ? ' selected' : '');
+    eventEl.className = `timeline-event${index === state.selectedEventIndex ? ' selected' : ''}`;
     eventEl.dataset.index = index;
     eventEl.dataset.type = evt.type;
 
@@ -191,7 +191,9 @@ function updateTimelineCursor() {
     const prevIdx = parseInt(prevSelected.dataset.index, 10);
     if (prevIdx !== state.selectedEventIndex) {
       prevSelected.classList.remove('selected');
-      const newSelected = elements.timelineEvents.querySelector(`.timeline-event[data-index="${state.selectedEventIndex}"]`);
+      const newSelected = elements.timelineEvents.querySelector(
+        `.timeline-event[data-index="${state.selectedEventIndex}"]`
+      );
       if (newSelected) newSelected.classList.add('selected');
     }
   }
@@ -213,10 +215,4 @@ function onTimelineClick(e) {
   renderTimeline();
 }
 
-export {
-  initTimeline,
-  renderTimeline,
-  updateTimelineCursor,
-  onTimelineClick,
-  getTimelineEventLabel
-};
+export { initTimeline, renderTimeline, updateTimelineCursor, onTimelineClick, getTimelineEventLabel };

@@ -200,7 +200,7 @@ function init() {
     renderPreviewAtFrame(state.currentFrame);
   });
   elements.timelineLengthInput.addEventListener('change', () => {
-    state.timelineLength = Math.max(60, parseInt(elements.timelineLengthInput.value) || 300);
+    state.timelineLength = Math.max(60, parseInt(elements.timelineLengthInput.value, 10) || 300);
     elements.timelineLengthInput.value = state.timelineLength;
     renderTimeline();
   });

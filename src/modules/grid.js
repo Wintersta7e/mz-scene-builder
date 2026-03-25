@@ -37,10 +37,4 @@ function snapPosition(value) {
   return Math.round(value / GRID_SIZE) * GRID_SIZE;
 }
 
-export {
-  toggleGrid,
-  toggleSnapToGrid,
-  updateGridButton,
-  updateSnapButton,
-  snapPosition
-};
+export { toggleGrid, toggleSnapToGrid, updateGridButton, updateSnapButton, snapPosition };

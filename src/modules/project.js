@@ -26,7 +26,7 @@ async function openProject() {
     }
   } catch (err) {
     logger.error('Failed to open project:', err);
-    showError('Failed to open project: ' + err.message);
+    showError(`Failed to open project: ${err.message}`);
   }
 }
 
@@ -66,7 +66,7 @@ async function openProjectPath(projPath) {
     eventBus.emit(Events.RENDER_TIMELINE);
   } catch (err) {
     logger.error('Failed to open project path:', err);
-    showError('Failed to open project: ' + err.message);
+    showError(`Failed to open project: ${err.message}`);
   }
 }
 
@@ -120,7 +120,7 @@ async function loadFolderStructure() {
     }
   } catch (err) {
     logger.error('Failed to load folder structure:', err);
-    showError('Failed to load folder structure: ' + err.message);
+    showError(`Failed to load folder structure: ${err.message}`);
   }
 }
 
@@ -141,14 +141,8 @@ async function loadScreenResolution() {
     }
   } catch (err) {
     logger.error('Failed to load screen resolution:', err);
-    showError('Failed to load screen resolution: ' + err.message);
+    showError(`Failed to load screen resolution: ${err.message}`);
   }
 }
 
-export {
-  openProject,
-  openProjectPath,
-  enableButtons,
-  loadFolderStructure,
-  loadScreenResolution
-};
+export { openProject, openProjectPath, enableButtons, loadFolderStructure, loadScreenResolution };

@@ -114,10 +114,4 @@ function showInfo(message) {
 
 // Note: slideIn/slideOut keyframes are defined in styles.css
 
-export {
-  showNotification,
-  showError,
-  showWarning,
-  showSuccess,
-  showInfo
-};
+export { showNotification, showError, showWarning, showSuccess, showInfo };

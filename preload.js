@@ -46,10 +46,10 @@ contextBridge.exposeInMainWorld('api', {
     const allowedHosts = ['github.com'];
     try {
       const urlObj = new URL(url);
-      if (allowedHosts.some((host) => urlObj.hostname === host || urlObj.hostname.endsWith('.' + host))) {
+      if (allowedHosts.some((host) => urlObj.hostname === host || urlObj.hostname.endsWith(`.${host}`))) {
         return shell.openExternal(url);
       }
-    } catch (e) {
+    } catch (_e) {
       console.debug('Invalid URL:', url);
     }
     console.warn('Blocked attempt to open URL:', url);

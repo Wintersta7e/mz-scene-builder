@@ -5,9 +5,9 @@
 function rgbToHex(r, g, b) {
   const toHex = (c) => {
     const hex = Math.max(0, Math.min(255, Math.round(c))).toString(16);
-    return hex.length === 1 ? '0' + hex : hex;
+    return hex.length === 1 ? `0${hex}` : hex;
   };
-  return '#' + toHex(r) + toHex(g) + toHex(b);
+  return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
 }
 
 function hexToRgb(hex) {

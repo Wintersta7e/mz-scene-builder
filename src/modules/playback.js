@@ -122,10 +122,4 @@ function continueFromText() {
   }
 }
 
-export {
-  togglePlayback,
-  startPlayback,
-  pausePlayback,
-  stopPlayback,
-  continueFromText
-};
+export { togglePlayback, startPlayback, pausePlayback, stopPlayback, continueFromText };

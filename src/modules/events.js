@@ -45,7 +45,7 @@ function getNextPictureNumber() {
   for (let i = 1; i <= MAX_PICTURE_NUMBER; i++) {
     if (!usedNumbers.includes(i)) return i;
   }
-  logger.warn('All picture numbers (1-' + MAX_PICTURE_NUMBER + ') in use, reusing #1');
+  logger.warn(`All picture numbers (1-${MAX_PICTURE_NUMBER}) in use, reusing #1`);
   return 1;
 }
 
@@ -152,7 +152,7 @@ function createDefaultEvent(type) {
 }
 
 function addEvent(type) {
-  saveState('add ' + type);
+  saveState(`add ${type}`);
   const evt = createDefaultEvent(type);
   logger.debug('Add event:', type, 'at frame', state.currentFrame);
   const insertFrame = state.currentFrame;

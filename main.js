@@ -226,7 +226,7 @@ ipcMain.handle('get-folder-contents', async (event, folderPath) => {
     entries = await fsPromises.readdir(fullPath, { withFileTypes: true });
   } catch (e) {
     logger.error('Failed to read folder contents:', fullPath, e.message);
-    return { error: 'Failed to read folder: ' + e.message };
+    return { error: `Failed to read folder: ${e.message}` };
   }
 
   for (const entry of entries) {
@@ -259,12 +259,12 @@ ipcMain.handle('get-thumbnail', async (event, imagePath) => {
   if (!projectPath) return null;
 
   const picturesBase = path.join(projectPath, 'img', 'pictures');
-  if (!isPathSafe(picturesBase, imagePath + '.png')) {
+  if (!isPathSafe(picturesBase, `${imagePath}.png`)) {
     logger.warn('Blocked unsafe thumbnail path:', imagePath);
     return null;
   }
 
-  const fullPath = path.join(picturesBase, imagePath + '.png');
+  const fullPath = path.join(picturesBase, `${imagePath}.png`);
   if (!(await pathExists(fullPath))) return null;
 
   try {
@@ -281,12 +281,12 @@ ipcMain.handle('get-image-path', async (event, imagePath) => {
   if (!projectPath) return null;
 
   const picturesBase = path.join(projectPath, 'img', 'pictures');
-  if (!isPathSafe(picturesBase, imagePath + '.png')) {
+  if (!isPathSafe(picturesBase, `${imagePath}.png`)) {
     logger.warn('Blocked unsafe image path:', imagePath);
     return null;
   }
 
-  const fullPath = path.join(picturesBase, imagePath + '.png');
+  const fullPath = path.join(picturesBase, `${imagePath}.png`);
   if (!(await pathExists(fullPath))) return null;
 
   return fullPath;

@@ -76,13 +76,13 @@ function updateRecentProjectsDropdown() {
         // Validate project through IPC (checks if path exists and is valid MZ project)
         const result = await window.api.invoke('set-project-path', p);
         if (result && result.error) {
-          showWarning('Project folder not found or invalid: ' + p);
+          showWarning(`Project folder not found or invalid: ${p}`);
           return;
         }
         eventBus.emit(Events.OPEN_RECENT_PROJECT, p);
       } catch (err) {
         logger.error('Error opening project:', err);
-        showError('Error opening project: ' + err.message);
+        showError(`Error opening project: ${err.message}`);
       }
     });
     dropdown.appendChild(item);
@@ -96,9 +96,9 @@ function initRecentProjectsDropdown() {
 
   if (!container || !dropdown || !openBtn) {
     logger.warn('Recent projects elements not found', {
-      container: !!container,
-      dropdown: !!dropdown,
-      openBtn: !!openBtn
+      container: Boolean(container),
+      dropdown: Boolean(dropdown),
+      openBtn: Boolean(openBtn)
     });
     return;
   }

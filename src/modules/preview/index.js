@@ -66,8 +66,8 @@ function applyPictureState(img, pictureState) {
   const scaleY = (pictureState.scaleY / 100) * scale;
 
   img.style.position = 'absolute';
-  img.style.left = x + 'px';
-  img.style.top = y + 'px';
+  img.style.left = `${x}px`;
+  img.style.top = `${y}px`;
 
   const rotation = pictureState.rotation !== 0 ? ` rotate(${pictureState.rotation}deg)` : '';
   img.style.transform = `scale(${scaleX}, ${scaleY})${rotation}`;
@@ -150,7 +150,7 @@ async function renderPreviewAtFrame(frame) {
       gridEl.id = 'preview-grid';
       canvas.insertBefore(gridEl, canvas.firstChild);
     }
-    gridEl.className = 'preview-grid' + (state.gridVisible ? ' visible' : '');
+    gridEl.className = `preview-grid${state.gridVisible ? ' visible' : ''}`;
 
     // Build picture states
     const pictureStates = {};
@@ -221,7 +221,7 @@ async function renderPreviewAtFrame(frame) {
     // Filter and sort active pictures
     const sortedPictures = Object.entries(pictureStates)
       .filter(([_, s]) => !s.erased && s.imageName)
-      .sort((a, b) => parseInt(a[0]) - parseInt(b[0]));
+      .sort((a, b) => parseInt(a[0], 10) - parseInt(b[0], 10));
 
     // Fetch image paths in parallel using cache
     const pathResults = await Promise.all(
@@ -250,7 +250,7 @@ async function renderPreviewAtFrame(frame) {
       const imgPath = pathResults[i];
 
       if (!imgPath) {
-        logger.warn('Image not found for picture #' + pictureNumber + ':', pictureState.imageName);
+        logger.warn(`Image not found for picture #${pictureNumber}:`, pictureState.imageName);
         continue;
       }
 
@@ -353,7 +353,7 @@ async function renderPreviewAtFrame(frame) {
         canvas.appendChild(textBox);
       }
 
-      const evtIdx = parseInt(eventIndex);
+      const evtIdx = parseInt(eventIndex, 10);
       textBox.onclick = (e) => {
         e.stopPropagation();
         if (state.waitingForTextClick && state.isPlaying) {
@@ -382,10 +382,4 @@ async function renderPreviewAtFrame(frame) {
   }
 }
 
-export {
-  getPreviewScale,
-  resizePreviewCanvas,
-  applyPictureState,
-  renderPreviewAtFrame,
-  clearImagePathCache
-};
+export { getPreviewScale, resizePreviewCanvas, applyPictureState, renderPreviewAtFrame, clearImagePathCache };

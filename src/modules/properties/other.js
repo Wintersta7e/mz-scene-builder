@@ -150,7 +150,7 @@ function renderFlashProperties(evt) {
   const intensitySlider = document.getElementById('prop-intensity');
   const intensityVal = document.getElementById('prop-intensity-val');
   intensitySlider.addEventListener('input', () => {
-    evt.intensity = parseInt(intensitySlider.value);
+    evt.intensity = parseInt(intensitySlider.value, 10);
     intensityVal.textContent = evt.intensity;
     eventBus.emit(Events.RENDER_TIMELINE);
   });
@@ -158,18 +158,13 @@ function renderFlashProperties(evt) {
   // Color presets
   document.querySelectorAll('.flash-preset').forEach((btn) => {
     btn.addEventListener('click', () => {
-      evt.red = parseInt(btn.dataset.r);
-      evt.green = parseInt(btn.dataset.g);
-      evt.blue = parseInt(btn.dataset.b);
+      evt.red = parseInt(btn.dataset.r, 10);
+      evt.green = parseInt(btn.dataset.g, 10);
+      evt.blue = parseInt(btn.dataset.b, 10);
       renderFlashProperties(evt);
       eventBus.emit(Events.RENDER_TIMELINE);
     });
   });
 }
 
-export {
-  renderRotateProperties,
-  renderEraseProperties,
-  renderWaitProperties,
-  renderFlashProperties
-};
+export { renderRotateProperties, renderEraseProperties, renderWaitProperties, renderFlashProperties };

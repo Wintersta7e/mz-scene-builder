@@ -196,10 +196,4 @@ function updateMinimapCursor() {
   elements.minimapCursor.style.left = `${state.currentFrame * scale}px`;
 }
 
-export {
-  renderMinimap,
-  updateMinimapCursor,
-  updateMinimapViewport,
-  initMinimapEvents,
-  MINIMAP_COLORS
-};
+export { renderMinimap, updateMinimapCursor, updateMinimapViewport, initMinimapEvents, MINIMAP_COLORS };

@@ -96,7 +96,7 @@ function renderTintProperties(evt) {
   const graySlider = document.getElementById('prop-gray');
   const grayVal = document.getElementById('prop-gray-val');
   graySlider.addEventListener('input', () => {
-    evt.gray = parseInt(graySlider.value);
+    evt.gray = parseInt(graySlider.value, 10);
     grayVal.textContent = evt.gray;
     emitRender();
   });
@@ -104,9 +104,9 @@ function renderTintProperties(evt) {
   // Color presets
   document.querySelectorAll('.color-preset').forEach((btn) => {
     btn.addEventListener('click', () => {
-      evt.red = parseInt(btn.dataset.r);
-      evt.green = parseInt(btn.dataset.g);
-      evt.blue = parseInt(btn.dataset.b);
+      evt.red = parseInt(btn.dataset.r, 10);
+      evt.green = parseInt(btn.dataset.g, 10);
+      evt.blue = parseInt(btn.dataset.b, 10);
       renderTintProperties(evt);
       emitRender();
     });

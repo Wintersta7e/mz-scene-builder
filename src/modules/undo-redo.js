@@ -77,7 +77,7 @@ function markClean() {
 }
 
 function updateWindowTitle() {
-  const title = 'Timeline Scene Builder' + (state.isDirty ? ' *' : '');
+  const title = `Timeline Scene Builder${state.isDirty ? ' *' : ''}`;
   document.title = title;
 }
 
@@ -130,7 +130,7 @@ function showConfirmDialog(title, message, buttons) {
 
     buttons.forEach((btnText, i) => {
       const btn = document.createElement('button');
-      btn.className = 'btn' + (i === 0 ? ' btn-primary' : '');
+      btn.className = `btn${i === 0 ? ' btn-primary' : ''}`;
       btn.textContent = btnText;
       btn.addEventListener('click', () => closeModal(btnText));
       btnContainer.appendChild(btn);
@@ -169,13 +169,4 @@ function showConfirmDialog(title, message, buttons) {
   });
 }
 
-export {
-  saveState,
-  undo,
-  redo,
-  markDirty,
-  markClean,
-  updateWindowTitle,
-  checkUnsavedChanges,
-  showConfirmDialog
-};
+export { saveState, undo, redo, markDirty, markClean, updateWindowTitle, checkUnsavedChanges, showConfirmDialog };

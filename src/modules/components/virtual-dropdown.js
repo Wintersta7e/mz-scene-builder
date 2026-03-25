@@ -79,7 +79,7 @@ export class VirtualDropdown {
       el.style.position = 'absolute';
       el.style.left = '0';
       el.style.right = '0';
-      el.style.height = ITEM_HEIGHT + 'px';
+      el.style.height = `${ITEM_HEIGHT}px`;
       this.content.appendChild(el);
       this.pool[i] = { el, index: -1 };
     }
@@ -222,7 +222,7 @@ export class VirtualDropdown {
       this.filteredItems = this.items.filter((item) => item.label.toLowerCase().includes(q));
     }
     this.focusedIndex = this.filteredItems.length > 0 ? 0 : -1;
-    this.content.style.height = this.filteredItems.length * ITEM_HEIGHT + 'px';
+    this.content.style.height = `${this.filteredItems.length * ITEM_HEIGHT}px`;
     this.viewport.scrollTop = 0;
     this.startIndex = 0;
     this._render();
@@ -295,7 +295,7 @@ export class VirtualDropdown {
     this.filteredItems = this.items;
     this.focusedIndex = -1;
     this.startIndex = 0;
-    this.content.style.height = this.filteredItems.length * ITEM_HEIGHT + 'px';
+    this.content.style.height = `${this.filteredItems.length * ITEM_HEIGHT}px`;
     this._render();
     this.emptyMsg.style.display = this.items.length === 0 ? '' : 'none';
   }
@@ -326,9 +326,9 @@ export class VirtualDropdown {
     if (this.disabled || this.isOpen) return;
 
     const rect = this.trigger.getBoundingClientRect();
-    this.dropdown.style.top = rect.bottom + 'px';
-    this.dropdown.style.left = rect.left + 'px';
-    this.dropdown.style.width = rect.width + 'px';
+    this.dropdown.style.top = `${rect.bottom}px`;
+    this.dropdown.style.left = `${rect.left}px`;
+    this.dropdown.style.width = `${rect.width}px`;
     this.dropdown.style.display = '';
 
     this.isOpen = true;
@@ -340,7 +340,7 @@ export class VirtualDropdown {
 
     // Sync filteredItems with items (clears any previous filter)
     this.filteredItems = this.items;
-    this.content.style.height = this.filteredItems.length * ITEM_HEIGHT + 'px';
+    this.content.style.height = `${this.filteredItems.length * ITEM_HEIGHT}px`;
     this.emptyMsg.style.display = this.filteredItems.length === 0 ? '' : 'none';
     this.focusedIndex = this.filteredItems.length > 0 ? 0 : -1;
 
@@ -388,4 +388,3 @@ export class VirtualDropdown {
     this.container.innerHTML = '';
   }
 }
-

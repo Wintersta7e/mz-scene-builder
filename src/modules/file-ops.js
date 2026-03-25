@@ -62,7 +62,7 @@ async function loadSceneFromFile(file) {
     logger.info('Loaded scene from:', file.name);
   } catch (e) {
     logger.error('Failed to load scene:', e);
-    showError('Failed to load scene file: ' + e.message);
+    showError(`Failed to load scene file: ${e.message}`);
   }
 }
 
@@ -96,7 +96,7 @@ async function saveScene() {
     }
   } catch (err) {
     logger.error('Failed to save scene:', err);
-    showError('Failed to save scene: ' + err.message);
+    showError(`Failed to save scene: ${err.message}`);
   }
 }
 
@@ -121,14 +121,8 @@ async function loadScene() {
     }
   } catch (err) {
     logger.error('Failed to load scene:', err);
-    showError('Failed to load scene: ' + err.message);
+    showError(`Failed to load scene: ${err.message}`);
   }
 }
 
-export {
-  initDragDrop,
-  loadSceneFromFile,
-  newScene,
-  saveScene,
-  loadScene
-};
+export { initDragDrop, loadSceneFromFile, newScene, saveScene, loadScene };

@@ -198,9 +198,7 @@ function addSelectedImagesAsEvents() {
 
   if (existingPictures.length > 0) {
     // Find the latest end frame among existing pictures
-    const lastEndFrame = Math.max(
-      ...existingPictures.map((e) => (e.startFrame || 0) + getEventDuration(e.type, e))
-    );
+    const lastEndFrame = Math.max(...existingPictures.map((e) => (e.startFrame || 0) + getEventDuration(e.type, e)));
     startFrame = lastEndFrame;
     // Reuse the picture number from the last picture (sequential images can share a slot)
     pictureNumber = existingPictures[existingPictures.length - 1].pictureNumber || 1;
@@ -296,11 +294,4 @@ function expandToPath(imagePath) {
   }
 }
 
-export {
-  renderFolderTree,
-  createImageItem,
-  handleImageClick,
-  addSelectedImagesAsEvents,
-  filterImages,
-  expandToPath
-};
+export { renderFolderTree, createImageItem, handleImageClick, addSelectedImagesAsEvents, filterImages, expandToPath };

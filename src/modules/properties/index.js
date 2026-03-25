@@ -8,12 +8,7 @@ import { renderPictureProperties } from './picture.js';
 import { renderMoveProperties } from './move.js';
 import { renderTintProperties } from './tint.js';
 import { renderTextProperties } from './text.js';
-import {
-  renderRotateProperties,
-  renderEraseProperties,
-  renderWaitProperties,
-  renderFlashProperties
-} from './other.js';
+import { renderRotateProperties, renderEraseProperties, renderWaitProperties, renderFlashProperties } from './other.js';
 
 function renderProperties() {
   const elements = getElements();
