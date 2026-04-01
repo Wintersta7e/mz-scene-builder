@@ -400,7 +400,7 @@ async function renderPreviewAtFrame(frame) {
     if (_pendingFrame !== null) {
       const next = _pendingFrame;
       _pendingFrame = null;
-      renderPreviewAtFrame(next);
+      requestAnimationFrame(() => renderPreviewAtFrame(next));
     }
   }
 }

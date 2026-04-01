@@ -7,7 +7,7 @@ import { getElements } from './elements.js';
 import { showConfirmDialog, markDirty } from './undo-redo.js';
 import { logger } from './logger.js';
 import { eventBus, Events } from './event-bus.js';
-import { resetInsertOrderCounter } from './utils.js';
+import { sanitizeEvents, syncInsertOrderCounter } from './file-ops.js';
 
 function startAutosave() {
   stopAutosave();
@@ -88,9 +88,8 @@ async function checkAutosaveRecovery(openProjectPath) {
 
       // Set recovered events AFTER openProjectPath (which clears state.events)
       state.events = data.events || [];
-      // Sync insert order counter so new events get higher numbers
-      const maxOrder = state.events.reduce((max, e) => Math.max(max, e._insertOrder || 0), 0);
-      resetInsertOrderCounter(maxOrder);
+      sanitizeEvents(state.events);
+      syncInsertOrderCounter(state.events);
       state.timelineLength = data.timelineLength || 300;
       elements.timelineLengthInput.value = state.timelineLength;
 

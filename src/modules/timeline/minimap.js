@@ -65,22 +65,24 @@ function renderMinimap() {
 
   // Events
   const laneHeight = height / 3;
-  state.events.forEach((evt) => {
-    const startFrame = evt.startFrame || 0;
-    const duration = Math.max(getEventDuration(evt.type, evt), 5);
-    const lane = getEventLane(evt.type);
+  ctx.globalAlpha = 0.8;
+  try {
+    state.events.forEach((evt) => {
+      const startFrame = evt.startFrame || 0;
+      const duration = Math.max(getEventDuration(evt.type, evt), 5);
+      const lane = getEventLane(evt.type);
 
-    const x = startFrame * scale;
-    const w = Math.max(duration * scale, 2);
-    const y = lane * laneHeight + 2;
-    const h = laneHeight - 4;
+      const x = startFrame * scale;
+      const w = Math.max(duration * scale, 2);
+      const y = lane * laneHeight + 2;
+      const h = laneHeight - 4;
 
-    ctx.fillStyle = MINIMAP_COLORS[evt.type] || '#888';
-    ctx.globalAlpha = 0.8;
-    ctx.fillRect(x, y, w, h);
-  });
-
-  ctx.globalAlpha = 1;
+      ctx.fillStyle = MINIMAP_COLORS[evt.type] || '#888';
+      ctx.fillRect(x, y, w, h);
+    });
+  } finally {
+    ctx.globalAlpha = 1;
+  }
 
   updateMinimapViewport();
 

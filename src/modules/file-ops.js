@@ -12,6 +12,43 @@ import { showError } from './notifications.js';
 import { eventBus, Events } from './event-bus.js';
 import { resetInsertOrderCounter } from './utils.js';
 
+// Numeric fields that must be coerced to numbers on load to prevent innerHTML injection
+const NUMERIC_FIELDS = [
+  'startFrame',
+  'pictureNumber',
+  'origin',
+  'positionType',
+  'x',
+  'y',
+  'scaleX',
+  'scaleY',
+  'opacity',
+  'blend',
+  'duration',
+  'easingType',
+  'speed',
+  'frames',
+  'red',
+  'green',
+  'blue',
+  'gray',
+  'intensity',
+  'background',
+  'position',
+  'faceIndex',
+  '_insertOrder'
+];
+
+function sanitizeEvents(events) {
+  for (const evt of events) {
+    for (const field of NUMERIC_FIELDS) {
+      if (field in evt && typeof evt[field] !== 'number') {
+        evt[field] = Number(evt[field]) || 0;
+      }
+    }
+  }
+}
+
 // Reset insert order counter based on loaded events
 function syncInsertOrderCounter(events) {
   const maxOrder = events.reduce((max, e) => Math.max(max, e._insertOrder || 0), 0);
@@ -47,6 +84,7 @@ async function loadSceneFromFile(file) {
     const text = await file.text();
     const data = JSON.parse(text);
     state.events = data.events || [];
+    sanitizeEvents(state.events);
     syncInsertOrderCounter(state.events);
     state.timelineLength = data.timelineLength || 300;
     elements.timelineLengthInput.value = state.timelineLength;
@@ -108,6 +146,7 @@ async function loadScene() {
     const sceneData = await api.invoke('load-scene');
     if (sceneData) {
       state.events = sceneData.events || [];
+      sanitizeEvents(state.events);
       syncInsertOrderCounter(state.events);
       state.timelineLength = sceneData.timelineLength || 300;
       elements.timelineLengthInput.value = state.timelineLength;
@@ -125,4 +164,4 @@ async function loadScene() {
   }
 }
 
-export { initDragDrop, loadSceneFromFile, newScene, saveScene, loadScene };
+export { initDragDrop, loadSceneFromFile, newScene, saveScene, loadScene, sanitizeEvents, syncInsertOrderCounter };

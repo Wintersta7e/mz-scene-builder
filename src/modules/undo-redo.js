@@ -3,6 +3,7 @@
 // ============================================
 
 import { state, MAX_UNDO_STACK } from './state.js';
+import { getElements } from './elements.js';
 import { logger } from './logger.js';
 import { eventBus, Events } from './event-bus.js';
 
@@ -30,6 +31,9 @@ function stopPlaybackIfActive() {
     state.playbackInterval = null;
     state.isPlaying = false;
     state.waitingForTextClick = false;
+    state.processedTextEvents.clear();
+    const elements = getElements();
+    if (elements.btnPlay) elements.btnPlay.textContent = '\u25b6';
   }
 }
 

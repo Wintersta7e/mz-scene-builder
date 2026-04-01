@@ -15,6 +15,14 @@ jest.unstable_mockModule('../src/modules/logger.js', () => ({
   }
 }));
 
+// Mock elements
+jest.unstable_mockModule('../src/modules/elements.js', () => ({
+  getElements: jest.fn(() => ({
+    btnPlay: { textContent: '▶' }
+  })),
+  initElements: jest.fn()
+}));
+
 // Mock event-bus
 jest.unstable_mockModule('../src/modules/event-bus.js', () => ({
   eventBus: {
