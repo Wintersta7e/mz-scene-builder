@@ -73,31 +73,33 @@ async function checkAutosaveRecovery(openProjectPath) {
       ['Recover', 'Discard']
     );
 
-    if (result === 'Recover') {
-      const elements = getElements();
+    try {
+      if (result === 'Recover') {
+        const elements = getElements();
 
-      if (data.projectPath) {
-        // Check if project path is still valid via IPC
-        const projResult = await window.api.invoke('set-project-path', data.projectPath);
-        if (projResult && projResult.success) {
-          await openProjectPath(data.projectPath);
-        } else {
-          logger.warn('Autosave project path no longer valid:', data.projectPath);
+        if (data.projectPath) {
+          // Check if project path is still valid via IPC
+          const projResult = await window.api.invoke('set-project-path', data.projectPath);
+          if (projResult && projResult.success) {
+            await openProjectPath(data.projectPath);
+          } else {
+            logger.warn('Autosave project path no longer valid:', data.projectPath);
+          }
         }
+
+        // Set recovered events AFTER openProjectPath (which clears state.events)
+        state.events = data.events || [];
+        sanitizeEvents(state.events);
+        syncInsertOrderCounter(state.events);
+        state.timelineLength = data.timelineLength || 300;
+        elements.timelineLengthInput.value = state.timelineLength;
+
+        eventBus.emit(Events.RENDER);
+        markDirty();
       }
-
-      // Set recovered events AFTER openProjectPath (which clears state.events)
-      state.events = data.events || [];
-      sanitizeEvents(state.events);
-      syncInsertOrderCounter(state.events);
-      state.timelineLength = data.timelineLength || 300;
-      elements.timelineLengthInput.value = state.timelineLength;
-
-      eventBus.emit(Events.RENDER);
-      markDirty();
+    } finally {
+      await window.api.invoke('autosave-delete');
     }
-
-    await window.api.invoke('autosave-delete');
   } catch (e) {
     logger.error('Autosave recovery failed:', e);
   }
