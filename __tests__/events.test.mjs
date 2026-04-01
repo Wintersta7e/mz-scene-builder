@@ -24,7 +24,6 @@ jest.unstable_mockModule('../src/modules/event-bus.js', () => ({
     RENDER: 'render',
     RENDER_TIMELINE: 'render:timeline',
     RENDER_PREVIEW: 'render:preview',
-    RENDER_PROPERTIES: 'render:properties',
     PROJECT_LOADED: 'project:loaded'
   }
 }));
@@ -248,6 +247,14 @@ describe('events', () => {
       expect(original.startFrame).toBe(10);
     });
 
+    it('does not shift same-lane events before the current frame', () => {
+      state.events = [{ type: 'showPicture', startFrame: 0, pictureNumber: 1, _insertOrder: 1 }];
+      state.currentFrame = 10;
+      addEvent('movePicture');
+      const original = state.events.find((e) => e.type === 'showPicture');
+      expect(original.startFrame).toBe(0); // before frame 10, should not be shifted
+    });
+
     it('does not shift events in different lanes', () => {
       state.events = [{ type: 'showText', startFrame: 0, text: 'hi', _insertOrder: 1 }];
       state.currentFrame = 0;
@@ -280,6 +287,19 @@ describe('events', () => {
       deleteSelectedEvent();
       expect(state.events.length).toBe(0);
       expect(state.selectedEventIndex).toBe(-1);
+    });
+
+    it('clamps selectedEventIndex to last event when deleting a middle event', () => {
+      state.events = [
+        { type: 'showPicture', startFrame: 0 },
+        { type: 'wait', startFrame: 10 },
+        { type: 'showText', startFrame: 20, text: 'hi' }
+      ];
+      state.selectedEventIndex = 1;
+      deleteSelectedEvent();
+      expect(state.events.length).toBe(2);
+      // Index 1 should still be valid (now points to the former index 2)
+      expect(state.selectedEventIndex).toBe(1);
     });
 
     it('does nothing when no event is selected', () => {

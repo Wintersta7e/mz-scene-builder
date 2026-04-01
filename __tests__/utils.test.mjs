@@ -92,10 +92,6 @@ describe('TYPE_PRIORITY', () => {
 });
 
 describe('sortEvents', () => {
-  beforeEach(() => {
-    resetInsertOrderCounter(0);
-  });
-
   describe('frame-based sorting', () => {
     it('sorts events by frame ascending', () => {
       const events = [
@@ -224,10 +220,6 @@ describe('sortEvents', () => {
 });
 
 describe('getNextInsertOrder', () => {
-  beforeEach(() => {
-    resetInsertOrderCounter(0);
-  });
-
   it('returns incrementing values', () => {
     expect(getNextInsertOrder()).toBe(1);
     expect(getNextInsertOrder()).toBe(2);

@@ -34,8 +34,7 @@ jest.unstable_mockModule('../src/modules/event-bus.js', () => ({
   Events: {
     RENDER: 'render',
     RENDER_TIMELINE: 'render:timeline',
-    RENDER_PREVIEW: 'render:preview',
-    RENDER_PROPERTIES: 'render:properties'
+    RENDER_PREVIEW: 'render:preview'
   }
 }));
 
