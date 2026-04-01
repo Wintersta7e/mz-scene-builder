@@ -324,6 +324,14 @@ async function quickExport() {
 
   try {
     const { mapId, eventId, pageIndex } = lastExport;
+    if (!Number.isInteger(mapId) || mapId < 1 || mapId > 999) {
+      showWarning('Invalid cached export settings. Use "Export to Map" to set a new target.');
+      return;
+    }
+    if (!Number.isInteger(eventId) || eventId < 1 || !Number.isInteger(pageIndex) || pageIndex < 0) {
+      showWarning('Invalid cached export settings. Use "Export to Map" to set a new target.');
+      return;
+    }
     logger.info('Quick export to:', { mapId, eventId, page: pageIndex + 1 });
 
     const result = await api.invoke('export-to-map', {

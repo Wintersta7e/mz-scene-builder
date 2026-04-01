@@ -117,7 +117,9 @@ ipcMain.handle('open-project', async () => {
 
 // Set project path directly (for recent projects)
 ipcMain.handle('set-project-path', async (event, projPath) => {
-  if (!projPath) return { error: 'No path provided' };
+  if (!projPath || typeof projPath !== 'string' || !path.isAbsolute(projPath) || projPath.includes('\0')) {
+    return { error: 'Invalid project path' };
+  }
 
   // Verify it's a valid RPG Maker MZ project
   const gameFile = path.join(projPath, 'game.rmmzproject');

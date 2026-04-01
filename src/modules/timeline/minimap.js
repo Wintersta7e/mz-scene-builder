@@ -43,7 +43,7 @@ function renderMinimap() {
   }
 
   const ctx = canvas.getContext('2d');
-  ctx.scale(dpr, dpr);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   ctx.clearRect(0, 0, width, height);
 
   let maxFrame = state.timelineLength;
@@ -221,6 +221,7 @@ export {
   renderMinimap,
   updateMinimapCursor,
   updateMinimapViewport,
+  updateCachedContainerWidth,
   initMinimapEvents,
   teardownMinimapEvents,
   MINIMAP_COLORS

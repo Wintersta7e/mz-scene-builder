@@ -14,7 +14,7 @@ import { toggleGrid, toggleSnapToGrid } from './grid.js';
 import { showAboutModal, showShortcutsModal } from './modals.js';
 import { startAutosave, stopAutosave, checkAutosaveRecovery } from './autosave.js';
 import { initTimeline, renderTimeline, onTimelineClick } from './timeline/index.js';
-import { initMinimapEvents, teardownMinimapEvents } from './timeline/minimap.js';
+import { initMinimapEvents, teardownMinimapEvents, updateCachedContainerWidth } from './timeline/minimap.js';
 import { renderProperties } from './properties/index.js';
 import { setupPropertyDelegation } from './properties/bind-input.js';
 import { renderPreviewAtFrame, resizePreviewCanvas } from './preview/index.js';
@@ -124,6 +124,7 @@ function initResizeHandles() {
       resizeTimeline.classList.remove('dragging');
       currentHandle = null;
       resizePreviewCanvas();
+      updateCachedContainerWidth();
     }
   });
 }
@@ -189,7 +190,9 @@ function init() {
     deleteSelectedEvent();
     renderProperties();
   });
-  elements.clearScene.addEventListener('click', clearScene);
+  elements.clearScene.addEventListener('click', () => {
+    clearScene().catch((err) => logger.error('clearScene failed:', err));
+  });
 
   // Timeline controls
   elements.btnPlay.addEventListener('click', togglePlayback);

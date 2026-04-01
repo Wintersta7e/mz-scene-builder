@@ -17,13 +17,14 @@ import { continueFromText } from '../playback.js';
 const IMAGE_PATH_CACHE_MAX = 500;
 const imagePathCache = new Map();
 let _renderInFlight = false;
+let _pendingFrame = null;
 
 function clearImagePathCache() {
   imagePathCache.clear();
 }
 
 function escapeHtml(text) {
-  return text
+  return String(text)
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
@@ -146,8 +147,12 @@ function applyPictureState(img, pictureState) {
 }
 
 async function renderPreviewAtFrame(frame) {
-  if (_renderInFlight) return;
+  if (_renderInFlight) {
+    _pendingFrame = frame;
+    return;
+  }
   _renderInFlight = true;
+  _pendingFrame = null;
   try {
     logger.time('renderPreviewAtFrame');
     logger.debug('renderPreviewAtFrame', { frame, eventsCount: state.events.length });
@@ -392,6 +397,11 @@ async function renderPreviewAtFrame(frame) {
     logger.error('Failed to render preview:', err);
   } finally {
     _renderInFlight = false;
+    if (_pendingFrame !== null) {
+      const next = _pendingFrame;
+      _pendingFrame = null;
+      renderPreviewAtFrame(next);
+    }
   }
 }
 

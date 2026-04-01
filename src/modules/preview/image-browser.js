@@ -47,7 +47,7 @@ function getThumbnailObserver() {
 async function loadThumbnail(el, path) {
   try {
     const thumb = await api.invoke('get-thumbnail', path);
-    if (thumb) {
+    if (thumb && thumb.startsWith('data:image/png;base64,')) {
       const thumbEl = el.querySelector('.image-thumb');
       thumbEl.style.backgroundImage = `url(${thumb})`;
       thumbEl.style.backgroundSize = 'contain';
@@ -61,6 +61,10 @@ async function loadThumbnail(el, path) {
 
 function renderFolderTree(container, items, isRoot = true) {
   if (isRoot) {
+    if (thumbnailObserver) {
+      thumbnailObserver.disconnect();
+      thumbnailObserver = null;
+    }
     container.innerHTML = '';
   }
 

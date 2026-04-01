@@ -137,7 +137,7 @@ async function loadPickerImages(folderPath) {
       const loadThumb = async () => {
         try {
           const thumb = await api.invoke('get-thumbnail', img.path);
-          if (thumb) {
+          if (thumb && thumb.startsWith('data:image/png;base64,')) {
             el.querySelector('.grid-image-thumb').style.backgroundImage = `url(${thumb})`;
             el.querySelector('.grid-image-thumb').style.backgroundSize = 'contain';
             el.querySelector('.grid-image-thumb').style.backgroundRepeat = 'no-repeat';

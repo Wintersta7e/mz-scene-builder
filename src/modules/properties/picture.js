@@ -6,9 +6,18 @@ import { getElements } from '../elements.js';
 import { openImagePicker } from '../preview/image-picker.js';
 import { targetGroupHtml, positionGroupHtml, scaleGroupHtml, effectsGroupHtml, bindCoreInputs } from './shared.js';
 
+function escapeHtml(text) {
+  return String(text)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
 function renderPictureProperties(evt) {
   const elements = getElements();
-  const imageName = evt.imageName ? evt.imageName.split('/').pop() : '(none)';
+  const imageName = evt.imageName ? escapeHtml(evt.imageName.split('/').pop()) : '(none)';
 
   elements.propertiesPanel.innerHTML = `
     <div class="property-group">

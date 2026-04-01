@@ -184,41 +184,14 @@ describe('undo-redo', () => {
       expect(result).toBe(true);
     });
 
-    it('returns true when dirty and user clicks Continue', async () => {
-      state.isDirty = true;
-      // Mock showConfirmDialog via document DOM
-      // The real showConfirmDialog creates DOM elements, so we need a minimal DOM mock
-      globalThis.document = {
-        title: 'test',
-        activeElement: null,
-        createElement: (tag) => {
-          const el = {
-            tagName: tag.toUpperCase(),
-            className: '',
-            textContent: '',
-            style: { cssText: '', width: '', padding: '' },
-            appendChild: jest.fn(),
-            querySelector: jest.fn(() => ({ focus: jest.fn() })),
-            querySelectorAll: jest.fn(() => []),
-            addEventListener: jest.fn(),
-            removeEventListener: jest.fn(),
-            remove: jest.fn(),
-            focus: jest.fn()
-          };
-          return el;
-        },
-        body: {
-          appendChild: jest.fn((_modal) => {
-            // Simulate clicking "Continue" button immediately
-            // Find the click handler that was set up on buttons
-            // Since the buttons are created via forEach and addEventListener,
-            // we trigger the resolve by calling the click handler
-          })
-        }
-      };
-      // For this test, since the real function creates DOM, we just verify the fast path
-      state.isDirty = false;
-      expect(await checkUnsavedChanges()).toBe(true);
+    it('stops playback before undo if playing', () => {
+      state.isPlaying = true;
+      state.playbackInterval = 123;
+      state.events = [{ type: 'wait', startFrame: 0 }];
+      saveState('test');
+      undo();
+      expect(state.isPlaying).toBe(false);
+      expect(state.playbackInterval).toBeNull();
     });
   });
 

@@ -24,8 +24,18 @@ function saveState(actionName) {
   markDirty();
 }
 
+function stopPlaybackIfActive() {
+  if (state.isPlaying && state.playbackInterval) {
+    clearInterval(state.playbackInterval);
+    state.playbackInterval = null;
+    state.isPlaying = false;
+    state.waitingForTextClick = false;
+  }
+}
+
 function undo() {
   if (state.undoStack.length === 0) return;
+  stopPlaybackIfActive();
 
   const currentState = {
     action: 'redo',
@@ -46,6 +56,7 @@ function undo() {
 
 function redo() {
   if (state.redoStack.length === 0) return;
+  stopPlaybackIfActive();
 
   const currentState = {
     action: 'undo',
