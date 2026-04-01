@@ -12,7 +12,7 @@ function renderTextProperties(evt) {
     <div class="property-group">
       <h4>Text</h4>
       <div class="property-row" style="flex-direction: column; align-items: stretch;">
-        <textarea id="prop-text" rows="6" style="width: 100%; resize: vertical; background: var(--bg-input); color: var(--text); border: 1px solid var(--border); border-radius: 3px; padding: 6px;">${evt.text || ''}</textarea>
+        <textarea id="prop-text" rows="6" style="width: 100%; resize: vertical; background: var(--bg-input); color: var(--text); border: 1px solid var(--border); border-radius: 3px; padding: 6px;"></textarea>
       </div>
     </div>
     <div class="property-group">

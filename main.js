@@ -296,12 +296,24 @@ ipcMain.handle('get-image-path', async (event, imagePath) => {
 ipcMain.handle('export-to-map', async (event, { events: evtList, mapId, eventId, pageIndex }) => {
   if (!projectPath) return { error: 'No project loaded' };
 
+  // Validate inputs from renderer
+  if (!Number.isInteger(mapId) || mapId < 1 || mapId > 999) {
+    return { error: 'Invalid map ID' };
+  }
+  if (!Number.isInteger(eventId) || eventId < 1) {
+    return { error: 'Invalid event ID' };
+  }
+  const safePageIndex = pageIndex ?? 0;
+  if (!Number.isInteger(safePageIndex) || safePageIndex < 0) {
+    return { error: 'Invalid page index' };
+  }
+
   const mapFile = path.join(projectPath, 'data', `Map${String(mapId).padStart(3, '0')}.json`);
   if (!(await pathExists(mapFile))) {
     return { error: `Map file not found: Map${String(mapId).padStart(3, '0')}.json` };
   }
 
-  logger.info('Export to map:', { mapId, eventId, pageIndex });
+  logger.info('Export to map:', { mapId, eventId, pageIndex: safePageIndex });
 
   try {
     const mapData = JSON.parse(await fsPromises.readFile(mapFile, 'utf-8'));
@@ -313,17 +325,19 @@ ipcMain.handle('export-to-map', async (event, { events: evtList, mapId, eventId,
       return { error: `Event ID ${eventId} not found in map` };
     }
 
-    const page = mapEvent.pages[pageIndex ?? 0];
+    const page = mapEvent.pages[safePageIndex];
     if (!page) {
-      return { error: `Page ${pageIndex ?? 0} not found in event` };
+      return { error: `Page ${safePageIndex} not found in event` };
     }
 
-    // Insert commands before the terminating null command
+    // Validate page structure
     if (page.list.length === 0 || page.list[page.list.length - 1]?.code !== 0) {
       return { error: 'Invalid event page structure: missing terminating command' };
     }
-    const insertIndex = page.list.length - 1; // Before the {code: 0}
-    page.list.splice(insertIndex, 0, ...mzCommands);
+
+    // Replace existing content, keeping only the terminating {code: 0}
+    const terminator = page.list[page.list.length - 1];
+    page.list = [...mzCommands, terminator];
 
     // Save the map file
     await fsPromises.writeFile(mapFile, JSON.stringify(mapData, null, 2));
@@ -359,6 +373,10 @@ ipcMain.handle('get-maps', async () => {
 // Get events in a map
 ipcMain.handle('get-map-events', async (event, mapId) => {
   if (!projectPath) return { error: 'No project loaded' };
+
+  if (!Number.isInteger(mapId) || mapId < 1 || mapId > 999) {
+    return { error: 'Invalid map ID' };
+  }
 
   const mapFile = path.join(projectPath, 'data', `Map${String(mapId).padStart(3, '0')}.json`);
   if (!(await pathExists(mapFile))) {

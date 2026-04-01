@@ -71,7 +71,7 @@ function renderFolderTree(container, items, isRoot = true) {
       folderEl.innerHTML = `
         <div class="folder-header">
           <span class="folder-icon">📁</span>
-          <span class="folder-name">${item.name}</span>
+          <span class="folder-name">${escapeHtml(item.name)}</span>
         </div>
         <div class="folder-children"></div>
       `;

@@ -6,6 +6,7 @@
 const api = window.api;
 import { state } from '../state.js';
 import { getElements } from '../elements.js';
+import { saveState, markDirty } from '../undo-redo.js';
 import { eventBus, Events } from '../event-bus.js';
 import { logger } from '../logger.js';
 
@@ -53,7 +54,7 @@ function renderPickerFolders(items, container = null) {
       folderEl.innerHTML = `
         <div class="folder-header">
           <span class="folder-icon">📁</span>
-          <span class="folder-name">${item.name}</span>
+          <span class="folder-name">${escapeHtml(item.name)}</span>
         </div>
         <div class="folder-children"></div>
       `;
@@ -171,7 +172,9 @@ async function loadPickerImages(folderPath) {
 
 function selectPickerImage(imagePath) {
   if (state.selectedEventIndex >= 0 && state.events[state.selectedEventIndex].type === 'showPicture') {
+    saveState('change image');
     state.events[state.selectedEventIndex].imageName = imagePath;
+    markDirty();
     eventBus.emit(Events.RENDER);
   }
   closeImagePicker();
