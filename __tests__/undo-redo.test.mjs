@@ -191,15 +191,48 @@ describe('undo-redo', () => {
       const result = await checkUnsavedChanges();
       expect(result).toBe(true);
     });
+  });
 
-    it('stops playback before undo if playing', () => {
+  describe('stopPlaybackIfActive (via undo/redo)', () => {
+    it('stops playback and clears interval before undo', () => {
+      const clearIntervalSpy = jest.spyOn(globalThis, 'clearInterval');
       state.isPlaying = true;
       state.playbackInterval = 123;
+      state.waitingForTextClick = true;
       state.events = [{ type: 'wait', startFrame: 0 }];
       saveState('test');
       undo();
+      expect(clearIntervalSpy).toHaveBeenCalledWith(123);
       expect(state.isPlaying).toBe(false);
       expect(state.playbackInterval).toBeNull();
+      expect(state.waitingForTextClick).toBe(false);
+      clearIntervalSpy.mockRestore();
+    });
+
+    it('stops playback before redo', () => {
+      const clearIntervalSpy = jest.spyOn(globalThis, 'clearInterval');
+      state.events = [{ type: 'wait', startFrame: 0 }];
+      saveState('test');
+      state.events = [{ type: 'wait', startFrame: 10 }];
+      undo();
+      // Now set up playing state before redo
+      state.isPlaying = true;
+      state.playbackInterval = 456;
+      redo();
+      expect(clearIntervalSpy).toHaveBeenCalledWith(456);
+      expect(state.isPlaying).toBe(false);
+      expect(state.playbackInterval).toBeNull();
+      clearIntervalSpy.mockRestore();
+    });
+
+    it('does not touch state when not playing', () => {
+      state.isPlaying = false;
+      state.playbackInterval = null;
+      state.events = [{ type: 'wait', startFrame: 0 }];
+      saveState('test');
+      undo();
+      // Should proceed normally without modifying playback fields
+      expect(state.isPlaying).toBe(false);
     });
   });
 

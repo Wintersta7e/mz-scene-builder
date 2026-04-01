@@ -67,7 +67,7 @@ const {
   duplicateSelectedEvent
 } = await import('../src/modules/events.js');
 const { saveState } = await import('../src/modules/undo-redo.js');
-const { eventBus } = await import('../src/modules/event-bus.js');
+const { eventBus, Events } = await import('../src/modules/event-bus.js');
 
 describe('events', () => {
   beforeEach(() => {
@@ -115,9 +115,17 @@ describe('events', () => {
       expect(getEventDuration('wait', {})).toBe(60); // default
     });
 
+    it('returns 0 for wait with frames: 0 (nullish coalescing)', () => {
+      expect(getEventDuration('wait', { frames: 0 })).toBe(0);
+    });
+
     it('returns duration for screenFlash', () => {
       expect(getEventDuration('screenFlash', { duration: 16 })).toBe(16);
       expect(getEventDuration('screenFlash', {})).toBe(8); // default
+    });
+
+    it('returns 0 for screenFlash with duration: 0 (nullish coalescing)', () => {
+      expect(getEventDuration('screenFlash', { duration: 0 })).toBe(0);
     });
 
     it('returns 30 for showPicture default', () => {
@@ -250,7 +258,7 @@ describe('events', () => {
 
     it('emits RENDER after adding', () => {
       addEvent('wait');
-      expect(eventBus.emit).toHaveBeenCalledWith('render');
+      expect(eventBus.emit).toHaveBeenCalledWith(Events.RENDER);
     });
   });
 

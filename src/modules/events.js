@@ -30,8 +30,8 @@ function getEventLane(type) {
 function getEventDuration(type, evt) {
   if (type === 'showText') return 1;
   if (type === 'erasePicture') return 1;
-  if (type === 'wait') return evt?.frames || 60;
-  if (type === 'screenFlash') return evt?.duration || 8;
+  if (type === 'wait') return evt?.frames ?? 60;
+  if (type === 'screenFlash') return evt?.duration ?? 8;
   if (evt && evt.duration) return evt.duration;
   if (type === 'showPicture') return 30;
   if (type === 'movePicture') return evt?.duration || 60;
