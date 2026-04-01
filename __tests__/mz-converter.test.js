@@ -383,9 +383,8 @@ describe('isPathSafe', () => {
       expect(isPathSafe(basePath, '/root/.ssh/id_rsa')).toBe(false);
     });
 
-    it('blocks double-encoded traversal attempts', () => {
-      // These resolve to the actual characters, so path.resolve handles them
-      expect(isPathSafe(basePath, '..%2f..%2fetc/passwd')).toBe(true); // Stays as literal string, doesn't escape
+    it('allows double-encoded paths (not a threat — path.resolve treats percent-encoded sequences as literal characters)', () => {
+      expect(isPathSafe(basePath, '..%2f..%2fetc/passwd')).toBe(true);
     });
 
     it('blocks access to sibling directories with similar name prefixes', () => {

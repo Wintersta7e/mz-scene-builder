@@ -33,7 +33,8 @@ jest.unstable_mockModule('../src/modules/event-bus.js', () => ({
 jest.unstable_mockModule('../src/modules/undo-redo.js', () => ({
   saveState: jest.fn(),
   markDirty: jest.fn(),
-  markClean: jest.fn()
+  markClean: jest.fn(),
+  showConfirmDialog: jest.fn(() => Promise.resolve('Clear'))
 }));
 
 // Mock elements
@@ -56,8 +57,17 @@ jest.unstable_mockModule('../src/modules/utils.js', () => ({
 }));
 
 const { state, MAX_PICTURE_NUMBER } = await import('../src/modules/state.js');
-const { getEventLane, getEventDuration, createDefaultEvent, getNextPictureNumber } =
-  await import('../src/modules/events.js');
+const {
+  getEventLane,
+  getEventDuration,
+  createDefaultEvent,
+  getNextPictureNumber,
+  addEvent,
+  deleteSelectedEvent,
+  duplicateSelectedEvent
+} = await import('../src/modules/events.js');
+const { saveState } = await import('../src/modules/undo-redo.js');
+const { eventBus } = await import('../src/modules/event-bus.js');
 
 describe('events', () => {
   beforeEach(() => {
@@ -148,7 +158,7 @@ describe('events', () => {
       expect(evt.scaleY).toBe(100);
       expect(evt.opacity).toBe(255);
       expect(evt.blend).toBe(0);
-      expect(evt._insertOrder).toBeDefined();
+      expect(evt._insertOrder).toBe(1);
     });
 
     it('creates movePicture with correct defaults', () => {
@@ -179,7 +189,7 @@ describe('events', () => {
     it('creates erasePicture with correct defaults', () => {
       const evt = createDefaultEvent('erasePicture');
       expect(evt.type).toBe('erasePicture');
-      expect(evt.pictureNumber).toBeDefined();
+      expect(evt.pictureNumber).toBe(1);
     });
 
     it('creates showText with correct defaults', () => {
@@ -210,6 +220,102 @@ describe('events', () => {
     it('returns minimal object for unknown type', () => {
       const evt = createDefaultEvent('unknown');
       expect(evt.type).toBe('unknown');
+    });
+  });
+
+  describe('addEvent', () => {
+    it('adds event to state.events and calls saveState', () => {
+      addEvent('showPicture');
+      expect(saveState).toHaveBeenCalledWith('add showPicture');
+      expect(state.events.length).toBe(1);
+      expect(state.events[0].type).toBe('showPicture');
+    });
+
+    it('shifts same-lane events at or after current frame by 10', () => {
+      state.events = [{ type: 'showPicture', startFrame: 0, pictureNumber: 1, _insertOrder: 1 }];
+      state.currentFrame = 0;
+      addEvent('movePicture');
+      // Original event should have been shifted by 10 frames
+      const original = state.events.find((e) => e.type === 'showPicture');
+      expect(original.startFrame).toBe(10);
+    });
+
+    it('does not shift events in different lanes', () => {
+      state.events = [{ type: 'showText', startFrame: 0, text: 'hi', _insertOrder: 1 }];
+      state.currentFrame = 0;
+      addEvent('showPicture'); // lane 0, should not shift showText (lane 2)
+      const textEvt = state.events.find((e) => e.type === 'showText');
+      expect(textEvt.startFrame).toBe(0);
+    });
+
+    it('emits RENDER after adding', () => {
+      addEvent('wait');
+      expect(eventBus.emit).toHaveBeenCalledWith('render');
+    });
+  });
+
+  describe('deleteSelectedEvent', () => {
+    it('removes the selected event', () => {
+      state.events = [
+        { type: 'showPicture', startFrame: 0 },
+        { type: 'wait', startFrame: 10 }
+      ];
+      state.selectedEventIndex = 0;
+      deleteSelectedEvent();
+      expect(state.events.length).toBe(1);
+      expect(state.events[0].type).toBe('wait');
+    });
+
+    it('clamps selectedEventIndex when deleting last event', () => {
+      state.events = [{ type: 'showPicture', startFrame: 0 }];
+      state.selectedEventIndex = 0;
+      deleteSelectedEvent();
+      expect(state.events.length).toBe(0);
+      expect(state.selectedEventIndex).toBe(-1);
+    });
+
+    it('does nothing when no event is selected', () => {
+      state.events = [{ type: 'wait', startFrame: 0 }];
+      state.selectedEventIndex = -1;
+      deleteSelectedEvent();
+      expect(state.events.length).toBe(1);
+      expect(saveState).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('duplicateSelectedEvent', () => {
+    it('duplicates a non-text event at startFrame + 1', () => {
+      state.events = [{ type: 'showPicture', startFrame: 10, pictureNumber: 1, _insertOrder: 1 }];
+      state.selectedEventIndex = 0;
+      duplicateSelectedEvent();
+      expect(state.events.length).toBe(2);
+      const dup = state.events.find((e) => e.startFrame === 11);
+      expect(dup).toBeDefined();
+      expect(dup.type).toBe('showPicture');
+    });
+
+    it('duplicates a text event after the last text frame + 10', () => {
+      state.events = [{ type: 'showText', startFrame: 20, text: 'hello', _insertOrder: 1 }];
+      state.selectedEventIndex = 0;
+      duplicateSelectedEvent();
+      expect(state.events.length).toBe(2);
+      const dup = state.events.find((e) => e.startFrame === 30);
+      expect(dup).toBeDefined();
+      expect(dup.type).toBe('showText');
+    });
+
+    it('assigns a fresh _insertOrder to the duplicate', () => {
+      state.events = [{ type: 'wait', startFrame: 0, frames: 60, _insertOrder: 5 }];
+      state.selectedEventIndex = 0;
+      duplicateSelectedEvent();
+      const dup = state.events.find((e) => e.startFrame === 1);
+      expect(dup._insertOrder).not.toBe(5);
+    });
+
+    it('does nothing when no event is selected', () => {
+      state.selectedEventIndex = -1;
+      duplicateSelectedEvent();
+      expect(saveState).not.toHaveBeenCalled();
     });
   });
 

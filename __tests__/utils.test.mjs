@@ -5,6 +5,11 @@ beforeAll(async () => {
   ({ rgbToHex, hexToRgb, sortEvents, TYPE_PRIORITY, getNextInsertOrder, resetInsertOrderCounter } = mod);
 });
 
+// Reset counter before every test to prevent cross-suite contamination
+beforeEach(() => {
+  if (resetInsertOrderCounter) resetInsertOrderCounter(0);
+});
+
 describe('rgbToHex', () => {
   it('converts standard RGB values', () => {
     expect(rgbToHex(255, 0, 0)).toBe('#ff0000');
