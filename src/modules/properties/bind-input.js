@@ -5,6 +5,7 @@
 // from repeatedly adding listeners to replaced elements.
 
 import { state } from '../state.js';
+import { markDirty } from '../undo-redo.js';
 import { eventBus, Events } from '../event-bus.js';
 
 let _delegationSetup = false;
@@ -41,7 +42,7 @@ function setupPropertyDelegation(propertiesPanel) {
       evt[property] = el.value;
     }
 
-    // Trigger renders via event bus
+    markDirty();
     eventBus.emit(Events.RENDER_TIMELINE);
     eventBus.emit(Events.RENDER_PREVIEW, state.currentFrame);
   };

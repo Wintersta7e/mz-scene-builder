@@ -9,7 +9,6 @@ function basename(p) {
   return p.split(/[/\\]/).pop() || p;
 }
 import { logger } from './logger.js';
-import { showError, showWarning } from './notifications.js';
 import { eventBus, Events } from './event-bus.js';
 
 function getSettings() {
@@ -68,22 +67,10 @@ function updateRecentProjectsDropdown() {
     item.className = 'dropdown-item';
     item.textContent = basename(p);
     item.title = p;
-    item.addEventListener('click', async (e) => {
+    item.addEventListener('click', (e) => {
       e.stopPropagation();
       e.preventDefault();
-
-      try {
-        // Validate project through IPC (checks if path exists and is valid MZ project)
-        const result = await window.api.invoke('set-project-path', p);
-        if (result && result.error) {
-          showWarning(`Project folder not found or invalid: ${p}`);
-          return;
-        }
-        eventBus.emit(Events.OPEN_RECENT_PROJECT, p);
-      } catch (err) {
-        logger.error('Error opening project:', err);
-        showError(`Error opening project: ${err.message}`);
-      }
+      eventBus.emit(Events.OPEN_RECENT_PROJECT, p);
     });
     dropdown.appendChild(item);
   });

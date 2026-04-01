@@ -4,11 +4,13 @@
 
 import { getElements } from '../elements.js';
 import { state } from '../state.js';
+import { markDirty } from '../undo-redo.js';
 import { rgbToHex, hexToRgb } from '../utils.js';
 import { bindInput } from './bind-input.js';
 import { eventBus, Events } from '../event-bus.js';
 
 function emitRender() {
+  markDirty();
   eventBus.emit(Events.RENDER_TIMELINE);
   eventBus.emit(Events.RENDER_PREVIEW, state.currentFrame);
 }

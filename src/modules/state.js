@@ -90,6 +90,11 @@ const state = {
   // Minimap
   minimapDragging: false,
 
+  // Internal runtime flags (not serialized)
+  _autosaveFailCount: 0,
+  _arrowKeyUndoSaved: false,
+  _arrowKeyUndoTimer: null,
+
   // Export cache (prefetched data)
   cachedMaps: null,
   cachedMapEvents: {} // { mapId: eventsArray }
@@ -107,16 +112,11 @@ function update(updates) {
   Object.assign(state, updates);
 }
 
-function getState() {
-  return state;
-}
-
 export {
   state,
   get,
   set,
   update,
-  getState,
   // Constants
   TIMELINE_LANES,
   LANE_HEIGHT,

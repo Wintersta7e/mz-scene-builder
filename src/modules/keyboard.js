@@ -6,7 +6,7 @@ import { state } from './state.js';
 import { getElements } from './elements.js';
 import { sortEvents } from './utils.js';
 import { undo, redo, saveState, markDirty } from './undo-redo.js';
-import { selectEvent, duplicateSelectedEvent, deleteSelectedEvent, addEvent } from './events.js';
+import { selectEvent, duplicateSelectedEvent, deleteSelectedEvent, addEvent, getEventDuration } from './events.js';
 import { showShortcutsModal } from './modals.js';
 import { logger } from './logger.js';
 import { eventBus, Events } from './event-bus.js';
@@ -128,7 +128,13 @@ function handleKeyboardMove(e) {
     if (e.key === 'ArrowLeft') {
       state.currentFrame = Math.max(0, state.currentFrame - step);
     } else {
-      state.currentFrame = Math.min(state.timelineLength, state.currentFrame + step);
+      // Compute effective max frame (events may extend past timelineLength)
+      let maxFrame = state.timelineLength;
+      for (const evt of state.events) {
+        const end = (evt.startFrame || 0) + getEventDuration(evt.type, evt);
+        if (end > maxFrame) maxFrame = end;
+      }
+      state.currentFrame = Math.min(maxFrame, state.currentFrame + step);
     }
     eventBus.emit(Events.RENDER);
     return;

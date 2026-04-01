@@ -231,6 +231,9 @@ function closeExportModal() {
   if (mapDropdown) mapDropdown.close();
   if (eventDropdown) eventDropdown.close();
   if (pageDropdown) pageDropdown.close();
+
+  // Clear map events cache (only needed while modal is open)
+  state.cachedMapEvents = {};
 }
 
 async function doExportToMap() {

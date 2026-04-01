@@ -9,7 +9,7 @@ import { eventBus, Events } from './event-bus.js';
 function saveState(actionName) {
   const stateSnapshot = {
     action: actionName,
-    events: JSON.parse(JSON.stringify(state.events)),
+    events: structuredClone(state.events),
     selectedEventIndex: state.selectedEventIndex,
     currentFrame: state.currentFrame
   };
@@ -29,7 +29,7 @@ function undo() {
 
   const currentState = {
     action: 'redo',
-    events: JSON.parse(JSON.stringify(state.events)),
+    events: structuredClone(state.events),
     selectedEventIndex: state.selectedEventIndex,
     currentFrame: state.currentFrame
   };
@@ -49,7 +49,7 @@ function redo() {
 
   const currentState = {
     action: 'undo',
-    events: JSON.parse(JSON.stringify(state.events)),
+    events: structuredClone(state.events),
     selectedEventIndex: state.selectedEventIndex,
     currentFrame: state.currentFrame
   };
@@ -122,10 +122,34 @@ function showConfirmDialog(title, message, buttons) {
     const btnContainer = document.createElement('div');
     btnContainer.style.cssText = 'display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;';
 
+    // Mutual references between closeModal and handleKeydown require forward declaration
+    let handleKeydown; // eslint-disable-line prefer-const -- assigned below, used in closeModal
+
     const closeModal = (result) => {
+      modal.removeEventListener('keydown', handleKeydown);
       modal.remove();
       if (previousFocus) previousFocus.focus();
       resolve(result);
+    };
+
+    // Escape to close (resolve last button = cancel), focus trapping
+    handleKeydown = (e) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        closeModal(buttons[buttons.length - 1]);
+      }
+      if (e.key === 'Tab') {
+        const focusable = modal.querySelectorAll('button');
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
     };
 
     buttons.forEach((btnText, i) => {
@@ -140,30 +164,9 @@ function showConfirmDialog(title, message, buttons) {
     content.appendChild(header);
     content.appendChild(body);
     modal.appendChild(content);
-
-    // Escape to close (resolve last button = cancel)
-    modal.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') {
-        e.preventDefault();
-        closeModal(buttons[buttons.length - 1]);
-      }
-      // Trap focus within modal
-      if (e.key === 'Tab') {
-        const focusable = modal.querySelectorAll('button');
-        const first = focusable[0];
-        const last = focusable[focusable.length - 1];
-        if (e.shiftKey && document.activeElement === first) {
-          e.preventDefault();
-          last.focus();
-        } else if (!e.shiftKey && document.activeElement === last) {
-          e.preventDefault();
-          first.focus();
-        }
-      }
-    });
+    modal.addEventListener('keydown', handleKeydown);
 
     document.body.appendChild(modal);
-    // Focus first button
     const firstBtn = modal.querySelector('button');
     if (firstBtn) firstBtn.focus();
   });

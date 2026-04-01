@@ -3,6 +3,7 @@
 // ============================================
 
 import { getElements } from '../elements.js';
+import { markDirty } from '../undo-redo.js';
 import { rgbToHex, hexToRgb } from '../utils.js';
 import { bindInput } from './bind-input.js';
 import { eventBus, Events } from '../event-bus.js';
@@ -143,6 +144,7 @@ function renderFlashProperties(evt) {
     evt.green = rgb.g;
     evt.blue = rgb.b;
     preview.textContent = `(${evt.red}, ${evt.green}, ${evt.blue})`;
+    markDirty();
     eventBus.emit(Events.RENDER_TIMELINE);
   });
 
@@ -152,6 +154,7 @@ function renderFlashProperties(evt) {
   intensitySlider.addEventListener('input', () => {
     evt.intensity = parseInt(intensitySlider.value, 10);
     intensityVal.textContent = evt.intensity;
+    markDirty();
     eventBus.emit(Events.RENDER_TIMELINE);
   });
 
@@ -162,6 +165,7 @@ function renderFlashProperties(evt) {
       evt.green = parseInt(btn.dataset.g, 10);
       evt.blue = parseInt(btn.dataset.b, 10);
       renderFlashProperties(evt);
+      markDirty();
       eventBus.emit(Events.RENDER_TIMELINE);
     });
   });
