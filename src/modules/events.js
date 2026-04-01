@@ -4,7 +4,7 @@
 
 import { state, MAX_PICTURE_NUMBER } from './state.js';
 import { getElements } from './elements.js';
-import { saveState } from './undo-redo.js';
+import { saveState, showConfirmDialog } from './undo-redo.js';
 import { sortEvents, getNextInsertOrder } from './utils.js';
 import { eventBus, Events } from './event-bus.js';
 import { logger } from './logger.js';
@@ -41,9 +41,9 @@ function getEventDuration(type, evt) {
 }
 
 function getNextPictureNumber() {
-  const usedNumbers = state.events.filter((e) => e.type === 'showPicture').map((e) => e.pictureNumber);
+  const usedNumbers = new Set(state.events.filter((e) => e.type === 'showPicture').map((e) => e.pictureNumber));
   for (let i = 1; i <= MAX_PICTURE_NUMBER; i++) {
-    if (!usedNumbers.includes(i)) return i;
+    if (!usedNumbers.has(i)) return i;
   }
   logger.warn(`All picture numbers (1-${MAX_PICTURE_NUMBER}) in use, reusing #1`);
   return 1;
@@ -205,6 +205,7 @@ function duplicateSelectedEvent() {
   saveState('duplicate');
   const original = state.events[state.selectedEventIndex];
   const duplicate = JSON.parse(JSON.stringify(original));
+  duplicate._insertOrder = getNextInsertOrder();
 
   if (duplicate.type === 'showText') {
     const textEvents = state.events.filter((e) => e.type === 'showText');
@@ -230,12 +231,15 @@ function clearImageSelection() {
   });
 }
 
-function clearScene() {
+async function clearScene() {
   if (state.events.length === 0) return;
 
-  if (!confirm('Clear all events from the timeline? This can be undone with Ctrl+Z.')) {
-    return;
-  }
+  const result = await showConfirmDialog(
+    'Clear Scene',
+    'Clear all events from the timeline? This can be undone with Ctrl+Z.',
+    ['Clear', 'Cancel']
+  );
+  if (result !== 'Clear') return;
 
   saveState('clear scene');
   state.events = [];

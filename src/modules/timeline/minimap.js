@@ -19,6 +19,8 @@ const MINIMAP_COLORS = {
 };
 
 let _minimapInitialized = false;
+let _cachedContainerWidth = 0;
+let _resizeHandler = null;
 
 function renderMinimap() {
   const elements = getElements();
@@ -31,10 +33,14 @@ function renderMinimap() {
   const height = containerRect.height;
 
   const dpr = window.devicePixelRatio || 1;
-  canvas.width = width * dpr;
-  canvas.height = height * dpr;
-  canvas.style.width = `${width}px`;
-  canvas.style.height = `${height}px`;
+  const targetWidth = width * dpr;
+  const targetHeight = height * dpr;
+  if (canvas.width !== targetWidth || canvas.height !== targetHeight) {
+    canvas.width = targetWidth;
+    canvas.height = targetHeight;
+    canvas.style.width = `${width}px`;
+    canvas.style.height = `${height}px`;
+  }
 
   const ctx = canvas.getContext('2d');
   ctx.scale(dpr, dpr);
@@ -141,13 +147,18 @@ function initMinimapEvents() {
   });
 
   let resizeRaf = null;
-  window.addEventListener('resize', () => {
+  _resizeHandler = () => {
     if (resizeRaf) cancelAnimationFrame(resizeRaf);
     resizeRaf = requestAnimationFrame(() => {
+      updateCachedContainerWidth();
       renderMinimap();
       resizeRaf = null;
     });
-  });
+  };
+  window.addEventListener('resize', _resizeHandler);
+
+  // Initialize cached width
+  updateCachedContainerWidth();
 }
 
 function handleMinimapClick(e) {
@@ -177,23 +188,40 @@ function handleMinimapClick(e) {
   eventBus.emit(Events.RENDER_PREVIEW, state.currentFrame);
 }
 
+function updateCachedContainerWidth() {
+  const container = getElements().timelineMinimap;
+  if (container) _cachedContainerWidth = container.getBoundingClientRect().width;
+}
+
 // Lightweight cursor-only update for playback (avoids full canvas redraw)
 function updateMinimapCursor() {
   const elements = getElements();
-  const container = elements.timelineMinimap;
-  if (!container) return;
+  if (!elements.minimapCursor || _cachedContainerWidth <= 0) return;
 
   let maxFrame = state.timelineLength;
-  state.events.forEach((evt) => {
+  for (const evt of state.events) {
     const endFrame = (evt.startFrame || 0) + getEventDuration(evt.type, evt);
     if (endFrame > maxFrame) maxFrame = endFrame + 30;
-  });
+  }
 
   if (maxFrame <= 0) return;
 
-  const containerWidth = container.getBoundingClientRect().width;
-  const scale = containerWidth / maxFrame;
+  const scale = _cachedContainerWidth / maxFrame;
   elements.minimapCursor.style.left = `${state.currentFrame * scale}px`;
 }
 
-export { renderMinimap, updateMinimapCursor, updateMinimapViewport, initMinimapEvents, MINIMAP_COLORS };
+function teardownMinimapEvents() {
+  if (_resizeHandler) {
+    window.removeEventListener('resize', _resizeHandler);
+    _resizeHandler = null;
+  }
+}
+
+export {
+  renderMinimap,
+  updateMinimapCursor,
+  updateMinimapViewport,
+  initMinimapEvents,
+  teardownMinimapEvents,
+  MINIMAP_COLORS
+};

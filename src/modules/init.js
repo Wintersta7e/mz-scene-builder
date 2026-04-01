@@ -14,13 +14,14 @@ import { toggleGrid, toggleSnapToGrid } from './grid.js';
 import { showAboutModal, showShortcutsModal } from './modals.js';
 import { startAutosave, stopAutosave, checkAutosaveRecovery } from './autosave.js';
 import { initTimeline, renderTimeline, onTimelineClick } from './timeline/index.js';
-import { initMinimapEvents } from './timeline/minimap.js';
+import { initMinimapEvents, teardownMinimapEvents } from './timeline/minimap.js';
 import { renderProperties } from './properties/index.js';
 import { setupPropertyDelegation } from './properties/bind-input.js';
 import { renderPreviewAtFrame, resizePreviewCanvas } from './preview/index.js';
 import { closeImagePicker } from './preview/image-picker.js';
 import { filterImages } from './preview/image-browser.js';
 import { togglePlayback, stopPlayback } from './playback.js';
+import { markDirty } from './undo-redo.js';
 import { handleKeyboardMove, setSaveCallback } from './keyboard.js';
 import {
   openExportModal,
@@ -47,8 +48,6 @@ function setupEventBusListeners() {
   eventBus.on(Events.RENDER_PREVIEW, (frame) => {
     renderPreviewAtFrame(frame !== undefined ? frame : state.currentFrame);
   });
-  eventBus.on(Events.RENDER_PROPERTIES, renderProperties);
-
   // Project loaded - resize preview and update quick export button
   eventBus.on(Events.PROJECT_LOADED, () => {
     resizePreviewCanvas();
@@ -202,6 +201,7 @@ function init() {
   elements.timelineLengthInput.addEventListener('change', () => {
     state.timelineLength = Math.max(60, parseInt(elements.timelineLengthInput.value, 10) || 300);
     elements.timelineLengthInput.value = state.timelineLength;
+    markDirty();
     renderTimeline();
   });
 
@@ -260,7 +260,9 @@ function init() {
 
   // Clean up on close
   window.addEventListener('beforeunload', () => {
+    stopPlayback();
     stopAutosave();
+    teardownMinimapEvents();
   });
 
   logger.info('Timeline Scene Builder initialized');

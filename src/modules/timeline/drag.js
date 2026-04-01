@@ -3,6 +3,7 @@
 // ============================================
 
 import { state } from '../state.js';
+import { getElements } from '../elements.js';
 import { saveState, markDirty } from '../undo-redo.js';
 import { sortEvents } from '../utils.js';
 import { selectEvent } from '../events.js';
@@ -42,7 +43,13 @@ function onTimelineDrag(e) {
   }
 
   state.timelineDragEvt.startFrame = newFrame;
-  eventBus.emit(Events.RENDER_TIMELINE);
+
+  // Lightweight update: only move the dragged element instead of full DOM rebuild
+  const elements = getElements();
+  const el = elements.timelineEvents.querySelector(`.timeline-event[data-index="${state.timelineDragIndex}"]`);
+  if (el) {
+    el.style.left = `${newFrame * state.timelineScale}px`;
+  }
 }
 
 function stopTimelineDrag(onDrag, onStop) {

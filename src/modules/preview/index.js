@@ -13,11 +13,22 @@ import { startDrag, highlightSelectedImage, findImagesAtPoint } from './drag.js'
 import { renderTimeline } from '../timeline/index.js';
 import { continueFromText } from '../playback.js';
 
-// Image path cache — cleared on project change
+// Image path cache — cleared on project change, capped to prevent unbounded growth
+const IMAGE_PATH_CACHE_MAX = 500;
 const imagePathCache = new Map();
+let _renderInFlight = false;
 
 function clearImagePathCache() {
   imagePathCache.clear();
+}
+
+function escapeHtml(text) {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
 }
 
 eventBus.on(Events.PROJECT_LOADED, clearImagePathCache);
@@ -135,6 +146,8 @@ function applyPictureState(img, pictureState) {
 }
 
 async function renderPreviewAtFrame(frame) {
+  if (_renderInFlight) return;
+  _renderInFlight = true;
   try {
     logger.time('renderPreviewAtFrame');
     logger.debug('renderPreviewAtFrame', { frame, eventsCount: state.events.length });
@@ -230,7 +243,14 @@ async function renderPreviewAtFrame(frame) {
           return imagePathCache.get(ps.imageName);
         }
         const resolved = await api.invoke('get-image-path', ps.imageName);
-        if (resolved) imagePathCache.set(ps.imageName, resolved);
+        if (resolved) {
+          if (imagePathCache.size >= IMAGE_PATH_CACHE_MAX) {
+            // Evict oldest entry
+            const firstKey = imagePathCache.keys().next().value;
+            imagePathCache.delete(firstKey);
+          }
+          imagePathCache.set(ps.imageName, resolved);
+        }
         return resolved;
       })
     );
@@ -309,15 +329,6 @@ async function renderPreviewAtFrame(frame) {
       existingTexts.set(el.dataset.eventIndex, el);
     });
 
-    // Escape HTML to prevent XSS
-    const escapeHtml = (text) =>
-      text
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#039;');
-
     // Render text events (reuse DOM elements where possible)
     for (let textIdx = 0; textIdx < state.events.length; textIdx++) {
       const evt = state.events[textIdx];
@@ -379,7 +390,9 @@ async function renderPreviewAtFrame(frame) {
     logger.timeEnd('renderPreviewAtFrame');
   } catch (err) {
     logger.error('Failed to render preview:', err);
+  } finally {
+    _renderInFlight = false;
   }
 }
 
-export { getPreviewScale, resizePreviewCanvas, applyPictureState, renderPreviewAtFrame, clearImagePathCache };
+export { getPreviewScale, resizePreviewCanvas, renderPreviewAtFrame };
