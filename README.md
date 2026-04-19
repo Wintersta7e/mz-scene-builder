@@ -6,6 +6,11 @@ A visual timeline editor for creating cutscenes and picture sequences for RPG Ma
 ![JavaScript](https://img.shields.io/badge/JavaScript-ES2022-F7DF1E?logo=javascript)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE.txt)
 
+> **Part of [MZ DevKit](https://github.com/topics/mz-devkit)** — a suite of visual tools for RPG Maker MZ:
+> [`mz-plugin-studio`](https://github.com/Wintersta7e/mz-plugin-studio) (plugins) ·
+> [`mz-interaction-builder`](https://github.com/Wintersta7e/mz-interaction-builder) (dialogue trees) ·
+> [`mz-scene-builder`](https://github.com/Wintersta7e/mz-scene-builder) (timelines / cutscenes)
+
 <img src="screenshots/01-main-editor.png" alt="Timeline Scene Builder — main editor view" width="720" />
 
 ## Features
