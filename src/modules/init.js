@@ -13,7 +13,7 @@ import { updateRecentProjectsDropdown, initRecentProjectsDropdown } from './sett
 import { toggleGrid, toggleSnapToGrid } from './grid.js';
 import { showAboutModal, showShortcutsModal } from './modals.js';
 import { startAutosave, stopAutosave, checkAutosaveRecovery } from './autosave.js';
-import { initTimeline, renderTimeline, onTimelineClick } from './timeline/index.js';
+import { initTimeline, renderTimeline, onTimelineClick, updateTimelineCursor } from './timeline/index.js';
 import { initMinimapEvents, teardownMinimapEvents, updateCachedContainerWidth } from './timeline/minimap.js';
 import { renderProperties } from './properties/index.js';
 import { setupPropertyDelegation } from './properties/bind-input.js';
@@ -300,6 +300,36 @@ function init() {
   // Timeline controls
   elements.btnPlay.addEventListener('click', togglePlayback);
   elements.btnStop.addEventListener('click', stopPlayback);
+
+  // Skip transport buttons (60 frames = 1 second)
+  const btnSkipBack = document.getElementById('btn-skip-back');
+  const btnSkipFwd = document.getElementById('btn-skip-fwd');
+  if (btnSkipBack) {
+    btnSkipBack.addEventListener('click', () => {
+      state.currentFrame = Math.max(0, state.currentFrame - 60);
+      eventBus.emit(Events.RENDER_PREVIEW, state.currentFrame);
+      updateTimelineCursor();
+    });
+  }
+  if (btnSkipFwd) {
+    btnSkipFwd.addEventListener('click', () => {
+      state.currentFrame = Math.min(state.timelineLength, state.currentFrame + 60);
+      eventBus.emit(Events.RENDER_PREVIEW, state.currentFrame);
+      updateTimelineCursor();
+    });
+  }
+
+  // Play button — visual is-playing class mirrors state.isPlaying. Refreshed
+  // on every RENDER_PREVIEW emit (which fires on play/pause/stop transitions
+  // and on every frame tick during playback).
+  function refreshPlayButtonState() {
+    if (elements.btnPlay) {
+      elements.btnPlay.classList.toggle('is-playing', state.isPlaying);
+    }
+  }
+  eventBus.on(Events.RENDER_PREVIEW, refreshPlayButtonState);
+  refreshPlayButtonState();
+
   elements.timelineTrack.addEventListener('click', (e) => {
     onTimelineClick(e);
     renderPreviewAtFrame(state.currentFrame);

@@ -18,8 +18,9 @@ function getEventLane(type) {
       return 0;
     case 'tintPicture':
     case 'screenFlash':
-    case 'wait':
       return 1;
+    case 'wait':
+      return 3;
     case 'showText':
       return 2;
     default:

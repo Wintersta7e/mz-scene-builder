@@ -53,7 +53,8 @@ function initElements() {
     // Timeline elements
     btnPlay: $('btn-play'),
     btnStop: $('btn-stop'),
-    currentFrameDisplay: $('current-frame'),
+    btnSkipBack: $('btn-skip-back'),
+    btnSkipFwd: $('btn-skip-fwd'),
     timelineLengthInput: $('timeline-length'),
     timelineLanes: $('timeline-lanes'),
     timelineTrack: $('timeline-track'),
@@ -83,7 +84,11 @@ function initElements() {
     segPreview: $('seg-preview'),
     segInspect: $('seg-inspect'),
     btnSettings: $('btn-settings'),
-    btnRecent: $('btn-recent')
+    btnRecent: $('btn-recent'),
+    // Transport readout cells (redesign-D)
+    readoutFrame: $('readout-frame'),
+    readoutTime: $('readout-time'),
+    readoutEvents: $('readout-events')
   };
 
   return elements;

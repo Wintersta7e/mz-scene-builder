@@ -3,7 +3,7 @@
 // ============================================
 
 // Timeline constants
-const TIMELINE_LANES = ['Pictures', 'Effects', 'Text'];
+const TIMELINE_LANES = ['Pictures', 'Effects', 'Text', 'Timing'];
 const LANE_HEIGHT = 24;
 const MAX_UNDO_STACK = 50;
 const MAX_RECENT_PROJECTS = 5;

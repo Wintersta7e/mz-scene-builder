@@ -1,218 +1,106 @@
 // ============================================
-// Timeline Minimap
+// Timeline Minimap (DOM-based)
 // ============================================
+// Pill-style mini overview of the timeline. Each event renders as a
+// 5px-tall .minimap-event div positioned by (start/length)% width and
+// (laneIndex * 7 + 4)px from the top. Click anywhere on the track to
+// jump the playhead.
+//
+// Plan D switched this from canvas-based rendering to DOM pills — the
+// canvas approach didn't share the design's lane-color CSS tokens.
 
 import { state } from '../state.js';
-import { getElements } from '../elements.js';
-import { getEventLane, getEventDuration } from '../events.js';
 import { eventBus, Events } from '../event-bus.js';
+import { getEventLane, getEventDuration } from '../events.js';
 
-const MINIMAP_COLORS = {
-  showPicture: '#22c55e',
-  movePicture: '#3b82f6',
-  rotatePicture: '#a855f7',
-  tintPicture: '#eab308',
-  erasePicture: '#ef4444',
-  showText: '#06b6d4',
-  wait: '#6b7280',
-  screenFlash: '#f97316'
-};
-
-let _minimapInitialized = false;
-let _cachedContainerWidth = 0;
 let _resizeHandler = null;
+let _cachedContainerWidth = 0;
+let _minimapInitialized = false;
+
+const LANE_DATA = ['pic', 'fx', 'txt', 'aux'];
+
+function getTrack() {
+  return document.getElementById('minimap-track');
+}
+
+function updateCachedContainerWidth() {
+  const track = getTrack();
+  if (track) _cachedContainerWidth = track.getBoundingClientRect().width;
+}
 
 function renderMinimap() {
-  const elements = getElements();
-  const canvas = elements.minimapCanvas;
-  const container = elements.timelineMinimap;
-  if (!canvas || !container) return;
+  const track = getTrack();
+  if (!track) return;
 
-  const containerRect = container.getBoundingClientRect();
-  const width = containerRect.width;
-  const height = containerRect.height;
+  const length = Math.max(1, state.timelineLength);
 
-  const dpr = window.devicePixelRatio || 1;
-  const targetWidth = width * dpr;
-  const targetHeight = height * dpr;
-  if (canvas.width !== targetWidth || canvas.height !== targetHeight) {
-    canvas.width = targetWidth;
-    canvas.height = targetHeight;
-    canvas.style.width = `${width}px`;
-    canvas.style.height = `${height}px`;
+  while (track.firstChild) track.removeChild(track.firstChild);
+
+  for (const ev of state.events) {
+    const start = ev.startFrame || 0;
+    const dur = Math.max(1, getEventDuration(ev.type, ev));
+    const laneIdx = getEventLane(ev.type);
+
+    const pill = document.createElement('div');
+    pill.className = 'minimap-event';
+    pill.dataset.lane = LANE_DATA[laneIdx] || 'pic';
+    pill.style.left = `${(start / length) * 100}%`;
+    pill.style.width = `${Math.max(0.5, (dur / length) * 100)}%`;
+    pill.style.top = `${laneIdx * 7 + 4}px`;
+    track.appendChild(pill);
   }
+}
 
-  const ctx = canvas.getContext('2d');
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  ctx.clearRect(0, 0, width, height);
-
-  let maxFrame = state.timelineLength;
-  state.events.forEach((evt) => {
-    const endFrame = (evt.startFrame || 0) + getEventDuration(evt.type, evt);
-    if (endFrame > maxFrame) maxFrame = endFrame + 30;
-  });
-
-  if (maxFrame <= 0) return;
-
-  const scale = width / maxFrame;
-
-  // Frame markers
-  ctx.fillStyle = 'rgba(100, 100, 120, 0.3)';
-  for (let f = 60; f <= maxFrame; f += 60) {
-    const x = f * scale;
-    ctx.fillRect(x, 0, 1, height);
-  }
-
-  // Events
-  const laneHeight = height / 3;
-  ctx.globalAlpha = 0.8;
-  try {
-    state.events.forEach((evt) => {
-      const startFrame = evt.startFrame || 0;
-      const duration = Math.max(getEventDuration(evt.type, evt), 5);
-      const lane = getEventLane(evt.type);
-
-      const x = startFrame * scale;
-      const w = Math.max(duration * scale, 2);
-      const y = lane * laneHeight + 2;
-      const h = laneHeight - 4;
-
-      ctx.fillStyle = MINIMAP_COLORS[evt.type] || '#888';
-      ctx.fillRect(x, y, w, h);
-    });
-  } finally {
-    ctx.globalAlpha = 1;
-  }
-
-  updateMinimapViewport();
-
-  const cursorX = state.currentFrame * scale;
-  elements.minimapCursor.style.left = `${cursorX}px`;
+function updateMinimapCursor() {
+  const cursor = document.getElementById('minimap-cursor');
+  if (!cursor) return;
+  const length = Math.max(1, state.timelineLength);
+  cursor.style.left = `${(state.currentFrame / length) * 100}%`;
 }
 
 function updateMinimapViewport() {
-  const elements = getElements();
-  const track = elements.timelineTrack;
-  const container = elements.timelineMinimap;
-  const viewport = elements.minimapViewport;
-  if (!track || !container || !viewport) return;
+  // Placeholder: in the legacy canvas-based renderer, this drew a viewport
+  // rectangle showing the visible portion of the main timeline track. The
+  // new design uses a click-to-jump model and doesn't show a viewport
+  // overlay. Kept as a no-op so external callers (renderTimeline) don't
+  // need updating; Plan F can decide whether to bring it back.
+  const viewport = document.getElementById('minimap-viewport');
+  if (!viewport) return;
+  viewport.style.display = 'none';
+}
 
-  let maxFrame = state.timelineLength;
-  state.events.forEach((evt) => {
-    const endFrame = (evt.startFrame || 0) + getEventDuration(evt.type, evt);
-    if (endFrame > maxFrame) maxFrame = endFrame + 30;
-  });
-
-  if (maxFrame <= 0) return;
-
-  const containerWidth = container.getBoundingClientRect().width;
-  const scale = containerWidth / maxFrame;
-
-  const scrollLeft = track.scrollLeft;
-  const visibleWidth = track.clientWidth;
-  const visibleStartFrame = scrollLeft / state.timelineScale;
-  const visibleEndFrame = (scrollLeft + visibleWidth) / state.timelineScale;
-
-  const viewportLeft = visibleStartFrame * scale;
-  const viewportWidth = Math.min((visibleEndFrame - visibleStartFrame) * scale, containerWidth);
-
-  viewport.style.left = `${Math.max(0, viewportLeft)}px`;
-  viewport.style.width = `${Math.max(20, viewportWidth)}px`;
+/**
+ * @param {MouseEvent} e
+ */
+function handleMinimapClick(e) {
+  const track = getTrack();
+  if (!track) return;
+  const rect = track.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const length = Math.max(1, state.timelineLength);
+  const frame = Math.max(0, Math.min(length, Math.round((x / rect.width) * length)));
+  state.currentFrame = frame;
+  updateMinimapCursor();
+  eventBus.emit(Events.RENDER_PREVIEW, frame);
+  eventBus.emit(Events.RENDER_TIMELINE);
 }
 
 function initMinimapEvents() {
   if (_minimapInitialized) return;
   _minimapInitialized = true;
-
-  const elements = getElements();
-  const minimap = elements.timelineMinimap;
-  const track = elements.timelineTrack;
-  if (!minimap || !track) return;
-
-  minimap.addEventListener('mousedown', (e) => {
-    state.minimapDragging = true;
-    handleMinimapClick(e);
-  });
-
-  document.addEventListener('mousemove', (e) => {
-    if (state.minimapDragging) {
-      handleMinimapClick(e);
-    }
-  });
-
-  document.addEventListener('mouseup', () => {
-    state.minimapDragging = false;
-  });
-
-  track.addEventListener('scroll', () => {
-    updateMinimapViewport();
-  });
-
-  let resizeRaf = null;
-  _resizeHandler = () => {
-    if (resizeRaf) cancelAnimationFrame(resizeRaf);
-    resizeRaf = requestAnimationFrame(() => {
-      updateCachedContainerWidth();
-      renderMinimap();
-      resizeRaf = null;
-    });
-  };
+  const track = getTrack();
+  if (!track) return;
+  track.addEventListener('click', handleMinimapClick);
+  _resizeHandler = updateCachedContainerWidth;
   window.addEventListener('resize', _resizeHandler);
-
-  // Initialize cached width
   updateCachedContainerWidth();
 }
 
-function handleMinimapClick(e) {
-  const elements = getElements();
-  const minimap = elements.timelineMinimap;
-  const track = elements.timelineTrack;
-  if (!minimap || !track) return;
-
-  const rect = minimap.getBoundingClientRect();
-  const x = Math.max(0, e.clientX - rect.left);
-  const containerWidth = rect.width;
-
-  let maxFrame = state.timelineLength;
-  state.events.forEach((evt) => {
-    const endFrame = (evt.startFrame || 0) + getEventDuration(evt.type, evt);
-    if (endFrame > maxFrame) maxFrame = endFrame + 30;
-  });
-
-  const clickFrame = (x / containerWidth) * maxFrame;
-  const visibleWidth = track.clientWidth;
-  const targetScrollPixels = clickFrame * state.timelineScale - visibleWidth / 2;
-  track.scrollLeft = Math.max(0, targetScrollPixels);
-
-  state.currentFrame = Math.round(clickFrame / 10) * 10;
-
-  eventBus.emit(Events.RENDER_TIMELINE);
-  eventBus.emit(Events.RENDER_PREVIEW, state.currentFrame);
-}
-
-function updateCachedContainerWidth() {
-  const container = getElements().timelineMinimap;
-  if (container) _cachedContainerWidth = container.getBoundingClientRect().width;
-}
-
-// Lightweight cursor-only update for playback (avoids full canvas redraw)
-function updateMinimapCursor() {
-  const elements = getElements();
-  if (!elements.minimapCursor || _cachedContainerWidth <= 0) return;
-
-  let maxFrame = state.timelineLength;
-  for (const evt of state.events) {
-    const endFrame = (evt.startFrame || 0) + getEventDuration(evt.type, evt);
-    if (endFrame > maxFrame) maxFrame = endFrame + 30;
-  }
-
-  if (maxFrame <= 0) return;
-
-  const scale = _cachedContainerWidth / maxFrame;
-  elements.minimapCursor.style.left = `${state.currentFrame * scale}px`;
-}
-
 function teardownMinimapEvents() {
+  if (!_minimapInitialized) return;
+  _minimapInitialized = false;
+  const track = getTrack();
+  if (track) track.removeEventListener('click', handleMinimapClick);
   if (_resizeHandler) {
     window.removeEventListener('resize', _resizeHandler);
     _resizeHandler = null;
@@ -223,8 +111,8 @@ export {
   renderMinimap,
   updateMinimapCursor,
   updateMinimapViewport,
-  updateCachedContainerWidth,
+  handleMinimapClick,
   initMinimapEvents,
   teardownMinimapEvents,
-  MINIMAP_COLORS
+  updateCachedContainerWidth
 };

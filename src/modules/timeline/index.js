@@ -2,20 +2,30 @@
 // Timeline Dispatcher
 // ============================================
 
-import { state, TIMELINE_LANES, LANE_HEIGHT } from '../state.js';
+import { state } from '../state.js';
 import { getElements } from '../elements.js';
 import { getEventLane, getEventDuration, selectEvent } from '../events.js';
 import { renderMinimap, updateMinimapCursor } from './minimap.js';
-import { startTimelineDrag } from './drag.js';
+import { startTimelineDrag, startTimelineResize } from './drag.js';
 import { renderProperties } from '../properties/index.js';
 
-function initTimeline() {
-  const elements = getElements();
-  elements.timelineLanes.innerHTML = TIMELINE_LANES.map(
-    (name) => `<div class="timeline-lane-label">${name}</div>`
-  ).join('');
-  renderTimeline();
-}
+const PX_PER_FRAME_DEFAULT = 5; // Matches state.timelineScale's existing default
+
+/**
+ * Lane metadata. Indices match TIMELINE_LANES from state.js.
+ */
+const LANE_META = [
+  { name: 'Pictures', code: 'PIC', data: 'pic' },
+  { name: 'Effects', code: 'FX', data: 'fx' },
+  { name: 'Text', code: 'TXT', data: 'txt' },
+  { name: 'Timing', code: 'AUX', data: 'aux' }
+];
+
+const POINT_EVENT_TYPES = new Set(['rotatePicture', 'erasePicture']);
+
+// ============================================
+// Pure label helper
+// ============================================
 
 function getTimelineEventLabel(evt) {
   switch (evt.type) {
@@ -40,161 +50,246 @@ function getTimelineEventLabel(evt) {
   }
 }
 
-function renderTimeline() {
-  const elements = getElements();
+// ============================================
+// Render helpers
+// ============================================
 
-  let maxFrame = state.timelineLength;
-  state.events.forEach((evt) => {
-    const endFrame = (evt.startFrame || 0) + getEventDuration(evt.type, evt);
-    if (endFrame > maxFrame) maxFrame = endFrame + 30;
-  });
+/**
+ * Render the 4 lane heads in the lanes column. Each shows: lane-colored
+ * swatch, name, mono `CODE · N clip(s)` line, and decorative eye/lock
+ * icon buttons.
+ */
+function renderLanesCol() {
+  const els = getElements();
+  const col = els.timelineLanes;
 
-  const totalWidth = maxFrame * state.timelineScale;
-
-  // Render ruler
-  elements.timelineRuler.innerHTML = '';
-  elements.timelineRuler.style.width = `${totalWidth}px`;
-  for (let f = 0; f <= maxFrame; f += 10) {
-    const mark = document.createElement('div');
-    mark.className = `timeline-ruler-mark${f % 60 === 0 ? ' major' : ''}`;
-    mark.style.left = `${f * state.timelineScale}px`;
-    if (f % 60 === 0) {
-      mark.textContent = `${f}`;
-    }
-    elements.timelineRuler.appendChild(mark);
+  const counts = [0, 0, 0, 0];
+  for (const ev of state.events) {
+    const idx = getEventLane(ev.type);
+    if (idx >= 0 && idx < counts.length) counts[idx]++;
   }
 
-  // Calculate sub-rows for overlapping events
-  const laneSubRows = [[], [], []];
-  const eventSubRowMap = new Map();
+  while (col.firstChild) col.removeChild(col.firstChild);
 
-  state.events.forEach((evt, index) => {
-    const startFrame = evt.startFrame || 0;
-    const duration = getEventDuration(evt.type, evt);
-    const endFrame = startFrame + duration;
-    const lane = getEventLane(evt.type);
+  for (let i = 0; i < LANE_META.length; i++) {
+    const meta = LANE_META[i];
+    const head = document.createElement('div');
+    head.className = 'lane-head';
+    head.dataset.lane = meta.data;
 
-    if (evt.type === 'showText') {
-      laneSubRows[lane][0] = laneSubRows[lane][0] || [];
-      laneSubRows[lane][0].push({ start: startFrame, end: endFrame });
-      eventSubRowMap.set(index, 0);
-      return;
-    }
+    const swatch = document.createElement('div');
+    swatch.className = 'swatch';
+    head.appendChild(swatch);
 
-    let subRow = 0;
-    const laneRows = laneSubRows[lane];
-    while (true) {
-      if (!laneRows[subRow]) laneRows[subRow] = [];
-      const hasOverlap = laneRows[subRow].some((range) => !(endFrame <= range.start || startFrame >= range.end));
-      if (!hasOverlap) break;
-      subRow++;
-    }
-    laneRows[subRow].push({ start: startFrame, end: endFrame });
-    eventSubRowMap.set(index, subRow);
-  });
+    const info = document.createElement('div');
+    info.className = 'lane-info';
+    const nameEl = document.createElement('div');
+    nameEl.className = 'lane-name';
+    nameEl.textContent = meta.name;
+    info.appendChild(nameEl);
+    const codeEl = document.createElement('div');
+    codeEl.className = 'lane-count';
+    codeEl.textContent = `${meta.code} · ${counts[i]} ${counts[i] === 1 ? 'clip' : 'clips'}`;
+    info.appendChild(codeEl);
+    head.appendChild(info);
 
-  const maxSubRows = laneSubRows.map((rows) => Math.max(1, rows.length));
-  const laneOffsets = [0];
-  for (let i = 1; i < TIMELINE_LANES.length; i++) {
-    laneOffsets[i] = laneOffsets[i - 1] + maxSubRows[i - 1] * LANE_HEIGHT;
+    const tools = document.createElement('div');
+    tools.className = 'lane-toggle';
+    const eye = document.createElement('button');
+    eye.type = 'button';
+    eye.className = 'icon-btn';
+    eye.title = 'Toggle visibility (decorative)';
+    eye.textContent = '◉';
+    const lock = document.createElement('button');
+    lock.type = 'button';
+    lock.className = 'icon-btn';
+    lock.title = 'Lock lane (decorative)';
+    lock.textContent = '⌘';
+    tools.appendChild(eye);
+    tools.appendChild(lock);
+    head.appendChild(tools);
+
+    col.appendChild(head);
   }
-  const totalHeight = laneOffsets[TIMELINE_LANES.length - 1] + maxSubRows[TIMELINE_LANES.length - 1] * LANE_HEIGHT;
+}
 
-  // Render events area
-  elements.timelineEvents.innerHTML = '';
-  elements.timelineEvents.style.width = `${totalWidth}px`;
-  elements.timelineEvents.style.height = `${totalHeight}px`;
+/**
+ * Render the sticky ruler ticks. One tick every 30 frames; the every-60
+ * (1-second) ticks get the `.major.second` class for amber emphasis.
+ */
+function renderRuler() {
+  const els = getElements();
+  const ruler = els.timelineRuler;
+  const length = state.timelineLength;
+  const px = state.timelineScale || PX_PER_FRAME_DEFAULT;
 
-  // Update lane labels
-  elements.timelineLanes.innerHTML = TIMELINE_LANES.map(
-    (name, i) => `<div class="timeline-lane-label" style="height: ${maxSubRows[i] * LANE_HEIGHT}px">${name}</div>`
-  ).join('');
+  while (ruler.firstChild) ruler.removeChild(ruler.firstChild);
+  ruler.style.width = `${length * px}px`;
 
-  // Add lane row backgrounds
-  for (let i = 0; i < TIMELINE_LANES.length; i++) {
-    for (let sr = 0; sr < maxSubRows[i]; sr++) {
-      const row = document.createElement('div');
-      row.className = `timeline-lane-row${sr % 2 === 1 ? ' alt' : ''}`;
-      row.style.top = `${laneOffsets[i] + sr * LANE_HEIGHT}px`;
-      row.style.width = `${totalWidth}px`;
-      row.style.height = `${LANE_HEIGHT}px`;
-      row.style.position = 'absolute';
-      elements.timelineEvents.appendChild(row);
-    }
-    if (i < TIMELINE_LANES.length - 1) {
-      const separator = document.createElement('div');
-      separator.className = 'timeline-lane-separator';
-      separator.style.top = `${laneOffsets[i] + maxSubRows[i] * LANE_HEIGHT - 1}px`;
-      separator.style.width = `${totalWidth}px`;
-      elements.timelineEvents.appendChild(separator);
-    }
+  for (let f = 0; f <= length; f += 30) {
+    const tick = document.createElement('span');
+    tick.className = 'ruler-tick major';
+    if (f % 60 === 0) tick.classList.add('second');
+    tick.style.left = `${f * px}px`;
+    tick.textContent = String(f);
+    ruler.appendChild(tick);
+  }
+}
+
+/**
+ * Render the event blocks into 4 lane rows inside the track. Point events
+ * (Rotate, Erase) are narrow (22px) chips with a downward triangle (drawn
+ * by CSS via .is-point::after). Duration events get edge handles for
+ * resize. Selected event gets the `.is-selected` class.
+ */
+function renderEventBlocks() {
+  const els = getElements();
+  const track = els.timelineEvents;
+  const length = state.timelineLength;
+  const px = state.timelineScale || PX_PER_FRAME_DEFAULT;
+
+  while (track.firstChild) track.removeChild(track.firstChild);
+  track.style.width = `${length * px}px`;
+  track.style.position = 'relative';
+
+  // 4 lane rows (CSS makes them flex 1 each within the track height)
+  const laneRows = [];
+  for (let i = 0; i < LANE_META.length; i++) {
+    const row = document.createElement('div');
+    row.className = 'lane-row';
+    row.dataset.lane = LANE_META[i].data;
+    row.dataset.laneIndex = String(i);
+    row.style.position = 'relative';
+    track.appendChild(row);
+    laneRows.push(row);
   }
 
-  // Add grid lines
-  for (let f = 0; f <= maxFrame; f += 30) {
-    const gridLine = document.createElement('div');
-    gridLine.className = `timeline-grid-line${f % 60 === 0 ? ' major' : ''}`;
-    gridLine.style.left = `${f * state.timelineScale}px`;
-    gridLine.style.height = `${totalHeight}px`;
-    elements.timelineEvents.appendChild(gridLine);
-  }
+  for (let i = 0; i < state.events.length; i++) {
+    const ev = state.events[i];
+    const laneIdx = getEventLane(ev.type);
+    const row = laneRows[laneIdx];
+    if (!row) continue;
 
-  // Render events
-  state.events.forEach((evt, index) => {
-    const eventEl = document.createElement('div');
-    eventEl.className = `timeline-event${index === state.selectedEventIndex ? ' selected' : ''}`;
-    eventEl.dataset.index = index;
-    eventEl.dataset.type = evt.type;
+    const block = document.createElement('div');
+    block.className = 'event-block';
+    block.dataset.eventIndex = String(i);
+    block.dataset.lane = LANE_META[laneIdx].data;
+    if (i === state.selectedEventIndex) block.classList.add('is-selected');
 
-    const startFrame = evt.startFrame || 0;
-    const duration = getEventDuration(evt.type, evt);
-    const lane = getEventLane(evt.type);
-    const subRow = eventSubRowMap.get(index) || 0;
+    const start = ev.startFrame || 0;
+    const dur = getEventDuration(ev.type, ev);
 
-    eventEl.style.left = `${startFrame * state.timelineScale}px`;
-    eventEl.style.top = `${laneOffsets[lane] + subRow * LANE_HEIGHT + 1}px`;
-    const minWidth = evt.type === 'showText' || evt.type === 'erasePicture' ? 50 : 20;
-    eventEl.style.width = `${Math.max(duration * state.timelineScale, minWidth)}px`;
+    if (POINT_EVENT_TYPES.has(ev.type)) {
+      block.classList.add('is-point');
+      block.style.left = `${start * px}px`;
+      block.style.width = '22px';
+    } else {
+      block.style.left = `${start * px}px`;
+      block.style.width = `${Math.max(8, dur) * px}px`;
+    }
 
-    eventEl.textContent = getTimelineEventLabel(evt);
-    eventEl.title = `${evt.type} @ frame ${startFrame}`;
+    const label = document.createElement('span');
+    label.className = 'event-label';
+    label.textContent = getTimelineEventLabel(ev);
+    block.appendChild(label);
 
-    eventEl.addEventListener('click', (e) => {
+    if (!POINT_EVENT_TYPES.has(ev.type)) {
+      const lh = document.createElement('div');
+      lh.className = 'event-handle-l';
+      lh.addEventListener('mousedown', (e) => startTimelineResize(e, ev, i, 'left'));
+      block.appendChild(lh);
+      const rh = document.createElement('div');
+      rh.className = 'event-handle-r';
+      rh.addEventListener('mousedown', (e) => startTimelineResize(e, ev, i, 'right'));
+      block.appendChild(rh);
+    }
+
+    block.addEventListener('click', (e) => {
       e.stopPropagation();
-      selectEvent(index);
+      selectEvent(i);
       renderTimeline();
-      // Re-render properties through callback
       renderProperties();
     });
 
-    eventEl.addEventListener('mousedown', (e) => startTimelineDrag(e, evt, index));
+    block.addEventListener('mousedown', (e) => startTimelineDrag(e, ev, i));
 
-    elements.timelineEvents.appendChild(eventEl);
-  });
+    row.appendChild(block);
+  }
+}
 
-  // Update cursor
-  elements.timelineCursor.style.left = `${state.currentFrame * state.timelineScale}px`;
-  elements.currentFrameDisplay.textContent = state.currentFrame;
+/**
+ * Update the transport readout chip cells. Frame is 4-digit zero-padded;
+ * Time is SS:FF where SS = floor(frame/60) and FF = frame % 60; Length
+ * is the editable input (skip update if user is currently typing in it);
+ * Events is the total count.
+ */
+function renderTransportReadout() {
+  const els = getElements();
+  const frame = state.currentFrame;
 
-  renderMinimap();
+  els.readoutFrame.textContent = String(frame).padStart(4, '0');
+
+  const secs = String(Math.floor(frame / 60)).padStart(2, '0');
+  const ff = String(frame % 60).padStart(2, '0');
+  els.readoutTime.textContent = `${secs}:${ff}`;
+
+  const lengthInput = /** @type {HTMLInputElement} */ (els.timelineLengthInput);
+  if (document.activeElement !== lengthInput) {
+    lengthInput.value = String(state.timelineLength);
+  }
+
+  els.readoutEvents.textContent = String(state.events.length);
+}
+
+// ============================================
+// Exports
+// ============================================
+
+function initTimeline() {
+  renderTimeline();
+}
+
+function renderTimeline() {
+  renderLanesCol();
+  renderRuler();
+  renderEventBlocks();
+  renderTransportReadout();
+  // Keep the existing minimap re-render hook — Task 7 swaps its internals
+  // from canvas to DOM but the function name stays the same.
+  if (typeof renderMinimap === 'function') renderMinimap();
 }
 
 // Lightweight cursor-only update for playback (avoids full DOM rebuild at 60fps)
 function updateTimelineCursor() {
-  const elements = getElements();
-  elements.timelineCursor.style.left = `${state.currentFrame * state.timelineScale}px`;
-  elements.currentFrameDisplay.textContent = state.currentFrame;
+  const els = getElements();
+  const cursor = els.timelineCursor;
+  const px = state.timelineScale || PX_PER_FRAME_DEFAULT;
+
+  cursor.style.left = `${state.currentFrame * px}px`;
+
+  // Build (or reuse) the grip badge that displays the current frame.
+  // Lives on the playhead's top edge per the design.
+  let grip = /** @type {HTMLElement | null} */ (cursor.querySelector('.playhead-grip'));
+  if (!grip) {
+    grip = document.createElement('div');
+    grip.className = 'playhead-grip';
+    cursor.appendChild(grip);
+  }
+  grip.textContent = `${String(state.currentFrame).padStart(4, '0')}f`;
+
+  // Keep the transport readout cells in lockstep with the playhead.
+  if (els.readoutFrame) renderTransportReadout();
 
   // Update selected highlight without full rebuild
-  const prevSelected = elements.timelineEvents.querySelector('.timeline-event.selected');
+  const prevSelected = els.timelineEvents.querySelector('.event-block.is-selected');
   if (prevSelected) {
-    const prevIdx = parseInt(prevSelected.dataset.index, 10);
+    const prevIdx = parseInt(prevSelected.dataset.eventIndex, 10);
     if (prevIdx !== state.selectedEventIndex) {
-      prevSelected.classList.remove('selected');
-      const newSelected = elements.timelineEvents.querySelector(
-        `.timeline-event[data-index="${state.selectedEventIndex}"]`
+      prevSelected.classList.remove('is-selected');
+      const newSelected = els.timelineEvents.querySelector(
+        `.event-block[data-event-index="${state.selectedEventIndex}"]`
       );
-      if (newSelected) newSelected.classList.add('selected');
+      if (newSelected) newSelected.classList.add('is-selected');
     }
   }
 
@@ -205,7 +300,8 @@ function onTimelineClick(e) {
   const elements = getElements();
   const rect = elements.timelineTrack.getBoundingClientRect();
   const x = e.clientX - rect.left + elements.timelineTrack.scrollLeft;
-  let newFrame = Math.max(0, Math.round(x / state.timelineScale));
+  const px = state.timelineScale || PX_PER_FRAME_DEFAULT;
+  let newFrame = Math.max(0, Math.round(x / px));
 
   if (!e.shiftKey) {
     newFrame = Math.round(newFrame / 10) * 10;

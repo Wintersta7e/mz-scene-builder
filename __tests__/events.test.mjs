@@ -88,11 +88,14 @@ describe('events', () => {
     it('returns lane 1 for effect events', () => {
       expect(getEventLane('tintPicture')).toBe(1);
       expect(getEventLane('screenFlash')).toBe(1);
-      expect(getEventLane('wait')).toBe(1);
     });
 
     it('returns lane 2 for text events', () => {
       expect(getEventLane('showText')).toBe(2);
+    });
+
+    it('returns lane 3 for timing events', () => {
+      expect(getEventLane('wait')).toBe(3);
     });
 
     it('returns lane 0 for unknown types', () => {
