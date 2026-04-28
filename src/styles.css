@@ -1583,8 +1583,11 @@ textarea.prop-input {
   position: relative;
   flex: 1;
   min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
 .lane-row {
+  flex: 1;
   position: relative;
   border-bottom: 1px solid var(--line-soft);
   background-image: linear-gradient(
