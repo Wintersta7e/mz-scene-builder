@@ -1,51 +1,57 @@
-// ============================================
-// Show Text Properties
-// ============================================
+// src/modules/properties/text.js
+//
+// Show Text section — text body, background style, position.
 
-import { getElements } from '../elements.js';
-import { bindInput } from './bind-input.js';
+import { buildSection, buildRow, buildSelect, commit } from './shared.js';
 
-function renderTextProperties(evt) {
-  const elements = getElements();
+export function renderTextProperties(ev, index) {
+  const wrap = document.createElement('div');
 
-  elements.propertiesPanel.innerHTML = `
-    <div class="property-group">
-      <h4>Text</h4>
-      <div class="property-row" style="flex-direction: column; align-items: stretch;">
-        <textarea id="prop-text" rows="6" style="width: 100%; resize: vertical; background: var(--bg-input); color: var(--text); border: 1px solid var(--border); border-radius: 3px; padding: 6px;"></textarea>
-      </div>
-    </div>
-    <div class="property-group">
-      <h4>Display</h4>
-      <div class="property-row">
-        <span class="property-label">Background:</span>
-        <div class="property-input">
-          <select id="prop-background">
-            <option value="0" ${evt.background === 0 ? 'selected' : ''}>Window</option>
-            <option value="1" ${evt.background === 1 ? 'selected' : ''}>Dim</option>
-            <option value="2" ${evt.background === 2 ? 'selected' : ''}>Transparent</option>
-          </select>
-        </div>
-      </div>
-      <div class="property-row">
-        <span class="property-label">Position:</span>
-        <div class="property-input">
-          <select id="prop-position">
-            <option value="0" ${evt.position === 0 ? 'selected' : ''}>Top</option>
-            <option value="1" ${evt.position === 1 ? 'selected' : ''}>Middle</option>
-            <option value="2" ${evt.position === 2 ? 'selected' : ''}>Bottom</option>
-          </select>
-        </div>
-      </div>
-    </div>
-  `;
+  // ----- Body -----
+  wrap.appendChild(
+    buildSection('Body', (body) => {
+      const ta = document.createElement('textarea');
+      ta.className = 'prop-input';
+      ta.rows = 4;
+      ta.value = ev.text || '';
+      ta.addEventListener('change', () => commit(ev, 'text', ta.value, index));
+      body.appendChild(ta);
+    })
+  );
 
-  // Set textarea value programmatically to prevent HTML injection
-  const textArea = document.getElementById('prop-text');
-  if (textArea) textArea.value = evt.text || '';
-  bindInput('prop-text', 'text', 'string');
-  bindInput('prop-background', 'background', 'number');
-  bindInput('prop-position', 'position', 'number');
+  // ----- Style -----
+  wrap.appendChild(
+    buildSection('Style', (body) => {
+      body.appendChild(
+        buildRow(
+          'Background',
+          buildSelect({
+            value: ev.background ?? 0,
+            options: [
+              { value: 0, label: 'Window' },
+              { value: 1, label: 'Dim' },
+              { value: 2, label: 'Transparent' }
+            ],
+            onChange: (v) => commit(ev, 'background', v, index)
+          })
+        )
+      );
+      body.appendChild(
+        buildRow(
+          'Position',
+          buildSelect({
+            value: ev.position ?? 2,
+            options: [
+              { value: 0, label: 'Top' },
+              { value: 1, label: 'Middle' },
+              { value: 2, label: 'Bottom' }
+            ],
+            onChange: (v) => commit(ev, 'position', v, index)
+          })
+        )
+      );
+    })
+  );
+
+  return wrap;
 }
-
-export { renderTextProperties };

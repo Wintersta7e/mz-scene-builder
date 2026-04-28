@@ -1,118 +1,93 @@
-// ============================================
-// Tint Picture Properties
-// ============================================
+// src/modules/properties/tint.js
+//
+// Tint Picture section — color preview, tone presets, RGB+gray sliders.
 
-import { getElements } from '../elements.js';
-import { state } from '../state.js';
-import { markDirty } from '../undo-redo.js';
-import { rgbToHex, hexToRgb } from '../utils.js';
-import { bindInput } from './bind-input.js';
-import { eventBus, Events } from '../event-bus.js';
+import { buildSection, buildRow, buildSlider, buildColorBubble, buildTintPresets, commit } from './shared.js';
 
-function emitRender() {
-  markDirty();
-  eventBus.emit(Events.RENDER_TIMELINE);
-  eventBus.emit(Events.RENDER_PREVIEW, state.currentFrame);
+export function renderTintProperties(ev, index) {
+  const wrap = document.createElement('div');
+
+  // Refresh helper: redraw the section so color-bubble + slider readouts
+  // reflect the latest tone after a preset/slider change. Lazy-imported
+  // to avoid circular dep with index.js.
+  function refresh() {
+    import('./index.js').then((m) => m.renderProperties()).catch(() => {});
+  }
+
+  const previewColor = toneToCssColor({
+    r: ev.red ?? 0,
+    g: ev.green ?? 0,
+    b: ev.blue ?? 0,
+    gray: ev.gray ?? 0
+  });
+
+  // ----- Tone -----
+  wrap.appendChild(
+    buildSection('Tone', (body) => {
+      const tintRow = document.createElement('div');
+      tintRow.className = 'tint-row';
+      tintRow.appendChild(buildColorBubble({ color: previewColor }));
+      tintRow.appendChild(
+        buildTintPresets({
+          active: null,
+          onChange: (preset) => {
+            commit(ev, 'red', preset.r, index);
+            commit(ev, 'green', preset.g, index);
+            commit(ev, 'blue', preset.b, index);
+            commit(ev, 'gray', preset.gray, index);
+            refresh();
+          }
+        })
+      );
+      body.appendChild(tintRow);
+    })
+  );
+
+  // ----- Channels -----
+  wrap.appendChild(
+    buildSection('Channels', (body) => {
+      const fields = /** @type {const} */ ([
+        { label: 'Red', prop: 'red', min: -255, max: 255 },
+        { label: 'Green', prop: 'green', min: -255, max: 255 },
+        { label: 'Blue', prop: 'blue', min: -255, max: 255 },
+        { label: 'Gray', prop: 'gray', min: 0, max: 255 }
+      ]);
+      for (const f of fields) {
+        body.appendChild(
+          buildRow(
+            f.label,
+            buildSlider({
+              value: ev[f.prop] ?? 0,
+              min: f.min,
+              max: f.max,
+              onChange: (v) => {
+                commit(ev, f.prop, v, index);
+                refresh();
+              }
+            })
+          )
+        );
+      }
+    })
+  );
+
+  return wrap;
 }
 
-function renderTintProperties(evt) {
-  const elements = getElements();
-
-  const r = Math.max(0, Math.min(255, evt.red + 128));
-  const g = Math.max(0, Math.min(255, evt.green + 128));
-  const b = Math.max(0, Math.min(255, evt.blue + 128));
-  const hexColor = rgbToHex(r, g, b);
-
-  elements.propertiesPanel.innerHTML = `
-    <div class="property-group">
-      <h4>Target</h4>
-      <div class="property-row">
-        <span class="property-label">Picture #:</span>
-        <div class="property-input">
-          <input type="number" id="prop-picture-number" value="${evt.pictureNumber}" min="1" max="100">
-        </div>
-      </div>
-    </div>
-    <div class="property-group">
-      <h4>Tint Color</h4>
-      <div class="property-row">
-        <span class="property-label">Color:</span>
-        <div class="property-input" style="display: flex; gap: 6px; align-items: center;">
-          <input type="color" id="prop-tint-color" value="${hexColor}" style="width: 50px; height: 24px; padding: 0; border: none;">
-          <span id="prop-tint-preview" style="font-size: 9px;">(${evt.red}, ${evt.green}, ${evt.blue})</span>
-        </div>
-      </div>
-      <div class="property-row">
-        <span class="property-label">Gray:</span>
-        <div class="property-input">
-          <input type="range" id="prop-gray" value="${evt.gray}" min="0" max="255" style="width: 80px;">
-          <span id="prop-gray-val">${evt.gray}</span>
-        </div>
-      </div>
-      <div class="color-presets" style="display: flex; gap: 3px; margin-top: 6px; flex-wrap: wrap;">
-        <button class="btn btn-sm color-preset" data-r="0" data-g="0" data-b="0" style="background: #808080; width: 20px; height: 20px; padding: 0;" title="Normal"></button>
-        <button class="btn btn-sm color-preset" data-r="68" data-g="68" data-b="68" style="background: #c4c4c4; width: 20px; height: 20px; padding: 0;" title="Bright"></button>
-        <button class="btn btn-sm color-preset" data-r="-68" data-g="-68" data-b="-68" style="background: #3c3c3c; width: 20px; height: 20px; padding: 0;" title="Dark"></button>
-        <button class="btn btn-sm color-preset" data-r="68" data-g="-68" data-b="-68" style="background: #c43c3c; width: 20px; height: 20px; padding: 0;" title="Red"></button>
-        <button class="btn btn-sm color-preset" data-r="-68" data-g="68" data-b="-68" style="background: #3cc43c; width: 20px; height: 20px; padding: 0;" title="Green"></button>
-        <button class="btn btn-sm color-preset" data-r="-68" data-g="-68" data-b="68" style="background: #3c3cc4; width: 20px; height: 20px; padding: 0;" title="Blue"></button>
-        <button class="btn btn-sm color-preset" data-r="68" data-g="68" data-b="-68" style="background: #c4c43c; width: 20px; height: 20px; padding: 0;" title="Yellow"></button>
-        <button class="btn btn-sm color-preset" data-r="-68" data-g="34" data-b="68" style="background: #3c62c4; width: 20px; height: 20px; padding: 0;" title="Night"></button>
-        <button class="btn btn-sm color-preset" data-r="34" data-g="17" data-b="-34" style="background: #a291ac; width: 20px; height: 20px; padding: 0;" title="Sepia"></button>
-      </div>
-    </div>
-    <div class="property-group">
-      <h4>Timing</h4>
-      <div class="property-row">
-        <span class="property-label">Duration:</span>
-        <div class="property-input">
-          <input type="number" id="prop-duration" value="${evt.duration}" min="1"> frames
-        </div>
-      </div>
-      <div class="property-row">
-        <span class="property-label">Wait:</span>
-        <div class="property-input">
-          <input type="checkbox" id="prop-wait" ${evt.wait ? 'checked' : ''}>
-        </div>
-      </div>
-    </div>
-  `;
-
-  bindInput('prop-picture-number', 'pictureNumber', 'number');
-  bindInput('prop-duration', 'duration', 'number');
-  bindInput('prop-wait', 'wait', 'boolean');
-
-  // Color picker handler
-  const colorPicker = document.getElementById('prop-tint-color');
-  const preview = document.getElementById('prop-tint-preview');
-  colorPicker.addEventListener('input', () => {
-    const rgb = hexToRgb(colorPicker.value);
-    evt.red = rgb.r - 128;
-    evt.green = rgb.g - 128;
-    evt.blue = rgb.b - 128;
-    preview.textContent = `(${evt.red}, ${evt.green}, ${evt.blue})`;
-    emitRender();
-  });
-
-  // Gray slider handler
-  const graySlider = document.getElementById('prop-gray');
-  const grayVal = document.getElementById('prop-gray-val');
-  graySlider.addEventListener('input', () => {
-    evt.gray = parseInt(graySlider.value, 10);
-    grayVal.textContent = evt.gray;
-    emitRender();
-  });
-
-  // Color presets
-  document.querySelectorAll('.color-preset').forEach((btn) => {
-    btn.addEventListener('click', () => {
-      evt.red = parseInt(btn.dataset.r, 10);
-      evt.green = parseInt(btn.dataset.g, 10);
-      evt.blue = parseInt(btn.dataset.b, 10);
-      renderTintProperties(evt);
-      emitRender();
-    });
-  });
+/**
+ * Naive bubble preview color from RGB tone deltas + gray amount.
+ * @param {{ r: number; g: number; b: number; gray: number }} tone
+ */
+function toneToCssColor({ r, g, b, gray }) {
+  const base = 128;
+  const cr = clamp(base + r, 0, 255);
+  const cg = clamp(base + g, 0, 255);
+  const cb = clamp(base + b, 0, 255);
+  const grayPct = (gray / 255) * 0.5;
+  const lerp = (c) => c * (1 - grayPct) + base * grayPct;
+  return `rgb(${Math.round(lerp(cr))}, ${Math.round(lerp(cg))}, ${Math.round(lerp(cb))})`;
 }
 
-export { renderTintProperties };
+function clamp(v, min, max) {
+  return Math.max(min, Math.min(max, v));
+}

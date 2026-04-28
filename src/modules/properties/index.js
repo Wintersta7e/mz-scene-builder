@@ -1,63 +1,64 @@
-// ============================================
-// Properties Panel Dispatcher
-// ============================================
+// src/modules/properties/index.js
+//
+// Inspector dispatcher. Builds the Director's Console inspector
+// content based on the currently-selected event.
 
 import { state } from '../state.js';
 import { getElements } from '../elements.js';
+import { buildEventTag, buildTimingSection } from './shared.js';
 import { renderPictureProperties } from './picture.js';
 import { renderMoveProperties } from './move.js';
 import { renderTintProperties } from './tint.js';
 import { renderTextProperties } from './text.js';
 import { renderRotateProperties, renderEraseProperties, renderWaitProperties, renderFlashProperties } from './other.js';
 
-function showPlaceholder(panel) {
-  const p = document.createElement('p');
-  p.className = 'placeholder';
-  p.textContent = 'Select an event to edit properties';
-  panel.replaceChildren(p);
+const SECTION_RENDERERS = {
+  showPicture: renderPictureProperties,
+  movePicture: renderMoveProperties,
+  tintPicture: renderTintProperties,
+  showText: renderTextProperties,
+  rotatePicture: renderRotateProperties,
+  erasePicture: renderEraseProperties,
+  wait: renderWaitProperties,
+  screenFlash: renderFlashProperties
+};
+
+const TYPES_WITH_DURATION = new Set(['showPicture', 'movePicture', 'tintPicture', 'screenFlash', 'wait']);
+
+export function showPlaceholder() {
+  const panel = getElements().propertiesPanel;
+  while (panel.firstChild) panel.removeChild(panel.firstChild);
+
+  const wrap = document.createElement('div');
+  wrap.className = 'empty-state';
+
+  const cog = document.createElement('div');
+  cog.className = 'empty-icon';
+  cog.textContent = '⚙';
+  wrap.appendChild(cog);
+
+  const msg = document.createElement('div');
+  msg.className = 'empty-msg';
+  msg.textContent = 'Select an event on the timeline or stage to edit its properties.';
+  wrap.appendChild(msg);
+
+  panel.appendChild(wrap);
 }
 
-function renderProperties() {
-  const elements = getElements();
+export function renderProperties() {
+  const panel = getElements().propertiesPanel;
+  while (panel.firstChild) panel.removeChild(panel.firstChild);
 
-  if (state.selectedEventIndex < 0) {
-    showPlaceholder(elements.propertiesPanel);
+  const idx = state.selectedEventIndex;
+  const ev = idx >= 0 ? state.events[idx] : null;
+  if (!ev) {
+    showPlaceholder();
     return;
   }
 
-  const evt = state.events[state.selectedEventIndex];
-  if (!evt) {
-    state.selectedEventIndex = -1;
-    showPlaceholder(elements.propertiesPanel);
-    return;
-  }
+  panel.appendChild(buildEventTag(idx, ev));
+  panel.appendChild(buildTimingSection(ev, idx, { showDuration: TYPES_WITH_DURATION.has(ev.type) }));
 
-  switch (evt.type) {
-    case 'showPicture':
-      renderPictureProperties(evt);
-      break;
-    case 'movePicture':
-      renderMoveProperties(evt);
-      break;
-    case 'rotatePicture':
-      renderRotateProperties(evt);
-      break;
-    case 'tintPicture':
-      renderTintProperties(evt);
-      break;
-    case 'erasePicture':
-      renderEraseProperties(evt);
-      break;
-    case 'showText':
-      renderTextProperties(evt);
-      break;
-    case 'wait':
-      renderWaitProperties(evt);
-      break;
-    case 'screenFlash':
-      renderFlashProperties(evt);
-      break;
-  }
+  const renderer = SECTION_RENDERERS[ev.type];
+  if (renderer) panel.appendChild(renderer(ev, idx));
 }
-
-export { renderProperties };

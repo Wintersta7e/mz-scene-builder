@@ -45,7 +45,7 @@ function closeImagePicker() {
 
 function renderPickerFolders(items, container = null) {
   const elements = getElements();
-  if (!container) container = elements.pickerFolders;
+  const target = container ?? elements.pickerFolders;
 
   for (const item of items) {
     if (item.type === 'folder') {
@@ -101,7 +101,7 @@ function renderPickerFolders(items, container = null) {
         );
       }
 
-      container.appendChild(folderEl);
+      target.appendChild(folderEl);
     }
   }
 }

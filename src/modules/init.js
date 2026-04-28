@@ -16,7 +16,6 @@ import { startAutosave, stopAutosave, checkAutosaveRecovery } from './autosave.j
 import { initTimeline, renderTimeline, onTimelineClick, updateTimelineCursor } from './timeline/index.js';
 import { initMinimapEvents, teardownMinimapEvents, updateCachedContainerWidth } from './timeline/minimap.js';
 import { renderProperties } from './properties/index.js';
-import { setupPropertyDelegation } from './properties/bind-input.js';
 import { renderPreviewAtFrame, resizePreviewCanvas } from './preview/index.js';
 import { closeImagePicker } from './preview/image-picker.js';
 import { filterImages } from './preview/image-browser.js';
@@ -241,9 +240,6 @@ function init() {
 
   // Set up event bus listeners for rendering
   setupEventBusListeners();
-
-  // Set up property delegation
-  setupPropertyDelegation(elements.propertiesPanel);
 
   // Keyboard save callback (not render-related)
   setSaveCallback(saveScene);
