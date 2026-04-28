@@ -227,8 +227,8 @@ function duplicateSelectedEvent() {
 function clearImageSelection() {
   const elements = getElements();
   state.selectedImages.clear();
-  elements.imageBrowser.querySelectorAll('.image-item.selected').forEach((item) => {
-    item.classList.remove('selected');
+  elements.imageBrowser.querySelectorAll('.lib-item.is-active').forEach((item) => {
+    item.classList.remove('is-active');
   });
 }
 

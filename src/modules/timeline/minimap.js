@@ -17,7 +17,7 @@ let _resizeHandler = null;
 let _cachedContainerWidth = 0;
 let _minimapInitialized = false;
 
-const LANE_DATA = ['pic', 'fx', 'txt', 'aux'];
+const LANE_DATA = ['picture', 'effect', 'text', 'aux'];
 
 function getTrack() {
   return document.getElementById('minimap-track');

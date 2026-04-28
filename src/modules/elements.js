@@ -63,7 +63,7 @@ function initElements() {
     timelineCursor: $('timeline-cursor'),
     // Minimap elements
     timelineMinimap: $('timeline-minimap'),
-    minimapCanvas: $('minimap-canvas'),
+    minimapTrack: $('minimap-track'),
     minimapViewport: $('minimap-viewport'),
     minimapCursor: $('minimap-cursor'),
     imagePickerModal: $('image-picker-modal'),

@@ -15,9 +15,9 @@ const PX_PER_FRAME_DEFAULT = 5; // Matches state.timelineScale's existing defaul
  * Lane metadata. Indices match TIMELINE_LANES from state.js.
  */
 const LANE_META = [
-  { name: 'Pictures', code: 'PIC', data: 'pic' },
-  { name: 'Effects', code: 'FX', data: 'fx' },
-  { name: 'Text', code: 'TXT', data: 'txt' },
+  { name: 'Pictures', code: 'PIC', data: 'picture' },
+  { name: 'Effects', code: 'FX', data: 'effect' },
+  { name: 'Text', code: 'TXT', data: 'text' },
   { name: 'Timing', code: 'AUX', data: 'aux' }
 ];
 
@@ -254,6 +254,7 @@ function renderTimeline() {
   renderRuler();
   renderEventBlocks();
   renderTransportReadout();
+  updateTimelineCursor();
   // Keep the existing minimap re-render hook — Task 7 swaps its internals
   // from canvas to DOM but the function name stays the same.
   if (typeof renderMinimap === 'function') renderMinimap();

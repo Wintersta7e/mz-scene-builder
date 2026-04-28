@@ -10,7 +10,7 @@ import { eventBus, Events } from '../event-bus.js';
 
 // ---------- Lane metadata ----------
 
-const LANE_DATA = ['pic', 'fx', 'txt', 'aux'];
+const LANE_DATA = ['picture', 'effect', 'text', 'aux'];
 
 const TYPE_LABELS = {
   showPicture: 'Show',

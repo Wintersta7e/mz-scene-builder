@@ -9,7 +9,7 @@ import { eventBus, Events } from '../event-bus.js';
 
 function findImagesAtPoint(clientX, clientY) {
   const elements = getElements();
-  const images = elements.previewCanvas.querySelectorAll('.preview-image');
+  const images = elements.previewCanvas.querySelectorAll('.stage-pic');
   const result = [];
 
   for (const img of images) {
@@ -32,8 +32,11 @@ function updateImagePosition(img, evt) {
 }
 
 function highlightSelectedImage() {
-  document.querySelectorAll('.preview-image, .preview-text').forEach((el) => {
-    el.classList.toggle('selected', parseInt(el.dataset.eventIndex, 10) === state.selectedEventIndex);
+  document.querySelectorAll('.stage-pic, .stage-text').forEach((el) => {
+    el.classList.toggle(
+      'is-selected',
+      parseInt(/** @type {HTMLElement} */ (el).dataset.eventIndex, 10) === state.selectedEventIndex
+    );
   });
 }
 
