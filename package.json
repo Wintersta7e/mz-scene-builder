@@ -1,7 +1,7 @@
 {
   "name": "timeline-scene-builder",
   "productName": "Timeline Scene Builder",
-  "version": "1.3.0",
+  "version": "2.0.0",
   "description": "Visual timeline editor for creating cutscenes and picture sequences",
   "main": "main.js",
   "scripts": {
