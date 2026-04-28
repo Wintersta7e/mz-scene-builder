@@ -1519,15 +1519,6 @@ textarea.prop-input {
   color: var(--text-4);
   letter-spacing: 0.1em;
 }
-.lane-head .lane-toggle {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-.lane-head .lane-toggle .icon-btn {
-  width: 18px;
-  height: 18px;
-}
 
 .timeline-track {
   position: relative;

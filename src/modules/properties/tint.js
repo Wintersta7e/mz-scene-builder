@@ -15,9 +15,11 @@ import {
 export function renderTintProperties(ev, index) {
   const wrap = document.createElement('div');
 
-  // Refresh helper: redraw the section so color-bubble + slider readouts
-  // reflect the latest tone after a preset/slider change. Lazy-imported
-  // to avoid circular dep with index.js.
+  // Refresh helper: redraw the section so the color bubble reflects the
+  // latest tone after a preset click. Sliders skip this and update only
+  // the stage preview to keep drags responsive — the inspector catches
+  // up on the next full render. Lazy-imported to avoid circular dep
+  // with index.js.
   function refresh() {
     import('./index.js').then((m) => m.renderProperties()).catch(() => {});
   }

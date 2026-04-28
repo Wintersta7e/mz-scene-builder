@@ -45,6 +45,9 @@ let topFolders = [];
  */
 let usageCounts = new Map();
 
+/** Folder paths whose lazy `get-folder-contents` IPC is currently in flight. */
+const _lazyLoading = /** @type {Set<string>} */ (new Set());
+
 // ---------- Helpers ----------
 
 function getThumbnailObserver() {
@@ -103,18 +106,24 @@ function flattenImageTree(items, parent = '', topFolder = '') {
       const childPath = parent ? `${parent}/${item.name}` : item.name;
       if (item.children) {
         out.push(...flattenImageTree(item.children, childPath, folderName));
-      } else {
-        // Lazy folder: trigger load. When IMAGES_LOADED fires again the tree
-        // will be flattened with this branch populated.
+      } else if (!_lazyLoading.has(item.path)) {
+        // Lazy folder: trigger load. The in-flight guard prevents repeat
+        // IPC calls for the same path while the previous request is still
+        // outstanding (re-flatten can be called many times before resolve).
+        _lazyLoading.add(item.path);
         api
           .invoke('get-folder-contents', item.path)
           .then((contents) => {
+            _lazyLoading.delete(item.path);
             if (contents && !contents.error) {
               item.children = contents;
               eventBus.emit(Events.IMAGES_LOADED);
             }
           })
-          .catch((err) => logger.warn('Lazy folder load failed', item.path, err));
+          .catch((err) => {
+            _lazyLoading.delete(item.path);
+            logger.warn('Lazy folder load failed', item.path, err);
+          });
       }
     } else if (item.type === 'file') {
       out.push({ name: item.name, path: item.path, folder: topFolder });
@@ -376,7 +385,6 @@ function renderFolderTree(_container, items) {
   state.libraryActiveFolder = null;
   renderFolderChips();
   renderLibraryList();
-  eventBus.emit(Events.IMAGES_LOADED);
 }
 
 function filterImages() {
@@ -421,6 +429,12 @@ eventBus.on(Events.RENDER_TIMELINE, () => {
 
 eventBus.on(Events.IMAGES_LOADED, () => {
   if (!_treeRoot) return;
+  // Re-flattening + re-rendering here makes any pending RENDER_TIMELINE
+  // throttle redundant — drop it so we don't double-render 120 ms later.
+  if (_libRefreshTimer) {
+    clearTimeout(_libRefreshTimer);
+    _libRefreshTimer = null;
+  }
   imageFlat = flattenImageTree(_treeRoot);
   topFolders = Array.from(new Set(imageFlat.map((it) => it.folder).filter(Boolean))).sort();
   renderFolderChips();
