@@ -419,6 +419,15 @@ function init() {
   if (btnAbout) btnAbout.addEventListener('click', showAboutModal);
   if (btnHelp) btnHelp.addEventListener('click', showShortcutsModal);
 
+  // Stage background click — deselect active event
+  const els = getElements();
+  els.previewCanvas.addEventListener('click', (e) => {
+    // Ignore clicks on child sprites/text (those have their own handlers).
+    if (e.target !== els.previewCanvas) return;
+    state.selectedEventIndex = -1;
+    eventBus.emit(Events.RENDER);
+  });
+
   // Initialize features
   initDragDrop();
   updateRecentProjectsDropdown();

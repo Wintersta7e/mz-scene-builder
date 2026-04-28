@@ -5,6 +5,7 @@
 import { state } from '../state.js';
 import { getElements } from '../elements.js';
 import { getEventLane, getEventDuration, selectEvent } from '../events.js';
+import { eventBus, Events } from '../event-bus.js';
 import { renderMinimap, updateMinimapCursor } from './minimap.js';
 import { startTimelineDrag, startTimelineResize } from './drag.js';
 import { renderProperties } from '../properties/index.js';
@@ -56,8 +57,7 @@ function getTimelineEventLabel(evt) {
 
 /**
  * Render the 4 lane heads in the lanes column. Each shows: lane-colored
- * swatch, name, mono `CODE · N clip(s)` line, and decorative eye/lock
- * icon buttons.
+ * swatch, name, and mono `CODE · N clip(s)` line.
  */
 function renderLanesCol() {
   const els = getElements();
@@ -92,22 +92,6 @@ function renderLanesCol() {
     codeEl.textContent = `${meta.code} · ${counts[i]} ${counts[i] === 1 ? 'clip' : 'clips'}`;
     info.appendChild(codeEl);
     head.appendChild(info);
-
-    const tools = document.createElement('div');
-    tools.className = 'lane-toggle';
-    const eye = document.createElement('button');
-    eye.type = 'button';
-    eye.className = 'icon-btn';
-    eye.title = 'Toggle visibility (decorative)';
-    eye.textContent = '◉';
-    const lock = document.createElement('button');
-    lock.type = 'button';
-    lock.className = 'icon-btn';
-    lock.title = 'Lock lane (decorative)';
-    lock.textContent = '⌘';
-    tools.appendChild(eye);
-    tools.appendChild(lock);
-    head.appendChild(tools);
 
     col.appendChild(head);
   }
@@ -247,6 +231,35 @@ function renderTransportReadout() {
 
 function initTimeline() {
   renderTimeline();
+
+  const els = getElements();
+  const cursor = els.timelineCursor;
+  const track = els.timelineEvents;
+
+  cursor.addEventListener('mousedown', (e) => {
+    if (e.button !== 0) return;
+    e.preventDefault();
+    e.stopPropagation();
+
+    const trackRect = track.getBoundingClientRect();
+    const px = state.timelineScale || PX_PER_FRAME_DEFAULT;
+
+    function move(ev) {
+      const x = ev.clientX - trackRect.left + track.scrollLeft;
+      const frame = Math.max(0, Math.min(state.timelineLength, Math.round(x / px)));
+      state.currentFrame = frame;
+      updateTimelineCursor();
+      eventBus.emit(Events.RENDER_PREVIEW, frame);
+    }
+
+    function up() {
+      document.removeEventListener('mousemove', move);
+      document.removeEventListener('mouseup', up);
+    }
+
+    document.addEventListener('mousemove', move);
+    document.addEventListener('mouseup', up);
+  });
 }
 
 function renderTimeline() {
