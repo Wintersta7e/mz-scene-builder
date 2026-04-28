@@ -50,6 +50,7 @@ async function openProjectPath(projPath) {
     markClean();
 
     state.projectPath = projPath;
+    eventBus.emit(Events.SCENE_PATH_CHANGED);
     logger.info('Project opened:', projPath);
     enableButtons(true);
     await loadFolderStructure();

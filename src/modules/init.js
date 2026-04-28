@@ -3,7 +3,7 @@
 // ============================================
 
 import { state } from './state.js';
-import { initElements } from './elements.js';
+import { initElements, getElements } from './elements.js';
 import { logger } from './logger.js';
 import { eventBus, Events } from './event-bus.js';
 import { addEvent, deleteSelectedEvent, clearScene } from './events.js';
@@ -153,6 +153,85 @@ function initResizeHandles() {
   });
 }
 
+function wireTopRail() {
+  const els = getElements();
+  const sceneNameInput = /** @type {HTMLInputElement} */ (els.sceneNameInput);
+
+  // ----- Scene-name input -----
+  // Persisting the typed name ties into a future scene-rename feature; for now we
+  // just trim and reflect (so empty input falls back to the placeholder name).
+  sceneNameInput.addEventListener('change', () => {
+    const next = sceneNameInput.value.trim() || 'Untitled Scene';
+    sceneNameInput.value = next;
+  });
+
+  // ----- Saved-time pill -----
+  /**
+   * @param {number | null} ts
+   * @returns {string}
+   */
+  function formatRelative(ts) {
+    if (!ts) return 'unsaved';
+    const sec = Math.max(0, Math.round((Date.now() - ts) / 1000));
+    if (sec < 5) return 'saved just now';
+    if (sec < 60) return `saved ${sec}s ago`;
+    const min = Math.round(sec / 60);
+    if (min < 60) return `saved ${min}m ago`;
+    const hr = Math.round(min / 60);
+    return `saved ${hr}h ago`;
+  }
+
+  /** @type {number | null} */
+  let lastSaveTs = null;
+  function refreshSavedTime() {
+    els.sceneSavedTime.textContent = formatRelative(lastSaveTs);
+  }
+  eventBus.on(Events.AUTOSAVE_SUCCESS, (/** @type {{ timestamp: number }} */ payload) => {
+    lastSaveTs = payload.timestamp;
+    refreshSavedTime();
+  });
+  // Tick every 10s so "12s ago" / "2m ago" stays current without re-emitting.
+  setInterval(refreshSavedTime, 10_000);
+
+  // ----- Scene/project path → folder name + scene-name input default -----
+  function refreshScenePath() {
+    const proj = state.projectPath;
+    const scene = state.currentScenePath;
+    els.sceneFolderName.textContent = proj ? proj.split(/[\\/]/).filter(Boolean).pop() || 'project' : 'no project';
+    if (scene && document.activeElement !== sceneNameInput) {
+      const base = scene.split(/[\\/]/).pop() || '';
+      sceneNameInput.value = base.replace(/\.mzscene$/i, '') || 'Untitled Scene';
+    }
+  }
+  eventBus.on(Events.SCENE_PATH_CHANGED, refreshScenePath);
+  eventBus.on(Events.PROJECT_LOADED, refreshScenePath);
+  refreshScenePath();
+
+  // ----- Segmented control (visual only — Plan F wires real behavior) -----
+  /** @type {HTMLElement[]} */
+  const segs = [els.segDesign, els.segPreview, els.segInspect];
+  for (const seg of segs) {
+    seg.addEventListener('click', () => {
+      for (const s of segs) {
+        const isActive = s === seg;
+        s.classList.toggle('is-active', isActive);
+        s.setAttribute('aria-selected', String(isActive));
+      }
+    });
+  }
+
+  // ----- Settings stub (Plan F provides the panel) -----
+  els.btnSettings.addEventListener('click', () => {
+    logger.info('Settings panel TBD (Plan F)');
+  });
+
+  // ----- Recent button mirrors the existing recent-projects dropdown -----
+  els.btnRecent.addEventListener('click', () => {
+    const dd = document.getElementById('recent-projects-dropdown');
+    if (dd) dd.classList.toggle('is-open');
+  });
+}
+
 function init() {
   // Initialize DOM elements cache
   const elements = initElements();
@@ -276,6 +355,7 @@ function init() {
   initRecentProjectsDropdown();
   initMinimapEvents();
   initResizeHandles();
+  wireTopRail();
 
   // Initial preview canvas resize
   requestAnimationFrame(() => resizePreviewCanvas());

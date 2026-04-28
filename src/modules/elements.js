@@ -62,7 +62,17 @@ function initElements() {
     // Virtual dropdown containers for export
     exportMapSelect: $('export-map-select'),
     exportEventSelect: $('export-event-select'),
-    exportPageSelect: $('export-page-select')
+    exportPageSelect: $('export-page-select'),
+    // Top rail (redesign-A)
+    sceneMeta: $('scene-meta'),
+    sceneNameInput: $('scene-name-input'),
+    sceneFolderName: $('scene-folder-name'),
+    sceneSavedTime: $('scene-saved-time'),
+    segDesign: $('seg-design'),
+    segPreview: $('seg-preview'),
+    segInspect: $('seg-inspect'),
+    btnSettings: $('btn-settings'),
+    btnRecent: $('btn-recent')
   };
 
   return elements;

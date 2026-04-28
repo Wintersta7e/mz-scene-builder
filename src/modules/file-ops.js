@@ -89,6 +89,7 @@ async function loadSceneFromFile(file) {
     state.timelineLength = data.timelineLength || 300;
     elements.timelineLengthInput.value = state.timelineLength;
     state.currentScenePath = file.name;
+    eventBus.emit(Events.SCENE_PATH_CHANGED);
 
     state.selectedEventIndex = -1;
     state.undoStack = [];
@@ -112,6 +113,7 @@ async function newScene() {
   state.selectedEventIndex = -1;
   state.currentFrame = 0;
   state.currentScenePath = null;
+  eventBus.emit(Events.SCENE_PATH_CHANGED);
   state.undoStack = [];
   state.redoStack = [];
   state.processedTextEvents.clear();
@@ -129,6 +131,7 @@ async function saveScene() {
     const result = await api.invoke('save-scene', sceneData);
     if (result) {
       state.currentScenePath = result;
+      eventBus.emit(Events.SCENE_PATH_CHANGED);
       logger.info('Scene saved:', result);
       markClean();
     }
