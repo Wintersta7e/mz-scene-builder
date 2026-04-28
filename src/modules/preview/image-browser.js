@@ -428,5 +428,6 @@ export {
   addSelectedImagesAsEvents,
   handleImageClick,
   loadThumbnail,
-  getThumbnailObserver
+  getThumbnailObserver,
+  flattenImageTree
 };

@@ -40,6 +40,7 @@ jest.unstable_mockModule('../src/modules/undo-redo.js', () => ({
 jest.unstable_mockModule('../src/modules/elements.js', () => ({
   getElements: jest.fn(() => ({
     deleteEvent: { disabled: false },
+    duplicateEvent: { disabled: false },
     imageBrowser: { querySelectorAll: jest.fn(() => []) }
   })),
   initElements: jest.fn()

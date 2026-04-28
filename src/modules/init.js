@@ -6,7 +6,7 @@ import { state } from './state.js';
 import { initElements, getElements } from './elements.js';
 import { logger } from './logger.js';
 import { eventBus, Events } from './event-bus.js';
-import { addEvent, deleteSelectedEvent, clearScene } from './events.js';
+import { addEvent, deleteSelectedEvent, duplicateSelectedEvent, clearScene } from './events.js';
 import { initDragDrop, newScene, loadScene, saveScene } from './file-ops.js';
 import { openProject, openProjectPath } from './project.js';
 import { updateRecentProjectsDropdown, initRecentProjectsDropdown } from './settings.js';
@@ -213,9 +213,7 @@ function wireTopRail() {
   for (const seg of segs) {
     seg.addEventListener('click', () => {
       for (const s of segs) {
-        const isActive = s === seg;
-        s.classList.toggle('is-active', isActive);
-        s.setAttribute('aria-selected', String(isActive));
+        s.classList.toggle('is-active', s === seg);
       }
     });
   }
@@ -288,6 +286,10 @@ function init() {
   });
   elements.deleteEvent.addEventListener('click', () => {
     deleteSelectedEvent();
+    renderProperties();
+  });
+  elements.duplicateEvent.addEventListener('click', () => {
+    duplicateSelectedEvent();
     renderProperties();
   });
   elements.clearScene.addEventListener('click', () => {

@@ -114,6 +114,33 @@ function durationField(evt) {
 const MIN_LENGTH = 8; // frames
 
 /**
+ * Pure resize math for an event block — no DOM, no state mutation.
+ * Used by startTimelineResize at every mousemove tick. Extracted so
+ * unit tests can verify the contract (preserve right edge, preserve
+ * start, never go negative, min length 8).
+ *
+ * @param {{
+ *   edge: 'left' | 'right';
+ *   startFrame: number;
+ *   startDur: number;
+ *   deltaFrames: number;
+ *   minLength?: number;
+ * }} args
+ * @returns {{ startFrame: number; duration: number }}
+ */
+function computeResize({ edge, startFrame, startDur, deltaFrames, minLength = MIN_LENGTH }) {
+  const startRight = startFrame + startDur;
+  if (edge === 'right') {
+    return { startFrame, duration: Math.max(minLength, startDur + deltaFrames) };
+  }
+  // left edge: keep right edge anchored
+  let newStart = startFrame + deltaFrames;
+  if (newStart > startRight - minLength) newStart = startRight - minLength;
+  if (newStart < 0) newStart = 0;
+  return { startFrame: newStart, duration: startRight - newStart };
+}
+
+/**
  * @param {MouseEvent} e
  * @param {any} evt
  * @param {number} index
@@ -130,7 +157,6 @@ function startTimelineResize(e, evt, index, edge) {
   const startX = e.clientX;
   const startFrame = evt.startFrame || 0;
   const startDur = getEventDuration(evt.type, evt);
-  const startRight = startFrame + startDur; // right edge anchor for left-handle drag
 
   state.timelineDragEvt = evt;
   state.timelineDragIndex = index;
@@ -139,18 +165,9 @@ function startTimelineResize(e, evt, index, edge) {
     const deltaPx = ev.clientX - startX;
     const deltaFrames = Math.round(deltaPx / state.timelineScale);
 
-    if (edge === 'right') {
-      const newDur = Math.max(MIN_LENGTH, startDur + deltaFrames);
-      evt[field] = newDur;
-    } else {
-      // left edge: keep right edge at startRight; clamp so duration >= MIN_LENGTH
-      let newStart = startFrame + deltaFrames;
-      if (newStart > startRight - MIN_LENGTH) newStart = startRight - MIN_LENGTH;
-      if (newStart < 0) newStart = 0;
-      const newDur = startRight - newStart;
-      evt.startFrame = newStart;
-      evt[field] = newDur;
-    }
+    const result = computeResize({ edge, startFrame, startDur, deltaFrames });
+    evt.startFrame = result.startFrame;
+    evt[field] = result.duration;
 
     // Optimistic visual update
     const elements = getElements();
@@ -181,4 +198,4 @@ function startTimelineResize(e, evt, index, edge) {
   e.stopPropagation();
 }
 
-export { startTimelineDrag, startTimelineResize };
+export { startTimelineDrag, startTimelineResize, computeResize };

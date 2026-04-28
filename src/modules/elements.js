@@ -49,6 +49,7 @@ function initElements() {
     addWait: $('btn-add-wait'),
     addFlash: $('btn-add-flash'),
     deleteEvent: $('btn-delete-event'),
+    duplicateEvent: $('btn-duplicate-event'),
     clearScene: $('btn-clear-scene'),
     // Timeline elements
     btnPlay: $('btn-play'),

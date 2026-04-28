@@ -198,6 +198,7 @@ function selectEvent(index) {
   const elements = getElements();
   state.selectedEventIndex = index;
   elements.deleteEvent.disabled = index < 0;
+  elements.duplicateEvent.disabled = index < 0;
 }
 
 function duplicateSelectedEvent() {
