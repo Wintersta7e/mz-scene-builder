@@ -17,7 +17,8 @@
     "lint:fix": "node node_modules/eslint/bin/eslint.js . --fix",
     "format": "node node_modules/prettier/bin/prettier.cjs --write .",
     "format:check": "node node_modules/prettier/bin/prettier.cjs --check .",
-    "prepare": "husky"
+    "prepare": "husky",
+    "fetch-fonts": "bash scripts/fetch-fonts.sh"
   },
   "keywords": [
     "rpg-maker",
