@@ -44,7 +44,7 @@ async function openImagePicker() {
   modal.setAttribute('aria-modal', 'true');
   modal.setAttribute('aria-label', 'Select Image');
 
-  modal.style.display = 'flex';
+  modal.style.display = 'grid';
 
   // Save focus origin for restore on close
   _pickerPreviousFocus = document.activeElement;

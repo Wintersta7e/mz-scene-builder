@@ -189,7 +189,8 @@ function deleteSelectedEvent() {
     logger.debug('Delete event:', evt.type, 'at index', state.selectedEventIndex);
     saveState('delete event');
     state.events.splice(state.selectedEventIndex, 1);
-    state.selectedEventIndex = Math.min(state.selectedEventIndex, state.events.length - 1);
+    const newIndex = state.events.length === 0 ? -1 : Math.min(state.selectedEventIndex, state.events.length - 1);
+    selectEvent(newIndex);
     eventBus.emit(Events.RENDER);
   }
 }
@@ -245,7 +246,7 @@ async function clearScene() {
 
   saveState('clear scene');
   state.events = [];
-  state.selectedEventIndex = -1;
+  selectEvent(-1);
   state.currentFrame = 0;
   eventBus.emit(Events.RENDER);
 }

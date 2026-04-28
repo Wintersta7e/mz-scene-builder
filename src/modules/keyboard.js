@@ -14,15 +14,21 @@ import { getPreviewScale } from './preview/index.js';
 import { togglePlayback } from './playback.js';
 
 /**
- * Check if target is an editable element (input, textarea, select, contenteditable).
  * @param {EventTarget | null} target
  * @returns {boolean}
+ *   True if Space should NOT trigger the global play/pause shortcut.
+ *   Covers editable form elements + native interactive elements where
+ *   Space has its own activation semantics (buttons, links, role=button).
  */
 function isEditableTarget(target) {
   if (!(target instanceof HTMLElement)) return false;
   if (target.isContentEditable) return true;
   const tag = target.tagName;
-  return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT';
+  if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return true;
+  if (tag === 'BUTTON' || tag === 'A') return true;
+  const role = target.getAttribute('role');
+  if (role === 'button') return true;
+  return false;
 }
 
 let saveSceneCallback = null;

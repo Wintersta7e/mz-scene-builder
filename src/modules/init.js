@@ -238,9 +238,19 @@ function wireTopRail() {
   });
 
   // ----- Recent button mirrors the existing recent-projects dropdown -----
-  els.btnRecent.addEventListener('click', () => {
+  els.btnRecent.addEventListener('click', (e) => {
     const dd = document.getElementById('recent-projects-dropdown');
-    if (dd) dd.classList.toggle('is-open');
+    if (!dd) return;
+    dd.classList.toggle('is-open');
+    e.stopPropagation();
+  });
+  // Close the recent dropdown on click anywhere else
+  document.addEventListener('click', (e) => {
+    const dd = document.getElementById('recent-projects-dropdown');
+    if (!dd || !dd.classList.contains('is-open')) return;
+    if (e.target instanceof Node && !dd.contains(e.target) && e.target !== els.btnRecent) {
+      dd.classList.remove('is-open');
+    }
   });
 }
 

@@ -2,7 +2,15 @@
 //
 // Tint Picture section — color preview, tone presets, RGB+gray sliders.
 
-import { buildSection, buildRow, buildSlider, buildColorBubble, buildTintPresets, commit } from './shared.js';
+import {
+  buildSection,
+  buildRow,
+  buildCell,
+  buildSlider,
+  buildColorBubble,
+  buildTintPresets,
+  commit
+} from './shared.js';
 
 export function renderTintProperties(ev, index) {
   const wrap = document.createElement('div');
@@ -20,6 +28,19 @@ export function renderTintProperties(ev, index) {
     b: ev.blue ?? 0,
     gray: ev.gray ?? 0
   });
+
+  // ----- Target -----
+  wrap.appendChild(
+    buildSection('Target', (body) => {
+      body.appendChild(
+        buildCell({
+          label: 'PIC #',
+          value: ev.pictureNumber ?? 1,
+          onChange: (v) => commit(ev, 'pictureNumber', Math.max(1, Math.min(100, /** @type {number} */ (v))), index)
+        })
+      );
+    })
+  );
 
   // ----- Tone -----
   wrap.appendChild(

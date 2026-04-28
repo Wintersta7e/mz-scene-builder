@@ -1758,6 +1758,18 @@ textarea.prop-input {
   background: var(--lane);
   opacity: 0.7;
 }
+.minimap-event[data-lane='picture'] {
+  --lane: var(--lane-pic);
+}
+.minimap-event[data-lane='effect'] {
+  --lane: var(--lane-fx);
+}
+.minimap-event[data-lane='text'] {
+  --lane: var(--lane-txt);
+}
+.minimap-event[data-lane='aux'] {
+  --lane: var(--lane-aux);
+}
 .minimap-playhead {
   position: absolute;
   top: 4px;
@@ -2314,6 +2326,11 @@ textarea.prop-input {
 }
 
 .dropdown-container:hover .dropdown {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+.dropdown.is-open {
   opacity: 1;
   visibility: visible;
   transform: translateY(0);

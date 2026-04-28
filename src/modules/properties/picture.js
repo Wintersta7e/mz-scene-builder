@@ -33,6 +33,19 @@ export function renderPictureProperties(ev, index) {
     })
   );
 
+  // ----- Target -----
+  wrap.appendChild(
+    buildSection('Target', (body) => {
+      body.appendChild(
+        buildCell({
+          label: 'PIC #',
+          value: ev.pictureNumber ?? 1,
+          onChange: (v) => commit(ev, 'pictureNumber', Math.max(1, Math.min(100, /** @type {number} */ (v))), index)
+        })
+      );
+    })
+  );
+
   // ----- Position -----
   wrap.appendChild(
     buildSection('Position', (body) => {

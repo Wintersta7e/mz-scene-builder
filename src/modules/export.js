@@ -141,7 +141,7 @@ async function openExportModal() {
       if (maps.error) {
         showError(`Error loading maps: ${maps.error}`);
         mapDropdown.setPlaceholder('Error loading maps');
-        elements.exportModal.style.display = 'flex';
+        elements.exportModal.style.display = 'grid';
         return;
       }
       state.cachedMaps = maps;
@@ -151,7 +151,7 @@ async function openExportModal() {
     }
 
     // Show modal
-    elements.exportModal.style.display = 'flex';
+    elements.exportModal.style.display = 'grid';
   } catch (err) {
     logger.error('Failed to open export modal:', err);
     showError(`Failed to open export: ${err.message}`);

@@ -23,9 +23,22 @@ export function renderMoveProperties(ev, index) {
     import('./index.js').then((m) => m.renderProperties()).catch(() => {});
   }
 
-  // ----- Target -----
+  // ----- Target picture -----
   wrap.appendChild(
     buildSection('Target', (body) => {
+      body.appendChild(
+        buildCell({
+          label: 'PIC #',
+          value: ev.pictureNumber ?? 1,
+          onChange: (v) => commit(ev, 'pictureNumber', Math.max(1, Math.min(100, /** @type {number} */ (v))), index)
+        })
+      );
+    })
+  );
+
+  // ----- Destination -----
+  wrap.appendChild(
+    buildSection('Destination', (body) => {
       body.appendChild(
         buildPair(
           buildCell({

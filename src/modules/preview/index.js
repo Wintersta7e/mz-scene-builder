@@ -96,9 +96,14 @@ function updateFlashOverlay(frame) {
   const start = active.startFrame ?? 0;
   const dur = Math.max(1, active.duration ?? 30);
   const progress = Math.min(1, Math.max(0, (frame - start) / dur));
-  const intensity = (active.intensity ?? 100) / 100;
+  const intensity = (active.intensity ?? 170) / 255;
   flashEl.style.opacity = String((1 - progress) * intensity);
-  flashEl.style.background = active.color || 'oklch(1 0 0)';
+
+  // Compose flash color from MZ-native RGB. Falls back to white if no fields set.
+  const r = active.red ?? 255;
+  const g = active.green ?? 255;
+  const b = active.blue ?? 255;
+  flashEl.style.background = `rgb(${r}, ${g}, ${b})`;
 }
 
 /**
