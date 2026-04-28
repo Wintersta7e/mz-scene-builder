@@ -8,208 +8,307 @@
       content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' file: data:; font-src 'self';"
     />
     <title>Timeline Scene Builder</title>
+    <link rel="stylesheet" href="styles-legacy.css" />
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
     <div class="app">
-      <!-- Top Toolbar -->
-      <header class="toolbar">
-        <div class="toolbar-group">
+      <!-- ============ TOP RAIL ============ -->
+      <header class="rail" role="banner">
+        <div class="rail-left">
+          <div class="brand" aria-label="Scene Builder">
+            <div class="brand-mark" aria-hidden="true"></div>
+            <div class="brand-text">
+              <span class="brand-name">Scene Builder</span>
+              <span class="brand-sub">Director's Console · v2.0</span>
+            </div>
+          </div>
+          <span class="divider-v" aria-hidden="true"></span>
           <div class="dropdown-container" id="open-project-container">
-            <button id="btn-open-project" class="btn btn-primary">Open Project ▾</button>
+            <button id="btn-open-project" class="btn">Open Project ▾</button>
             <div class="dropdown" id="recent-projects-dropdown">
               <div class="dropdown-item disabled">No recent projects</div>
             </div>
           </div>
-          <span id="project-name" class="project-name">No project loaded</span>
+          <button id="btn-recent" class="btn btn-ghost" title="Recent projects" aria-label="Recent projects">
+            <span aria-hidden="true">⟲</span>
+            <span>Recent</span>
+          </button>
+          <button id="btn-new-scene" class="btn btn-ghost" disabled title="New Scene">New</button>
+          <button id="btn-load-scene" class="btn btn-ghost" disabled title="Load Scene">Load</button>
         </div>
-        <div class="toolbar-group">
-          <button id="btn-new-scene" class="btn" disabled title="New Scene">New</button>
-          <button id="btn-load-scene" class="btn" disabled title="Load Scene">Load</button>
-          <button id="btn-save-scene" class="btn" disabled title="Save Scene (Ctrl+S)">Save</button>
+
+        <div class="rail-center">
+          <div class="scene-meta" id="scene-meta" aria-live="polite">
+            <span class="dot" aria-hidden="true"></span>
+            <input
+              id="scene-name-input"
+              class="scene-name-input"
+              type="text"
+              placeholder="Untitled Scene"
+              aria-label="Scene name"
+              spellcheck="false"
+              autocomplete="off"
+            />
+            <span class="pip" aria-hidden="true">·</span>
+            <span class="scene-folder" id="scene-folder-name">no project</span>
+            <span class="pip" aria-hidden="true">·</span>
+            <span class="scene-saved" id="scene-saved-time">unsaved</span>
+          </div>
         </div>
-        <div class="toolbar-group">
-          <button id="btn-export-map" class="btn btn-primary" disabled>Export to Map</button>
-          <button id="btn-quick-export" class="btn" disabled title="Export to last used location">Quick Export</button>
-        </div>
-        <div class="toolbar-group" style="margin-left: auto">
-          <button id="btn-help" class="btn" title="Keyboard Shortcuts (F1)" aria-label="Keyboard Shortcuts">?</button>
-          <button id="btn-about" class="btn" title="About">About</button>
+
+        <div class="rail-right">
+          <div class="rail-segment" role="tablist" aria-label="Workspace mode">
+            <button class="btn is-active" id="seg-design" role="tab" aria-selected="true" data-mode="design">
+              Design
+            </button>
+            <button class="btn" id="seg-preview" role="tab" aria-selected="false" data-mode="preview">Preview</button>
+            <button class="btn" id="seg-inspect" role="tab" aria-selected="false" data-mode="inspect">Inspect</button>
+          </div>
+          <span class="divider-v" aria-hidden="true"></span>
+          <button id="btn-settings" class="btn btn-icon btn-ghost" title="Settings" aria-label="Settings">⚙</button>
+          <button
+            id="btn-help"
+            class="btn btn-icon btn-ghost"
+            title="Keyboard Shortcuts (F1)"
+            aria-label="Keyboard Shortcuts"
+          >
+            ?
+          </button>
+          <button id="btn-about" class="btn btn-icon btn-ghost" title="About" aria-label="About">ⓘ</button>
+          <span class="divider-v" aria-hidden="true"></span>
+          <button id="btn-save-scene" class="btn" disabled title="Save Scene (Ctrl+S)">
+            Save
+            <span class="kbd">⌘S</span>
+          </button>
+          <button id="btn-export-map" class="btn btn-primary" disabled title="Export to Map">Export to Map</button>
+          <button
+            id="btn-quick-export"
+            class="btn btn-ghost"
+            disabled
+            title="Export to last used location"
+            aria-label="Quick export"
+          >
+            ↻
+          </button>
         </div>
       </header>
 
-      <div class="main-content">
-        <!-- Left Panel: Image Browser -->
-        <aside class="panel panel-left" id="panel-left">
-          <h3>Pictures</h3>
-          <div class="search-box">
-            <input type="text" id="image-search" placeholder="Search images..." disabled aria-label="Search images" />
-          </div>
-          <div id="image-browser" class="image-browser">
-            <p class="placeholder">Open a project to browse images</p>
-          </div>
-          <div class="resize-handle" id="resize-left"></div>
-        </aside>
-
-        <!-- Center: Preview -->
-        <main class="panel panel-center">
-          <div class="preview-header">
-            <h3>Preview (1920x1080)</h3>
-            <div class="preview-tools">
-              <button id="btn-toggle-grid" class="btn btn-sm" title="Toggle Grid Overlay">Grid</button>
-              <button id="btn-toggle-snap" class="btn btn-sm" title="Snap to Grid">Snap</button>
+      <!-- ============ MAIN GRID ============ -->
+      <div class="main">
+        <!-- LEFT: Library -->
+        <aside class="panel library" id="panel-left" aria-label="Image library">
+          <div class="panel-header">
+            <span class="panel-title">Library <span class="num" id="library-count">0</span></span>
+            <div class="panel-actions">
+              <button class="icon-btn" id="btn-library-grid" title="Grid view" aria-label="Grid view">▦</button>
+              <button class="icon-btn" id="btn-library-add" title="Add" aria-label="Add">+</button>
             </div>
           </div>
-          <div class="preview-container">
-            <div id="preview-canvas" class="preview-canvas" role="img" aria-label="Scene preview">
+          <div class="library-search">
+            <div class="library-search-wrap">
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                aria-hidden="true"
+              >
+                <circle cx="11" cy="11" r="7" />
+                <path d="m21 21-4.3-4.3" />
+              </svg>
+              <input type="text" id="image-search" placeholder="Search images..." disabled aria-label="Search images" />
+            </div>
+          </div>
+          <!-- Existing renderer module mounts here. Re-skinned in Plan B. -->
+          <div id="image-browser" class="image-browser library-list">
+            <p class="placeholder">Open a project to browse images</p>
+          </div>
+          <div class="resize-handle" id="resize-left" aria-hidden="true"></div>
+        </aside>
+
+        <!-- CENTER: Stage -->
+        <main class="panel stage" id="panel-center" aria-label="Stage preview">
+          <div class="stage-header">
+            <span class="panel-title">Stage</span>
+            <div class="stage-tools">
+              <button id="btn-toggle-grid" class="toggle-btn" title="Toggle Grid Overlay">
+                <span class="led" aria-hidden="true"></span><span>GRID</span>
+              </button>
+              <button id="btn-toggle-snap" class="toggle-btn" title="Snap to Grid">
+                <span class="led" aria-hidden="true"></span><span>SNAP</span>
+              </button>
+              <span class="divider-v" aria-hidden="true"></span>
+              <span class="stage-readout">
+                <span class="res">1920 × 1080</span>
+              </span>
+            </div>
+          </div>
+          <!-- Existing renderer module mounts inside .stage-body. Re-skinned in Plan C. -->
+          <div class="stage-body">
+            <div id="preview-canvas" class="preview-canvas stage-frame" role="img" aria-label="Scene preview">
+              <div class="bracket-tl" aria-hidden="true"></div>
+              <div class="bracket-tr" aria-hidden="true"></div>
+              <div class="bracket-bl" aria-hidden="true"></div>
+              <div class="bracket-br" aria-hidden="true"></div>
               <div id="preview-grid" class="preview-grid"></div>
-              <!-- Images will be positioned here -->
+              <!-- pictures injected by preview/index.js -->
             </div>
           </div>
         </main>
 
-        <!-- Right Panel: Properties -->
-        <aside class="panel panel-right" id="panel-right">
-          <div class="resize-handle" id="resize-right"></div>
-          <h3>Properties</h3>
-          <div id="properties-panel" class="properties-panel">
+        <!-- RIGHT: Inspector -->
+        <aside class="panel props" id="panel-right" aria-label="Inspector">
+          <div class="resize-handle" id="resize-right" aria-hidden="true"></div>
+          <div class="panel-header">
+            <span class="panel-title">Inspector</span>
+            <div class="panel-actions">
+              <button class="icon-btn" id="btn-duplicate-event" title="Duplicate" aria-label="Duplicate event">
+                ⧉
+              </button>
+              <button
+                id="btn-delete-event"
+                class="icon-btn"
+                disabled
+                title="Delete (Del)"
+                aria-label="Delete selected event"
+              >
+                🗑
+              </button>
+            </div>
+          </div>
+          <!-- Existing renderer module mounts here. Re-skinned in Plan E. -->
+          <div id="properties-panel" class="properties-panel props-body">
             <p class="placeholder">Select an event to edit properties</p>
           </div>
         </aside>
-      </div>
 
-      <!-- Bottom: Timeline -->
-      <section class="timeline-container" id="panel-timeline" role="region" aria-label="Timeline">
-        <div class="resize-handle-horizontal" id="resize-timeline"></div>
-        <div class="timeline-header">
-          <div class="timeline-controls">
-            <button id="btn-play" class="btn btn-sm" disabled title="Play" aria-label="Play">▶</button>
-            <button id="btn-stop" class="btn btn-sm" disabled title="Stop" aria-label="Stop">■</button>
-            <span class="timeline-position">Frame: <span id="current-frame">0</span></span>
-            <span class="timeline-length-control">
-              <label for="timeline-length">Length:</label>
-              <input
-                type="number"
-                id="timeline-length"
-                value="300"
-                min="60"
-                max="9999"
-                step="60"
-                title="Timeline length in frames (60 = 1 second)"
-                aria-label="Timeline length in frames"
-              />
-              frames
-            </span>
-          </div>
-          <div class="event-buttons">
-            <button
-              id="btn-add-picture"
-              class="btn btn-sm"
-              disabled
-              title="Add Show Picture"
-              aria-label="Add Show Picture event"
-            >
-              + Show
-            </button>
-            <button
-              id="btn-add-move"
-              class="btn btn-sm"
-              disabled
-              title="Add Move Picture"
-              aria-label="Add Move Picture event"
-            >
-              + Move
-            </button>
-            <button
-              id="btn-add-rotate"
-              class="btn btn-sm"
-              disabled
-              title="Add Rotate Picture"
-              aria-label="Add Rotate Picture event"
-            >
-              + Rotate
-            </button>
-            <button
-              id="btn-add-tint"
-              class="btn btn-sm"
-              disabled
-              title="Add Tint Picture"
-              aria-label="Add Tint Picture event"
-            >
-              + Tint
-            </button>
-            <button
-              id="btn-add-erase"
-              class="btn btn-sm"
-              disabled
-              title="Add Erase Picture"
-              aria-label="Add Erase Picture event"
-            >
-              + Erase
-            </button>
-            <button
-              id="btn-add-text"
-              class="btn btn-sm"
-              disabled
-              title="Add Show Text"
-              aria-label="Add Show Text event"
-            >
-              + Text
-            </button>
-            <button id="btn-add-wait" class="btn btn-sm" disabled title="Add Wait" aria-label="Add Wait event">
-              + Wait
-            </button>
-            <button
-              id="btn-add-flash"
-              class="btn btn-sm"
-              disabled
-              title="Add Screen Flash"
-              aria-label="Add Screen Flash event"
-            >
-              + Flash
-            </button>
-            <button
-              id="btn-delete-event"
-              class="btn btn-sm btn-danger"
-              disabled
-              title="Delete Selected (Del)"
-              aria-label="Delete selected event"
-            >
-              Del
-            </button>
-            <button
-              id="btn-clear-scene"
-              class="btn btn-sm"
-              disabled
-              title="Clear all events"
-              aria-label="Clear all events"
-            >
-              Clear
-            </button>
-          </div>
-        </div>
-        <div class="timeline-body">
-          <div class="timeline-lanes" id="timeline-lanes">
-            <!-- Lanes will be added here -->
-          </div>
-          <div class="timeline-track" id="timeline-track">
-            <div class="timeline-ruler" id="timeline-ruler"></div>
-            <div class="timeline-events" id="timeline-events">
-              <!-- Events will be placed here -->
+        <!-- BOTTOM: Timeline -->
+        <section class="panel timeline" id="panel-timeline" role="region" aria-label="Timeline">
+          <div class="resize-handle-horizontal" id="resize-timeline" aria-hidden="true"></div>
+          <!-- Transport (Plan D will re-skin contents) -->
+          <div class="transport timeline-header">
+            <div class="timeline-controls">
+              <button id="btn-play" class="transport-btn play" disabled title="Play" aria-label="Play">▶</button>
+              <button id="btn-stop" class="transport-btn stop" disabled title="Stop" aria-label="Stop">■</button>
+              <span class="timeline-position">Frame: <span id="current-frame">0</span></span>
+              <span class="timeline-length-control">
+                <label for="timeline-length">Length:</label>
+                <input
+                  type="number"
+                  id="timeline-length"
+                  value="300"
+                  min="60"
+                  max="9999"
+                  step="60"
+                  title="Timeline length in frames (60 = 1 second)"
+                  aria-label="Timeline length in frames"
+                />
+                frames
+              </span>
             </div>
-            <div class="timeline-cursor" id="timeline-cursor"></div>
+            <div class="event-buttons event-bar">
+              <button
+                id="btn-add-picture"
+                class="btn btn-sm"
+                disabled
+                title="Add Show Picture"
+                aria-label="Add Show Picture event"
+              >
+                + Show
+              </button>
+              <button
+                id="btn-add-move"
+                class="btn btn-sm"
+                disabled
+                title="Add Move Picture"
+                aria-label="Add Move Picture event"
+              >
+                + Move
+              </button>
+              <button
+                id="btn-add-rotate"
+                class="btn btn-sm"
+                disabled
+                title="Add Rotate Picture"
+                aria-label="Add Rotate Picture event"
+              >
+                + Rotate
+              </button>
+              <button
+                id="btn-add-tint"
+                class="btn btn-sm"
+                disabled
+                title="Add Tint Picture"
+                aria-label="Add Tint Picture event"
+              >
+                + Tint
+              </button>
+              <button
+                id="btn-add-erase"
+                class="btn btn-sm"
+                disabled
+                title="Add Erase Picture"
+                aria-label="Add Erase Picture event"
+              >
+                + Erase
+              </button>
+              <button
+                id="btn-add-text"
+                class="btn btn-sm"
+                disabled
+                title="Add Show Text"
+                aria-label="Add Show Text event"
+              >
+                + Text
+              </button>
+              <button id="btn-add-wait" class="btn btn-sm" disabled title="Add Wait" aria-label="Add Wait event">
+                + Wait
+              </button>
+              <button
+                id="btn-add-flash"
+                class="btn btn-sm"
+                disabled
+                title="Add Screen Flash"
+                aria-label="Add Screen Flash event"
+              >
+                + Flash
+              </button>
+              <button
+                id="btn-clear-scene"
+                class="btn btn-sm btn-ghost"
+                disabled
+                title="Clear all events"
+                aria-label="Clear all events"
+              >
+                Clear
+              </button>
+            </div>
           </div>
-        </div>
-        <!-- Timeline Minimap -->
-        <div class="timeline-minimap" id="timeline-minimap">
-          <canvas id="minimap-canvas" aria-label="Timeline minimap" role="img"></canvas>
-          <div class="minimap-viewport" id="minimap-viewport"></div>
-          <div class="minimap-cursor" id="minimap-cursor"></div>
-        </div>
-      </section>
+          <div class="timeline-body">
+            <div class="timeline-lanes lanes-col" id="timeline-lanes">
+              <!-- Lanes injected by timeline/index.js -->
+            </div>
+            <div class="timeline-track" id="timeline-track">
+              <div class="timeline-ruler ruler" id="timeline-ruler"></div>
+              <div class="timeline-events lanes-content" id="timeline-events">
+                <!-- Events injected by timeline/index.js -->
+              </div>
+              <div class="timeline-cursor playhead" id="timeline-cursor"></div>
+            </div>
+          </div>
+          <div class="timeline-minimap minimap" id="timeline-minimap">
+            <canvas id="minimap-canvas" aria-label="Timeline minimap" role="img"></canvas>
+            <div class="minimap-viewport" id="minimap-viewport"></div>
+            <div class="minimap-cursor minimap-playhead" id="minimap-cursor"></div>
+          </div>
+        </section>
+      </div>
     </div>
 
-    <!-- Image Picker Modal -->
+    <!-- ============ MODALS (restyled per phase) ============ -->
     <div
       id="image-picker-modal"
       class="modal"
@@ -232,7 +331,6 @@
       </div>
     </div>
 
-    <!-- Export to Map Modal -->
     <div
       id="export-modal"
       class="modal"
@@ -268,12 +366,12 @@
               </div>
             </div>
           </div>
-          <p style="color: var(--text-muted); font-size: 12px; margin: 12px 0">
+          <p style="color: var(--text-3); font-size: 12px; margin: 12px 0">
             Commands will be inserted at the end of the selected event page.
           </p>
           <div style="display: flex; gap: 8px; justify-content: flex-end">
             <button class="btn" id="btn-cancel-export">Cancel</button>
-            <button class="btn btn-success" id="btn-do-export" disabled>Export</button>
+            <button class="btn btn-primary" id="btn-do-export" disabled>Export</button>
           </div>
         </div>
       </div>
