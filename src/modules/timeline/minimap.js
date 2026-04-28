@@ -14,7 +14,6 @@ import { eventBus, Events } from '../event-bus.js';
 import { getEventLane, getEventDuration } from '../events.js';
 
 let _resizeHandler = null;
-let _cachedContainerWidth = 0;
 let _minimapInitialized = false;
 
 const LANE_DATA = ['picture', 'effect', 'text', 'aux'];
@@ -24,8 +23,10 @@ function getTrack() {
 }
 
 function updateCachedContainerWidth() {
-  const track = getTrack();
-  if (track) _cachedContainerWidth = track.getBoundingClientRect().width;
+  // No-op since the canvas->DOM minimap rewrite. Function kept for API
+  // compatibility — external callers (init.js resize-handler tail) still
+  // invoke it. Plan F or later may rename/remove if no live callers
+  // depend on the side effect.
 }
 
 function renderMinimap() {

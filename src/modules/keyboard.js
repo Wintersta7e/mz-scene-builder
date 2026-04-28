@@ -11,6 +11,19 @@ import { showShortcutsModal } from './modals.js';
 import { logger } from './logger.js';
 import { eventBus, Events } from './event-bus.js';
 import { getPreviewScale } from './preview/index.js';
+import { togglePlayback } from './playback.js';
+
+/**
+ * Check if target is an editable element (input, textarea, select, contenteditable).
+ * @param {EventTarget | null} target
+ * @returns {boolean}
+ */
+function isEditableTarget(target) {
+  if (!(target instanceof HTMLElement)) return false;
+  if (target.isContentEditable) return true;
+  const tag = target.tagName;
+  return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT';
+}
 
 let saveSceneCallback = null;
 
@@ -23,6 +36,15 @@ function handleKeyboardMove(e) {
 
   // Don't handle if typing in an input/textarea
   if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') {
+    return;
+  }
+
+  // Spacebar - Play/pause. Skip when focus is in an editable element so
+  // the shortcut doesn't fire while the user is typing a scene name,
+  // text-event body, etc.
+  if (e.code === 'Space' && !isEditableTarget(e.target)) {
+    e.preventDefault();
+    togglePlayback();
     return;
   }
 

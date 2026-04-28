@@ -8,7 +8,6 @@
       content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' file: data:; font-src 'self';"
     />
     <title>Timeline Scene Builder</title>
-    <link rel="stylesheet" href="styles-legacy.css" />
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
@@ -64,7 +63,15 @@
             <button class="btn" id="seg-inspect" data-mode="inspect">Inspect</button>
           </div>
           <span class="divider-v" aria-hidden="true"></span>
-          <button id="btn-settings" class="btn btn-icon btn-ghost" title="Settings" aria-label="Settings">⚙</button>
+          <button
+            id="btn-settings"
+            class="btn btn-icon btn-ghost"
+            title="Settings"
+            aria-label="Settings"
+            style="display: none"
+          >
+            ⚙
+          </button>
           <button
             id="btn-help"
             class="btn btn-icon btn-ghost"
@@ -93,7 +100,7 @@
       </header>
 
       <!-- ============ MAIN GRID ============ -->
-      <div class="main">
+      <div class="main mode-design">
         <!-- LEFT: Library -->
         <aside class="panel library" id="panel-left" aria-label="Image library">
           <div class="panel-header">

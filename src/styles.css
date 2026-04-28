@@ -110,35 +110,6 @@
   --lib-w: 240px;
   --props-w: 280px;
   --tl-h: 280px;
-
-  /* Legacy token aliases — referenced by markup not yet re-skinned.
-     Plan F removes these once every region uses the new tokens. */
-  --bg-primary: var(--ink-0);
-  --bg-secondary: var(--ink-1);
-  --bg-tertiary: var(--ink-2);
-  --bg-surface: var(--ink-3);
-  --bg-input: var(--ink-0);
-  --accent: var(--amber);
-  --accent-hover: oklch(0.86 0.16 75);
-  --accent-dim: var(--amber-soft);
-  --text-primary: var(--text);
-  --text-muted: var(--text-3);
-  --text-dim: var(--text-2);
-  --border: var(--line);
-  --border-light: var(--line-soft);
-  --selected: var(--amber-soft);
-  --success: oklch(0.75 0.18 145);
-  --success-dim: oklch(0.65 0.18 145);
-  --warning: var(--amber);
-  --error: var(--danger);
-  --evt-show: var(--lane-pic);
-  --evt-move: var(--lane-pic);
-  --evt-rotate: var(--lane-pic);
-  --evt-tint: var(--lane-fx);
-  --evt-erase: var(--lane-pic);
-  --evt-text: var(--lane-txt);
-  --evt-wait: var(--lane-aux);
-  --evt-flash: var(--lane-fx);
 }
 
 * {
@@ -457,6 +428,27 @@ body::after {
   min-height: 0;
   overflow: hidden;
 }
+
+/* ============= MODE SWITCHING (Design / Preview / Inspect) ============= */
+/* mode-design is the default — no overrides; the base .main rules apply. */
+
+/* Preview: hide library + inspector. Stage takes the freed columns. */
+.main.mode-preview {
+  grid-template-columns: 0 1fr 0;
+}
+.main.mode-preview .library,
+.main.mode-preview .props {
+  display: none;
+}
+
+/* Inspect: hide library only. Inspector + stage + timeline remain. */
+.main.mode-inspect {
+  grid-template-columns: 0 1fr var(--props-w);
+}
+.main.mode-inspect .library {
+  display: none;
+}
+
 .panel {
   background: var(--ink-1);
   display: flex;
@@ -2091,6 +2083,123 @@ textarea.prop-input {
   min-height: 0;
 }
 
+/* ============= MODAL INTERNALS (about / shortcuts / export) ============= */
+
+/* About modal — Director's Console branding */
+.modal-about .modal-body {
+  padding: 32px;
+  text-align: center;
+}
+.modal-about .brand-mark {
+  width: 48px;
+  height: 48px;
+  margin: 0 auto 16px;
+}
+.modal-about h3 {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 24px;
+  color: var(--text);
+  margin: 0 0 4px;
+}
+.modal-about .version {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text-3);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  margin: 0 0 16px;
+}
+.modal-about p {
+  color: var(--text-2);
+  line-height: 1.5;
+  margin: 8px 0;
+}
+.modal-about a {
+  color: var(--amber);
+  text-decoration: none;
+}
+.modal-about a:hover {
+  text-decoration: underline;
+}
+
+/* Shortcuts modal — keyboard reference table */
+.modal-shortcuts .modal-body {
+  padding: 20px 24px;
+}
+.modal-shortcuts h4 {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  margin: 16px 0 8px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--line-soft);
+}
+.modal-shortcuts h4:first-child {
+  margin-top: 0;
+}
+.modal-shortcuts dl {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 6px 16px;
+  margin: 0;
+}
+.modal-shortcuts dt {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text);
+  display: flex;
+  gap: 4px;
+}
+.modal-shortcuts dd {
+  font-size: 12px;
+  color: var(--text-2);
+  margin: 0;
+}
+.modal-shortcuts kbd {
+  font-family: var(--mono);
+  font-size: 10px;
+  padding: 2px 6px;
+  background: var(--ink-0);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  color: var(--text-2);
+}
+
+/* Export-to-map modal — form rows */
+.modal .property-group {
+  background: var(--ink-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 12px;
+  margin-bottom: 16px;
+}
+.modal .property-group h4 {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  margin: 0 0 10px;
+}
+.modal .property-row {
+  display: grid;
+  grid-template-columns: 80px 1fr;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+.modal .property-label {
+  font-size: 11px;
+  color: var(--text-3);
+}
+.modal .property-input {
+  font-family: var(--mono);
+  font-size: 12px;
+}
+
 /* Image picker: folder list on the left, image grid on the right */
 .image-picker-layout {
   display: grid;
@@ -2173,4 +2282,356 @@ textarea.prop-input {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* ============= OPEN-PROJECT DROPDOWN ============= */
+
+.dropdown-container {
+  position: relative;
+  display: inline-block;
+}
+
+.dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  min-width: 220px;
+  max-width: 350px;
+  background: var(--ink-1);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  box-shadow: 0 8px 16px oklch(0 0 0 / 0.4);
+  z-index: 1000;
+  padding: 4px 0;
+  margin-top: 2px;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-5px);
+  transition:
+    opacity 0.15s,
+    transform 0.15s,
+    visibility 0.15s;
+}
+
+.dropdown-container:hover .dropdown {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.dropdown-item {
+  padding: 8px 12px;
+  cursor: pointer;
+  font-size: 11px;
+  transition: background 0.15s;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dropdown-item:hover:not(.disabled) {
+  background: var(--ink-3);
+}
+
+.dropdown-item.disabled {
+  color: var(--text-3);
+  cursor: default;
+}
+
+/* ============= VIRTUAL DROPDOWN COMPONENT ============= */
+
+.virtual-dropdown {
+  position: relative;
+  width: 100%;
+}
+
+.virtual-dropdown.disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.virtual-dropdown-trigger {
+  background: var(--ink-0);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 6px 28px 6px 10px;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition:
+    border-color 0.15s,
+    background 0.15s;
+  position: relative;
+}
+
+.virtual-dropdown-trigger::after {
+  content: '\25BC';
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 8px;
+  color: var(--text-3);
+  pointer-events: none;
+}
+
+.virtual-dropdown-trigger:hover {
+  border-color: var(--amber-soft);
+}
+
+.virtual-dropdown.open .virtual-dropdown-trigger {
+  border-color: var(--amber);
+  background: var(--ink-3);
+}
+
+.virtual-dropdown-trigger.has-value {
+  color: var(--text);
+}
+
+.virtual-dropdown-panel {
+  position: fixed;
+  background: var(--ink-1);
+  border: 1px solid var(--amber);
+  border-radius: 4px;
+  z-index: 10000;
+  box-shadow: 0 4px 12px oklch(0 0 0 / 0.4);
+  display: flex;
+  flex-direction: column;
+}
+
+.virtual-dropdown-search {
+  padding: 8px 10px;
+  border: none;
+  border-bottom: 1px solid var(--line);
+  background: var(--ink-0);
+  color: var(--text);
+  font-size: 12px;
+  flex-shrink: 0;
+}
+
+.virtual-dropdown-search:focus {
+  outline: 2px solid var(--amber);
+  outline-offset: -2px;
+  background: var(--ink-3);
+}
+
+.virtual-dropdown-search:focus:not(:focus-visible) {
+  outline: none;
+}
+
+.virtual-dropdown-search::placeholder {
+  color: var(--text-3);
+}
+
+.virtual-dropdown-viewport {
+  overflow-y: auto;
+  max-height: 250px;
+  position: relative;
+}
+
+.virtual-dropdown-content {
+  position: relative;
+  /* Height set dynamically based on total items */
+}
+
+.virtual-dropdown-item {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 28px;
+  line-height: 28px;
+  padding: 0 10px;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  box-sizing: border-box;
+  transform: translateZ(0);
+}
+
+.virtual-dropdown-item:hover {
+  background: var(--ink-3);
+}
+
+.virtual-dropdown-item.selected {
+  background: var(--amber-soft);
+  color: #fff;
+}
+
+.virtual-dropdown-item.focused {
+  background: var(--ink-3);
+  outline: 1px solid var(--amber);
+  outline-offset: -1px;
+}
+
+.virtual-dropdown-item.selected.focused {
+  background: var(--amber);
+}
+
+.virtual-dropdown-item.disabled {
+  color: var(--text-3);
+  cursor: default;
+  pointer-events: none;
+}
+
+.virtual-dropdown-empty {
+  padding: 12px 10px;
+  color: var(--text-3);
+  text-align: center;
+  font-style: italic;
+}
+
+/* ============= PREVIEW GRID + TEXT HINT ============= */
+
+.preview-grid {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 50;
+  background-image:
+    linear-gradient(to right, oklch(1 0 0 / 0.1) 1px, transparent 1px),
+    linear-gradient(to bottom, oklch(1 0 0 / 0.1) 1px, transparent 1px);
+  background-size: 64px 64px;
+  display: none;
+  overflow: hidden;
+}
+
+.preview-grid.visible {
+  display: block;
+}
+
+.text-continue-hint {
+  text-align: right;
+  font-size: 12px;
+  color: #ffd700;
+  margin-top: 10px;
+  animation: hint-blink 0.8s ease-in-out infinite;
+}
+
+/* ============= PICKER IMAGE GRID (legacy class names from image-picker.js) ============= */
+
+.grid-image-item {
+  cursor: pointer;
+  text-align: center;
+  padding: 10px;
+  border-radius: 6px;
+  background: var(--ink-3);
+  transition:
+    background 0.15s,
+    transform 0.12s;
+}
+
+.grid-image-item:hover {
+  background: var(--amber-soft);
+  transform: translateY(-2px);
+}
+
+.grid-image-thumb {
+  width: 100%;
+  height: 85px;
+  object-fit: contain;
+  background: var(--ink-0);
+  border-radius: 4px;
+  margin-bottom: 8px;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+.grid-image-name {
+  font-size: 11px;
+  word-break: break-all;
+  color: var(--text);
+}
+
+/* ============= UTILITY ============= */
+
+.placeholder {
+  color: var(--text-3);
+  font-style: italic;
+  padding: 16px;
+  text-align: center;
+}
+
+.hidden {
+  display: none !important;
+}
+
+/* ============= GLOBAL ACCESSIBILITY + ANIMATIONS ============= */
+
+::selection {
+  background: var(--amber);
+  color: #fff;
+}
+
+:focus-visible {
+  outline: 2px solid var(--amber);
+  outline-offset: 2px;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--ink-0);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--ink-3);
+  border-radius: 5px;
+  border: 2px solid var(--ink-0);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--ink-3);
+  filter: brightness(1.2);
+}
+
+@keyframes hint-blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.3;
+  }
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideOut {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

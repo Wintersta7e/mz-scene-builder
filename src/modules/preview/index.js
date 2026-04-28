@@ -373,9 +373,6 @@ async function renderPreviewAtFrame(frame) {
       existingImages.set(/** @type {HTMLElement} */ (el).dataset.pictureNumber, /** @type {HTMLImageElement} */ (el));
     });
 
-    // Track which picture numbers are active this frame
-    const activePictureNumbers = new Set();
-
     // Render pictures (reuse DOM elements where possible)
     for (let i = 0; i < sortedPictures.length; i++) {
       const [pictureNumber, pictureState] = sortedPictures[i];
@@ -386,7 +383,6 @@ async function renderPreviewAtFrame(frame) {
         continue;
       }
 
-      activePictureNumbers.add(pictureNumber);
       let img = existingImages.get(pictureNumber);
 
       if (img) {

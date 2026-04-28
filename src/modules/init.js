@@ -210,11 +210,25 @@ function wireTopRail() {
   // ----- Segmented control (visual only — Plan F wires real behavior) -----
   /** @type {HTMLElement[]} */
   const segs = [els.segDesign, els.segPreview, els.segInspect];
+  const mainEl = document.querySelector('.main');
   for (const seg of segs) {
     seg.addEventListener('click', () => {
       for (const s of segs) {
         s.classList.toggle('is-active', s === seg);
       }
+
+      const mode = seg.dataset.mode || 'design';
+      if (mainEl) {
+        mainEl.classList.remove('mode-design', 'mode-preview', 'mode-inspect');
+        mainEl.classList.add(`mode-${mode}`);
+      }
+
+      // Resize the preview canvas + minimap to fit the new layout
+      // (deferred so the new grid template applies first).
+      requestAnimationFrame(() => {
+        resizePreviewCanvas();
+        updateCachedContainerWidth();
+      });
     });
   }
 
