@@ -27,6 +27,8 @@ function initElements() {
     quickExport: $('btn-quick-export'),
     imageBrowser: $('image-browser'),
     imageSearch: $('image-search'),
+    libraryFolders: $('library-folders'),
+    libraryCount: $('library-count'),
     previewCanvas: $('preview-canvas'),
     propertiesPanel: $('properties-panel'),
     addPicture: $('btn-add-picture'),

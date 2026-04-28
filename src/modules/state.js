@@ -71,6 +71,9 @@ const state = {
   selectedImages: new Set(),
   lastClickedImage: null,
 
+  // Library filter (non-serialized; resets on project reload)
+  libraryActiveFolder: /** @type {string | null} */ (null),
+
   // Drag state
   isDragging: false,
   dragStartX: 0,

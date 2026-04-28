@@ -103,6 +103,7 @@ const Events = {
 
   // Project events
   PROJECT_LOADED: 'project:loaded', // Project was loaded
+  IMAGES_LOADED: 'project:images-loaded', // payload: none
   SCENE_PATH_CHANGED: 'scene:path-changed', // Scene/project path was set or cleared
 
   // Autosave
