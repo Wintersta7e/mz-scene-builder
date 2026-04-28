@@ -1010,6 +1010,17 @@ body::after {
   }
 }
 
+/* ============= STAGE FLASH OVERLAY ============= */
+.stage-flash {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 4;
+  background: oklch(1 0 0);
+  opacity: 0;
+  /* JS sets opacity per-frame from screenFlash event progress */
+}
+
 /* ============= PROPERTIES (RIGHT) ============= */
 .props {
   grid-area: props;

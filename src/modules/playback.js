@@ -68,6 +68,7 @@ function startPlayback() {
   logger.debug('Playback started at frame', state.currentFrame);
   const elements = getElements();
   state.isPlaying = true;
+  eventBus.emit(Events.RENDER_PREVIEW, state.currentFrame);
   state.waitingForTextClick = false;
   state.processedTextEvents.clear();
   elements.btnPlay.textContent = '⏸';
@@ -121,6 +122,7 @@ function startPlayback() {
 function pausePlayback() {
   const elements = getElements();
   state.isPlaying = false;
+  eventBus.emit(Events.RENDER_PREVIEW, state.currentFrame);
   state.waitingForTextClick = false;
   elements.btnPlay.textContent = '▶';
   if (state.playbackInterval) {

@@ -5,9 +5,7 @@
 import { state } from '../state.js';
 import { getElements } from '../elements.js';
 import { saveState, markDirty } from '../undo-redo.js';
-import { snapPosition } from '../grid.js';
 import { eventBus, Events } from '../event-bus.js';
-import { getPreviewScale } from './index.js';
 
 function findImagesAtPoint(clientX, clientY) {
   const elements = getElements();
@@ -25,11 +23,9 @@ function findImagesAtPoint(clientX, clientY) {
 }
 
 function updateImagePosition(img, evt) {
-  const scale = getPreviewScale();
-
-  img.style.left = `${evt.x * scale}px`;
-  img.style.top = `${evt.y * scale}px`;
-  img.style.transform = `scale(${(evt.scaleX / 100) * scale}, ${(evt.scaleY / 100) * scale})`;
+  img.style.left = `${(evt.x / state.screenWidth) * 100}%`;
+  img.style.top = `${(evt.y / state.screenHeight) * 100}%`;
+  img.style.transform = `scale(${evt.scaleX / 100}, ${evt.scaleY / 100})`;
   img.style.transformOrigin = evt.origin === 1 ? 'center' : 'top left';
   img.style.opacity = evt.opacity / 255;
   img.style.mixBlendMode = ['normal', 'lighten', 'multiply', 'screen'][evt.blend] || 'normal';
@@ -46,6 +42,11 @@ function startDrag(e, img, evt, eventIndex) {
 
   saveState('move image');
 
+  // Snapshot the live frame dimensions so onDrag can convert mouse pixels
+  // to MZ-native event pixels. Recomputed at startDrag, not per onDrag.
+  const elements = getElements();
+  const rect = elements.previewCanvas.getBoundingClientRect();
+
   state.isDragging = true;
   state.dragImg = img;
   state.dragEvt = evt;
@@ -54,8 +55,11 @@ function startDrag(e, img, evt, eventIndex) {
   state.dragStartY = e.clientY;
   state.dragStartEvtX = evt.x;
   state.dragStartEvtY = evt.y;
+  // Stash live conversion factors on the state object so onDrag uses
+  // the same values for the whole gesture.
+  state._dragPxPerMzX = rect.width / state.screenWidth;
+  state._dragPxPerMzY = rect.height / state.screenHeight;
 
-  img.classList.add('dragging');
   document.body.style.cursor = 'move';
 
   document.addEventListener('mousemove', onDrag);
@@ -66,18 +70,29 @@ function startDrag(e, img, evt, eventIndex) {
 function onDrag(e) {
   if (!state.isDragging) return;
 
-  const scale = getPreviewScale();
-  const deltaX = (e.clientX - state.dragStartX) / scale;
-  const deltaY = (e.clientY - state.dragStartY) / scale;
+  const pxPerMzX = state._dragPxPerMzX || 1;
+  const pxPerMzY = state._dragPxPerMzY || 1;
 
-  let newX = Math.round(state.dragStartEvtX + deltaX);
-  let newY = Math.round(state.dragStartEvtY + deltaY);
+  // Mouse delta in screen pixels -> MZ-native event pixels
+  const dxMz = (e.clientX - state.dragStartX) / pxPerMzX;
+  const dyMz = (e.clientY - state.dragStartY) / pxPerMzY;
 
+  let newX = state.dragStartEvtX + dxMz;
+  let newY = state.dragStartEvtY + dyMz;
+
+  // Snap to the design's 30x17 cell grid when state.snapToGrid is on.
   if (state.snapToGrid) {
-    newX = snapPosition(newX);
-    newY = snapPosition(newY);
+    const cellX = state.screenWidth / 30;
+    const cellY = state.screenHeight / 17;
+    newX = Math.round(newX / cellX) * cellX;
+    newY = Math.round(newY / cellY) * cellY;
   }
 
+  newX = Math.round(newX);
+  newY = Math.round(newY);
+
+  // Clamp to a generous box around the visible frame so dragged sprites
+  // don't disappear off the page (preserved from the legacy behavior).
   const margin = Math.max(state.screenWidth, state.screenHeight) / 2;
   newX = Math.max(-margin, Math.min(state.screenWidth + margin, newX));
   newY = Math.max(-margin, Math.min(state.screenHeight + margin, newY));
@@ -88,10 +103,10 @@ function onDrag(e) {
   updateImagePosition(state.dragImg, state.dragEvt);
 
   if (state.dragEventIndex === state.selectedEventIndex) {
-    const xInput = document.getElementById('prop-x');
-    const yInput = document.getElementById('prop-y');
-    if (xInput) xInput.value = state.dragEvt.x;
-    if (yInput) yInput.value = state.dragEvt.y;
+    const xInput = /** @type {HTMLInputElement | null} */ (document.getElementById('prop-x'));
+    const yInput = /** @type {HTMLInputElement | null} */ (document.getElementById('prop-y'));
+    if (xInput) xInput.value = String(state.dragEvt.x);
+    if (yInput) yInput.value = String(state.dragEvt.y);
   }
 }
 
@@ -99,7 +114,6 @@ function stopDrag() {
   if (!state.isDragging) return;
 
   state.isDragging = false;
-  state.dragImg.classList.remove('dragging');
   document.body.style.cursor = '';
 
   document.removeEventListener('mousemove', onDrag);

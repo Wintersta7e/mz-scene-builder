@@ -337,11 +337,28 @@ function init() {
   if (btnCloseExportModal) btnCloseExportModal.addEventListener('click', closeExportModal);
   if (btnCancelExport) btnCancelExport.addEventListener('click', closeExportModal);
 
-  // Grid toggle buttons
+  // Grid + Snap toggle buttons — visual .is-on state mirrors state.gridVisible
+  // and state.snapToGrid (driven by toggleGrid / toggleSnapToGrid which flip
+  // the underlying state booleans).
   const btnGrid = document.getElementById('btn-toggle-grid');
   const btnSnap = document.getElementById('btn-toggle-snap');
-  if (btnGrid) btnGrid.addEventListener('click', toggleGrid);
-  if (btnSnap) btnSnap.addEventListener('click', toggleSnapToGrid);
+  function refreshStageToggles() {
+    if (btnGrid) btnGrid.classList.toggle('is-on', state.gridVisible);
+    if (btnSnap) btnSnap.classList.toggle('is-on', state.snapToGrid);
+  }
+  if (btnGrid) {
+    btnGrid.addEventListener('click', () => {
+      toggleGrid();
+      refreshStageToggles();
+    });
+  }
+  if (btnSnap) {
+    btnSnap.addEventListener('click', () => {
+      toggleSnapToGrid();
+      refreshStageToggles();
+    });
+  }
+  refreshStageToggles(); // initial sync
 
   // About and Help modals
   const btnAbout = document.getElementById('btn-about');
