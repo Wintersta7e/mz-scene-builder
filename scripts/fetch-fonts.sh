@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Download woff2 fonts from Google Fonts into assets/fonts/.
+# Download latin-subset woff2 fonts from fontsource via jsDelivr.
 # CSP-safe: outputs are self-hosted; no runtime CDN reference.
 # Re-run any time to refresh.
 set -euo pipefail
@@ -8,36 +8,43 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 OUT="$REPO_ROOT/assets/fonts"
 mkdir -p "$OUT"
 
-# Modern Chrome UA so Google Fonts returns woff2 (not legacy formats).
-UA='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+# fontsource @5 ships pre-bundled latin-only woff2 files — no subset ambiguity.
+BASE='https://cdn.jsdelivr.net/npm'
 
-fetch_woff2() {
-  # $1 = google fonts query (e.g. "Inter:wght@400")
-  # $2 = output filename (no extension)
-  local query="$1"
-  local out="$2"
-  local css url
-  css=$(curl -fsSL -A "$UA" "https://fonts.googleapis.com/css2?family=$query&display=swap")
-  url=$(printf '%s\n' "$css" | grep -oE 'https://[^)]+\.woff2' | head -1)
-  if [ -z "$url" ]; then
-    echo "FAILED: no woff2 url for $query" >&2
-    exit 1
-  fi
-  echo "  $query -> $out.woff2"
-  curl -fsSL -A "$UA" "$url" -o "$OUT/$out.woff2"
+fetch() {
+  # $1 = url
+  # $2 = output filename
+  echo "  $2"
+  curl -fsSL "$1" -o "$OUT/$2"
 }
 
 echo "Fetching Inter (4 weights)..."
 for w in 400 500 600 700; do
-  fetch_woff2 "Inter:wght@$w" "inter-$w"
+  fetch "$BASE/@fontsource/inter@5/files/inter-latin-$w-normal.woff2" "inter-$w.woff2"
 done
 
 echo "Fetching JetBrains Mono (2 weights)..."
 for w in 400 500; do
-  fetch_woff2 "JetBrains+Mono:wght@$w" "jetbrains-mono-$w"
+  fetch "$BASE/@fontsource/jetbrains-mono@5/files/jetbrains-mono-latin-$w-normal.woff2" "jetbrains-mono-$w.woff2"
 done
 
 echo "Fetching Instrument Serif (italic)..."
-fetch_woff2 "Instrument+Serif:ital@1" "instrument-serif-400-italic"
+fetch "$BASE/@fontsource/instrument-serif@5/files/instrument-serif-latin-400-italic.woff2" "instrument-serif-400-italic.woff2"
 
-echo "Done. $(ls -1 "$OUT"/*.woff2 | wc -l) font files in $OUT"
+# Sanity check — every file should be > 10 KB. Anything smaller is a subset miss.
+echo
+echo "Verifying file sizes..."
+fail=0
+for f in "$OUT"/*.woff2; do
+  size=$(stat -c%s "$f" 2>/dev/null || stat -f%z "$f")
+  if [ "$size" -lt 10000 ]; then
+    echo "FAIL: $f is only $size bytes (expected > 10000)"
+    fail=1
+  fi
+done
+if [ "$fail" -eq 1 ]; then
+  echo "One or more font files look like partial downloads. Re-run or investigate."
+  exit 1
+fi
+
+echo "Done. $(ls -1 "$OUT"/*.woff2 | wc -l) font files in $OUT, all sane size."
