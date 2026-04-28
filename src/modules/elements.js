@@ -2,64 +2,68 @@
 // DOM Elements Cache
 // ============================================
 
+/** @type {Record<string, HTMLElement> | null} */
 let elements = null;
 
 function initElements() {
-  elements = {
-    openProject: document.getElementById('btn-open-project'),
-    projectName: document.getElementById('project-name'),
-    newScene: document.getElementById('btn-new-scene'),
-    loadScene: document.getElementById('btn-load-scene'),
-    saveScene: document.getElementById('btn-save-scene'),
-    exportMap: document.getElementById('btn-export-map'),
-    quickExport: document.getElementById('btn-quick-export'),
-    imageBrowser: document.getElementById('image-browser'),
-    imageSearch: document.getElementById('image-search'),
-    previewCanvas: document.getElementById('preview-canvas'),
-    propertiesPanel: document.getElementById('properties-panel'),
-    addPicture: document.getElementById('btn-add-picture'),
-    addMove: document.getElementById('btn-add-move'),
-    addRotate: document.getElementById('btn-add-rotate'),
-    addTint: document.getElementById('btn-add-tint'),
-    addErase: document.getElementById('btn-add-erase'),
-    addText: document.getElementById('btn-add-text'),
-    addWait: document.getElementById('btn-add-wait'),
-    addFlash: document.getElementById('btn-add-flash'),
-    deleteEvent: document.getElementById('btn-delete-event'),
-    clearScene: document.getElementById('btn-clear-scene'),
-    // Timeline elements
-    btnPlay: document.getElementById('btn-play'),
-    btnStop: document.getElementById('btn-stop'),
-    currentFrameDisplay: document.getElementById('current-frame'),
-    timelineLengthInput: document.getElementById('timeline-length'),
-    timelineLanes: document.getElementById('timeline-lanes'),
-    timelineTrack: document.getElementById('timeline-track'),
-    timelineRuler: document.getElementById('timeline-ruler'),
-    timelineEvents: document.getElementById('timeline-events'),
-    timelineCursor: document.getElementById('timeline-cursor'),
-    // Minimap elements
-    timelineMinimap: document.getElementById('timeline-minimap'),
-    minimapCanvas: document.getElementById('minimap-canvas'),
-    minimapViewport: document.getElementById('minimap-viewport'),
-    minimapCursor: document.getElementById('minimap-cursor'),
-    imagePickerModal: document.getElementById('image-picker-modal'),
-    pickerFolders: document.getElementById('picker-folders'),
-    pickerImages: document.getElementById('picker-images'),
-    exportModal: document.getElementById('export-modal'),
-    doExport: document.getElementById('btn-do-export'),
-    // Virtual dropdown containers for export
-    exportMapSelect: document.getElementById('export-map-select'),
-    exportEventSelect: document.getElementById('export-event-select'),
-    exportPageSelect: document.getElementById('export-page-select')
+  /**
+   * Resolve a required element by ID, throwing with a clear message if missing.
+   * Used to satisfy strict TypeScript without scattering null checks.
+   * @param {string} id
+   * @returns {HTMLElement}
+   */
+  const $ = (id) => {
+    const el = document.getElementById(id);
+    if (!el) throw new Error(`Required DOM element #${id} not found in index.html`);
+    return el;
   };
 
-  // Warn about missing critical elements
-  const critical = ['previewCanvas', 'timelineEvents', 'timelineCursor', 'propertiesPanel', 'timelineTrack'];
-  for (const key of critical) {
-    if (!elements[key]) {
-      console.error(`Critical DOM element missing: ${key}. App may not function correctly.`);
-    }
-  }
+  elements = {
+    openProject: $('btn-open-project'),
+    newScene: $('btn-new-scene'),
+    loadScene: $('btn-load-scene'),
+    saveScene: $('btn-save-scene'),
+    exportMap: $('btn-export-map'),
+    quickExport: $('btn-quick-export'),
+    imageBrowser: $('image-browser'),
+    imageSearch: $('image-search'),
+    previewCanvas: $('preview-canvas'),
+    propertiesPanel: $('properties-panel'),
+    addPicture: $('btn-add-picture'),
+    addMove: $('btn-add-move'),
+    addRotate: $('btn-add-rotate'),
+    addTint: $('btn-add-tint'),
+    addErase: $('btn-add-erase'),
+    addText: $('btn-add-text'),
+    addWait: $('btn-add-wait'),
+    addFlash: $('btn-add-flash'),
+    deleteEvent: $('btn-delete-event'),
+    clearScene: $('btn-clear-scene'),
+    // Timeline elements
+    btnPlay: $('btn-play'),
+    btnStop: $('btn-stop'),
+    currentFrameDisplay: $('current-frame'),
+    timelineLengthInput: $('timeline-length'),
+    timelineLanes: $('timeline-lanes'),
+    timelineTrack: $('timeline-track'),
+    timelineRuler: $('timeline-ruler'),
+    timelineEvents: $('timeline-events'),
+    timelineCursor: $('timeline-cursor'),
+    // Minimap elements
+    timelineMinimap: $('timeline-minimap'),
+    minimapCanvas: $('minimap-canvas'),
+    minimapViewport: $('minimap-viewport'),
+    minimapCursor: $('minimap-cursor'),
+    imagePickerModal: $('image-picker-modal'),
+    pickerFolders: $('picker-folders'),
+    pickerImages: $('picker-images'),
+    exportModal: $('export-modal'),
+    doExport: $('btn-do-export'),
+    // Virtual dropdown containers for export
+    exportMapSelect: $('export-map-select'),
+    exportEventSelect: $('export-event-select'),
+    exportPageSelect: $('export-page-select')
+  };
 
   return elements;
 }

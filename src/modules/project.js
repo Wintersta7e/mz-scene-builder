@@ -32,8 +32,6 @@ async function openProject() {
 
 async function openProjectPath(projPath) {
   try {
-    const elements = getElements();
-
     const result = await api.invoke('set-project-path', projPath);
     if (result.error) {
       showError(result.error);
@@ -53,7 +51,6 @@ async function openProjectPath(projPath) {
 
     state.projectPath = projPath;
     logger.info('Project opened:', projPath);
-    elements.projectName.textContent = projPath.split(/[/\\]/).pop();
     enableButtons(true);
     await loadFolderStructure();
     await loadScreenResolution();

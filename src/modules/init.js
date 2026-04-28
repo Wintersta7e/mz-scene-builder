@@ -45,7 +45,7 @@ function setupEventBusListeners() {
 
   // Individual renders
   eventBus.on(Events.RENDER_TIMELINE, renderTimeline);
-  eventBus.on(Events.RENDER_PREVIEW, (frame) => {
+  eventBus.on(Events.RENDER_PREVIEW, (/** @type {number | undefined} */ frame) => {
     renderPreviewAtFrame(frame !== undefined ? frame : state.currentFrame);
   });
   // Project loaded - resize preview and update quick export button
@@ -55,7 +55,7 @@ function setupEventBusListeners() {
   });
 
   // Recent project opened (mediator for settings -> project circular dependency)
-  eventBus.on(Events.OPEN_RECENT_PROJECT, (path) => {
+  eventBus.on(Events.OPEN_RECENT_PROJECT, (/** @type {string} */ path) => {
     openProjectPath(path).catch((err) => {
       logger.error('Failed to open recent project:', err);
     });
@@ -68,6 +68,11 @@ function initResizeHandles() {
   const resizeRight = document.getElementById('resize-right');
   const resizeTimeline = document.getElementById('resize-timeline');
 
+  if (!resizeLeft || !resizeRight || !resizeTimeline) {
+    logger.warn('Resize handles missing from DOM; skipping init');
+    return;
+  }
+
   // Min/max constraints (px)
   const LIB_MIN = 180;
   const LIB_MAX = 400;
@@ -76,17 +81,24 @@ function initResizeHandles() {
   const TL_MIN = 180;
   const TL_MAX = 540;
 
-  let dragging = null; // 'left' | 'right' | 'timeline' | null
+  /** @type {'left' | 'right' | 'timeline' | null} */
+  let dragging = null;
   let startX = 0;
   let startY = 0;
   let startSize = 0;
 
+  /** @param {string} name */
   function readVarPx(name) {
     const v = getComputedStyle(root).getPropertyValue(name).trim();
     const n = parseFloat(v);
     return Number.isFinite(n) ? n : 0;
   }
 
+  /**
+   * @param {number} val
+   * @param {number} min
+   * @param {number} max
+   */
   function clamp(val, min, max) {
     return Math.max(min, Math.min(max, val));
   }
@@ -213,9 +225,10 @@ function init() {
     onTimelineClick(e);
     renderPreviewAtFrame(state.currentFrame);
   });
-  elements.timelineLengthInput.addEventListener('change', () => {
-    state.timelineLength = Math.max(60, parseInt(elements.timelineLengthInput.value, 10) || 300);
-    elements.timelineLengthInput.value = state.timelineLength;
+  const lengthInput = /** @type {HTMLInputElement} */ (elements.timelineLengthInput);
+  lengthInput.addEventListener('change', () => {
+    state.timelineLength = Math.max(60, parseInt(lengthInput.value, 10) || 300);
+    lengthInput.value = String(state.timelineLength);
     markDirty();
     renderTimeline();
   });
