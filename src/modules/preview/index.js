@@ -506,4 +506,20 @@ async function renderPreviewAtFrame(frame) {
   }
 }
 
-export { getPreviewScale, resizePreviewCanvas, renderPreviewAtFrame };
+/**
+ * Sync the stage frame's aspect-ratio (via CSS vars) and the resolution
+ * readout chip with the current project's screen dimensions.
+ */
+function updateStageGeometry() {
+  const root = document.documentElement;
+  root.style.setProperty('--stage-w', String(state.screenWidth));
+  root.style.setProperty('--stage-h', String(state.screenHeight));
+
+  // Readout chip: "816 × 624"-style label
+  const readout = document.querySelector('.stage-readout .res');
+  if (readout) {
+    readout.textContent = `${state.screenWidth} \xd7 ${state.screenHeight}`;
+  }
+}
+
+export { getPreviewScale, resizePreviewCanvas, renderPreviewAtFrame, updateStageGeometry };

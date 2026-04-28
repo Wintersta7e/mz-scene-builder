@@ -9,6 +9,12 @@ import { getElements } from '../elements.js';
 import { saveState, markDirty } from '../undo-redo.js';
 import { eventBus, Events } from '../event-bus.js';
 import { logger } from '../logger.js';
+// setupModal is imported for re-export / future use. The image picker is a
+// persistent DOM element (display-toggled, not append/remove), so we wire
+// focus management inline using closeImagePicker as the close action rather
+// than calling setupModal directly (which calls modal.remove()).
+// eslint-disable-next-line no-unused-vars
+import { setupModal } from '../modals.js';
 
 // Track IntersectionObservers for cleanup
 const activeObservers = new Set();
@@ -22,11 +28,38 @@ function escapeHtml(text) {
     .replace(/'/g, '&#039;');
 }
 
+/** @type {Element | null} */
+let _pickerPreviousFocus = null;
+/** @type {((e: KeyboardEvent) => void) | null} */
+let _pickerEscapeHandler = null;
+
 async function openImagePicker() {
   if (!state.folderStructure) return;
 
   const elements = getElements();
-  elements.imagePickerModal.style.display = 'flex';
+  const modal = elements.imagePickerModal;
+
+  // ARIA attributes (setupModal pattern adapted for persistent-DOM modal)
+  modal.setAttribute('role', 'dialog');
+  modal.setAttribute('aria-modal', 'true');
+  modal.setAttribute('aria-label', 'Select Image');
+
+  modal.style.display = 'flex';
+
+  // Save focus origin for restore on close
+  _pickerPreviousFocus = document.activeElement;
+
+  // Escape to close
+  if (_pickerEscapeHandler) modal.removeEventListener('keydown', _pickerEscapeHandler);
+  _pickerEscapeHandler = (e) => {
+    if (e.key === 'Escape') closeImagePicker();
+  };
+  modal.addEventListener('keydown', _pickerEscapeHandler);
+
+  // Focus the close button (first focusable element in the header)
+  const closeBtn = modal.querySelector('.btn-close');
+  if (closeBtn instanceof HTMLElement) closeBtn.focus();
+
   elements.pickerFolders.innerHTML = '';
   elements.pickerImages.innerHTML = '<p class="placeholder">Select a folder</p>';
 
@@ -35,7 +68,21 @@ async function openImagePicker() {
 
 function closeImagePicker() {
   const elements = getElements();
-  elements.imagePickerModal.style.display = 'none';
+  const modal = elements.imagePickerModal;
+  modal.style.display = 'none';
+
+  // Remove Escape handler
+  if (_pickerEscapeHandler) {
+    modal.removeEventListener('keydown', _pickerEscapeHandler);
+    _pickerEscapeHandler = null;
+  }
+
+  // Restore focus to the element that opened the picker
+  if (_pickerPreviousFocus instanceof HTMLElement) {
+    _pickerPreviousFocus.focus();
+    _pickerPreviousFocus = null;
+  }
+
   // Disconnect all pending IntersectionObservers
   for (const obs of activeObservers) {
     obs.disconnect();
@@ -107,6 +154,11 @@ function renderPickerFolders(items, container = null) {
 }
 
 async function loadPickerImages(folderPath) {
+  for (const obs of activeObservers) {
+    obs.disconnect();
+  }
+  activeObservers.clear();
+
   const elements = getElements();
   elements.pickerImages.innerHTML = '<p class="placeholder">Loading...</p>';
 

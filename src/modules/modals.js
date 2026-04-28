@@ -203,4 +203,4 @@ function showShortcutsModal() {
   modal.querySelector('.btn-close').focus();
 }
 
-export { showAboutModal, showShortcutsModal };
+export { showAboutModal, showShortcutsModal, setupModal };

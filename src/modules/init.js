@@ -16,7 +16,7 @@ import { startAutosave, stopAutosave, checkAutosaveRecovery } from './autosave.j
 import { initTimeline, renderTimeline, onTimelineClick, updateTimelineCursor } from './timeline/index.js';
 import { initMinimapEvents, teardownMinimapEvents, updateCachedContainerWidth } from './timeline/minimap.js';
 import { renderProperties } from './properties/index.js';
-import { renderPreviewAtFrame, resizePreviewCanvas } from './preview/index.js';
+import { renderPreviewAtFrame, resizePreviewCanvas, updateStageGeometry } from './preview/index.js';
 import { closeImagePicker } from './preview/image-picker.js';
 import { filterImages } from './preview/image-browser.js';
 import { togglePlayback, stopPlayback } from './playback.js';
@@ -47,9 +47,10 @@ function setupEventBusListeners() {
   eventBus.on(Events.RENDER_PREVIEW, (/** @type {number | undefined} */ frame) => {
     renderPreviewAtFrame(frame !== undefined ? frame : state.currentFrame);
   });
-  // Project loaded - resize preview and update quick export button
+  // Project loaded - resize preview, update geometry + quick export button
   eventBus.on(Events.PROJECT_LOADED, () => {
     resizePreviewCanvas();
+    updateStageGeometry();
     updateQuickExportButton();
   });
 
@@ -400,8 +401,11 @@ function init() {
   initResizeHandles();
   wireTopRail();
 
-  // Initial preview canvas resize
-  requestAnimationFrame(() => resizePreviewCanvas());
+  // Initial preview canvas resize + geometry sync
+  requestAnimationFrame(() => {
+    resizePreviewCanvas();
+    updateStageGeometry();
+  });
 
   // Autosave
   startAutosave();

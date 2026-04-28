@@ -23,6 +23,9 @@ const api = window.api;
 /** @type {IntersectionObserver | null} */
 let thumbnailObserver = null;
 
+/** @type {Array<any> | null} */
+let _treeRoot = null;
+
 /**
  * Flat snapshot of every image in the project, derived from the folder
  * tree on project load.
@@ -367,6 +370,7 @@ function addSelectedImagesAsEvents() {
  * @param {Array<any>} items — folder/file tree
  */
 function renderFolderTree(_container, items) {
+  _treeRoot = items;
   imageFlat = flattenImageTree(items);
   topFolders = Array.from(new Set(imageFlat.map((it) => it.folder).filter(Boolean))).sort();
   state.libraryActiveFolder = null;
@@ -407,6 +411,14 @@ function expandToPath(path) {
 
 eventBus.on(Events.RENDER_TIMELINE, () => {
   if (imageFlat.length > 0) renderLibraryList();
+});
+
+eventBus.on(Events.IMAGES_LOADED, () => {
+  if (!_treeRoot) return;
+  imageFlat = flattenImageTree(_treeRoot);
+  topFolders = Array.from(new Set(imageFlat.map((it) => it.folder).filter(Boolean))).sort();
+  renderFolderChips();
+  renderLibraryList();
 });
 
 export {

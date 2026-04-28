@@ -256,14 +256,28 @@ export function buildOriginPad({ origin, onChange }) {
   const pad = document.createElement('div');
   pad.className = 'origin-pad';
 
-  const activeIdx = origin === 1 ? 4 : origin;
+  // Map data origin (0=top-left, 1=center) to active grid index.
+  const activeIdx = origin === 1 ? 4 : 0;
+
+  // Only cells the renderer currently supports are clickable. The others
+  // render visibly so the 3x3 layout reads correctly, but are disabled
+  // until the renderer learns to interpret origin codes 2-8.
+  const SUPPORTED = new Set([0, 4]);
+  const ORIGIN_FOR_INDEX = { 0: 0, 4: 1 };
 
   for (let i = 0; i < 9; i++) {
     const cell = document.createElement('button');
     cell.type = 'button';
     cell.className = `origin-cell${i === activeIdx ? ' is-active' : ''}`;
     cell.title = ORIGIN_LABELS[i];
-    cell.addEventListener('click', () => onChange(i));
+    if (SUPPORTED.has(i)) {
+      cell.addEventListener('click', () => onChange(ORIGIN_FOR_INDEX[i]));
+    } else {
+      cell.disabled = true;
+      cell.setAttribute('aria-disabled', 'true');
+      cell.style.opacity = '0.35';
+      cell.style.cursor = 'not-allowed';
+    }
     pad.appendChild(cell);
   }
   return pad;

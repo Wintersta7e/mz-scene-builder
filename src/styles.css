@@ -102,6 +102,10 @@
 
   --shadow-soft: 0 1px 0 oklch(1 0 0 / 0.04) inset, 0 12px 40px -12px oklch(0 0 0 / 0.6);
 
+  /* Stage geometry — overridden by JS on project load */
+  --stage-w: 816;
+  --stage-h: 624;
+
   /* Resize-handle driven dimensions (set by initResizeHandles in init.js) */
   --lib-w: 240px;
   --props-w: 280px;
@@ -801,8 +805,8 @@ body::after {
 
 .stage-frame {
   position: relative;
-  aspect-ratio: 16 / 9;
-  width: min(100%, calc((100vh - 44px - 280px - 32px - 56px) * 16 / 9));
+  aspect-ratio: var(--stage-w) / var(--stage-h);
+  width: min(100%, calc((100vh - 44px - 280px - 32px - 56px) * var(--stage-w) / var(--stage-h)));
   max-width: 100%;
   background: oklch(0.08 0.015 260);
   border-radius: 6px;

@@ -6,7 +6,7 @@ import { state } from '../state.js';
 import { getElements } from '../elements.js';
 import { saveState, markDirty } from '../undo-redo.js';
 import { sortEvents } from '../utils.js';
-import { selectEvent } from '../events.js';
+import { selectEvent, getEventDuration } from '../events.js';
 import { eventBus, Events } from '../event-bus.js';
 import { logger } from '../logger.js';
 import { renderProperties } from '../properties/index.js';
@@ -129,7 +129,7 @@ function startTimelineResize(e, evt, index, edge) {
 
   const startX = e.clientX;
   const startFrame = evt.startFrame || 0;
-  const startDur = evt[field] || 0;
+  const startDur = getEventDuration(evt.type, evt);
   const startRight = startFrame + startDur; // right edge anchor for left-handle drag
 
   state.timelineDragEvt = evt;
@@ -144,8 +144,9 @@ function startTimelineResize(e, evt, index, edge) {
       evt[field] = newDur;
     } else {
       // left edge: keep right edge at startRight; clamp so duration >= MIN_LENGTH
-      let newStart = Math.max(0, startFrame + deltaFrames);
+      let newStart = startFrame + deltaFrames;
       if (newStart > startRight - MIN_LENGTH) newStart = startRight - MIN_LENGTH;
+      if (newStart < 0) newStart = 0;
       const newDur = startRight - newStart;
       evt.startFrame = newStart;
       evt[field] = newDur;
