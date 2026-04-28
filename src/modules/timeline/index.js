@@ -236,16 +236,21 @@ function initTimeline() {
   const cursor = els.timelineCursor;
   const track = els.timelineEvents;
 
+  // Without this, the click that follows a grip mousedown bubbles to the
+  // timeline-track click handler and snaps the cursor to a 10-frame grid.
+  cursor.addEventListener('click', (e) => e.stopPropagation());
+
   cursor.addEventListener('mousedown', (e) => {
     if (e.button !== 0) return;
     e.preventDefault();
     e.stopPropagation();
 
-    const trackRect = track.getBoundingClientRect();
-    const px = state.timelineScale || PX_PER_FRAME_DEFAULT;
-
-    function move(ev) {
-      const x = ev.clientX - trackRect.left + track.scrollLeft;
+    function move(mouseEvt) {
+      // Read geometry and scale fresh each tick: panel resize or a future
+      // timeline-zoom feature would otherwise leave cached values stale.
+      const rect = track.getBoundingClientRect();
+      const px = state.timelineScale || PX_PER_FRAME_DEFAULT;
+      const x = mouseEvt.clientX - rect.left + track.scrollLeft;
       const frame = Math.max(0, Math.min(state.timelineLength, Math.round(x / px)));
       state.currentFrame = frame;
       updateTimelineCursor();

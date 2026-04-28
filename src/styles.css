@@ -1713,6 +1713,17 @@ textarea.prop-input {
   border-right: 6px solid transparent;
   border-top: 8px solid var(--amber);
 }
+.playhead::after {
+  /* Wider invisible strike so the playhead line itself catches drags */
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -4px;
+  right: -4px;
+  pointer-events: auto;
+  cursor: ew-resize;
+}
 .playhead-grip {
   position: absolute;
   top: -22px;
