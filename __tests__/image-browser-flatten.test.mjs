@@ -37,7 +37,12 @@ jest.unstable_mockModule('../src/modules/undo-redo.js', () => ({
 jest.unstable_mockModule('../src/modules/utils.js', () => ({
   sortEvents: jest.fn(),
   getNextInsertOrder: jest.fn(() => 0),
-  resetInsertOrderCounter: jest.fn()
+  resetInsertOrderCounter: jest.fn(),
+  makeTrailingThrottle: jest.fn((_ms, fn) => {
+    const t = (...args) => fn(...args);
+    t.cancel = jest.fn();
+    return t;
+  })
 }));
 
 jest.unstable_mockModule('../src/modules/events.js', () => ({

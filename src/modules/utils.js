@@ -56,4 +56,43 @@ function resetInsertOrderCounter(maxOrder = 0) {
   insertOrderCounter = maxOrder;
 }
 
-export { rgbToHex, hexToRgb, sortEvents, TYPE_PRIORITY, getNextInsertOrder, resetInsertOrderCounter };
+/**
+ * Trailing-throttle wrapper. The first call schedules `fn` to fire after
+ * `ms`; subsequent calls during the wait are dropped. After firing, the
+ * next call is free to schedule again. Exposes a `cancel()` method that
+ * clears any pending fire without invoking `fn`.
+ *
+ * @template {(...args: any[]) => any} F
+ * @param {number} ms
+ * @param {F} fn
+ * @returns {((...args: Parameters<F>) => void) & { cancel: () => void }}
+ */
+function makeTrailingThrottle(ms, fn) {
+  /** @type {ReturnType<typeof setTimeout> | null} */
+  let timer = null;
+  /** @type {any} */
+  const throttled = (...args) => {
+    if (timer !== null) return;
+    timer = setTimeout(() => {
+      timer = null;
+      fn(...args);
+    }, ms);
+  };
+  throttled.cancel = () => {
+    if (timer !== null) {
+      clearTimeout(timer);
+      timer = null;
+    }
+  };
+  return throttled;
+}
+
+export {
+  rgbToHex,
+  hexToRgb,
+  sortEvents,
+  TYPE_PRIORITY,
+  getNextInsertOrder,
+  resetInsertOrderCounter,
+  makeTrailingThrottle
+};

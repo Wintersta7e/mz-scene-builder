@@ -76,10 +76,7 @@ function stopTimelineDrag(onDrag, onStop) {
   }
 
   sortEvents(state.events);
-
-  if (selectedEvt) {
-    state.selectedEventIndex = state.events.indexOf(selectedEvt);
-  }
+  state.selectedEventIndex = recoverSelectedIndex(state.events, selectedEvt);
 
   markDirty();
 
@@ -128,6 +125,19 @@ const MIN_LENGTH = 8; // frames
  * }} args
  * @returns {{ startFrame: number; duration: number }}
  */
+/**
+ * After a sort that may have reordered the events array, recover the new
+ * index of the previously-selected event by reference equality. Returns
+ * -1 if there was no selection or the event no longer exists in the array.
+ *
+ * @param {Array<any>} events
+ * @param {any | null} selectedEvt — event reference captured BEFORE the sort
+ * @returns {number}
+ */
+function recoverSelectedIndex(events, selectedEvt) {
+  return selectedEvt ? events.indexOf(selectedEvt) : -1;
+}
+
 function computeResize({ edge, startFrame, startDur, deltaFrames, minLength = MIN_LENGTH }) {
   const startRight = startFrame + startDur;
   if (edge === 'right') {
@@ -182,9 +192,8 @@ function startTimelineResize(e, evt, index, edge) {
   };
 
   const onStop = () => {
-    // Capture the currently-selected event reference BEFORE sortEvents
-    // potentially reorders the array, so we can recover the right index
-    // afterwards. Mirrors the recovery pattern in stopTimelineDrag.
+    // Capture the selected event reference before sortEvents potentially
+    // reorders the array, then re-resolve its new index afterwards.
     const selectedEvt = state.selectedEventIndex >= 0 ? state.events[state.selectedEventIndex] : null;
 
     state.timelineDragEvt = null;
@@ -192,10 +201,7 @@ function startTimelineResize(e, evt, index, edge) {
     document.removeEventListener('mousemove', onMove);
     document.removeEventListener('mouseup', onStop);
     sortEvents(state.events);
-
-    if (selectedEvt) {
-      state.selectedEventIndex = state.events.indexOf(selectedEvt);
-    }
+    state.selectedEventIndex = recoverSelectedIndex(state.events, selectedEvt);
 
     markDirty();
     eventBus.emit(Events.RENDER_TIMELINE);
@@ -208,4 +214,4 @@ function startTimelineResize(e, evt, index, edge) {
   e.stopPropagation();
 }
 
-export { startTimelineDrag, startTimelineResize, computeResize };
+export { startTimelineDrag, startTimelineResize, computeResize, recoverSelectedIndex };

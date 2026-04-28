@@ -11,7 +11,7 @@
 import { state } from '../state.js';
 import { getElements } from '../elements.js';
 import { saveState, markDirty } from '../undo-redo.js';
-import { sortEvents } from '../utils.js';
+import { sortEvents, makeTrailingThrottle } from '../utils.js';
 import { createDefaultEvent, clearImageSelection, getEventDuration } from '../events.js';
 import { logger } from '../logger.js';
 import { eventBus, Events } from '../event-bus.js';
@@ -417,24 +417,17 @@ function expandToPath(path) {
 
 // ---------- Wiring ----------
 
-let _libRefreshTimer = /** @type {ReturnType<typeof setTimeout> | null} */ (null);
+const refreshLibraryThrottled = makeTrailingThrottle(120, renderLibraryList);
+
 eventBus.on(Events.RENDER_TIMELINE, () => {
-  if (imageFlat.length === 0) return;
-  if (_libRefreshTimer) return; // already queued
-  _libRefreshTimer = setTimeout(() => {
-    _libRefreshTimer = null;
-    renderLibraryList();
-  }, 120);
+  if (imageFlat.length > 0) refreshLibraryThrottled();
 });
 
 eventBus.on(Events.IMAGES_LOADED, () => {
   if (!_treeRoot) return;
-  // Re-flattening + re-rendering here makes any pending RENDER_TIMELINE
-  // throttle redundant — drop it so we don't double-render 120 ms later.
-  if (_libRefreshTimer) {
-    clearTimeout(_libRefreshTimer);
-    _libRefreshTimer = null;
-  }
+  // The full re-render below makes any throttled RENDER_TIMELINE refresh
+  // redundant — drop it so we don't double-render 120 ms later.
+  refreshLibraryThrottled.cancel();
   imageFlat = flattenImageTree(_treeRoot);
   topFolders = Array.from(new Set(imageFlat.map((it) => it.folder).filter(Boolean))).sort();
   renderFolderChips();

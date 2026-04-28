@@ -41,7 +41,7 @@ jest.unstable_mockModule('../src/modules/properties/index.js', () => ({
   renderProperties: jest.fn()
 }));
 
-const { computeResize } = await import('../src/modules/timeline/drag.js');
+const { computeResize, recoverSelectedIndex } = await import('../src/modules/timeline/drag.js');
 
 describe('computeResize', () => {
   describe('right edge', () => {
@@ -93,5 +93,37 @@ describe('computeResize', () => {
       expect(r.startFrame).toBe(100);
       expect(r.duration).toBe(60);
     });
+  });
+});
+
+describe('recoverSelectedIndex', () => {
+  it('returns -1 when no event was selected before the sort', () => {
+    expect(recoverSelectedIndex([{ id: 'a' }, { id: 'b' }], null)).toBe(-1);
+  });
+
+  it('returns the new index of the selected event after a reorder', () => {
+    const a = { id: 'a' };
+    const b = { id: 'b' };
+    const c = { id: 'c' };
+    const reordered = [c, a, b];
+    expect(recoverSelectedIndex(reordered, a)).toBe(1);
+  });
+
+  it('returns 0 when the selected event lands at the front', () => {
+    const a = { id: 'a' };
+    const b = { id: 'b' };
+    expect(recoverSelectedIndex([a, b], a)).toBe(0);
+  });
+
+  it('returns -1 if the selected event no longer exists in the array', () => {
+    const a = { id: 'a' };
+    const b = { id: 'b' };
+    expect(recoverSelectedIndex([b], a)).toBe(-1);
+  });
+
+  it('matches by reference, not by value', () => {
+    const a = { id: 'a' };
+    const aClone = { id: 'a' };
+    expect(recoverSelectedIndex([aClone], a)).toBe(-1);
   });
 });

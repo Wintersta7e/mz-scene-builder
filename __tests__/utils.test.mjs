@@ -1,8 +1,18 @@
-let rgbToHex, hexToRgb, sortEvents, TYPE_PRIORITY, getNextInsertOrder, resetInsertOrderCounter;
+import { jest } from '@jest/globals';
+
+let rgbToHex, hexToRgb, sortEvents, TYPE_PRIORITY, getNextInsertOrder, resetInsertOrderCounter, makeTrailingThrottle;
 
 beforeAll(async () => {
   const mod = await import('../src/modules/utils.js');
-  ({ rgbToHex, hexToRgb, sortEvents, TYPE_PRIORITY, getNextInsertOrder, resetInsertOrderCounter } = mod);
+  ({
+    rgbToHex,
+    hexToRgb,
+    sortEvents,
+    TYPE_PRIORITY,
+    getNextInsertOrder,
+    resetInsertOrderCounter,
+    makeTrailingThrottle
+  } = mod);
 });
 
 // Reset counter before every test to prevent cross-suite contamination
@@ -238,5 +248,75 @@ describe('resetInsertOrderCounter', () => {
     getNextInsertOrder(); // increment
     resetInsertOrderCounter(0);
     expect(getNextInsertOrder()).toBe(1);
+  });
+});
+
+describe('makeTrailingThrottle', () => {
+  beforeEach(() => {
+    jest.useFakeTimers();
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
+  it('does not fire synchronously on the first call', () => {
+    const fn = jest.fn();
+    const throttled = makeTrailingThrottle(120, fn);
+    throttled();
+    expect(fn).not.toHaveBeenCalled();
+  });
+
+  it('fires once after the delay', () => {
+    const fn = jest.fn();
+    const throttled = makeTrailingThrottle(120, fn);
+    throttled();
+    jest.advanceTimersByTime(120);
+    expect(fn).toHaveBeenCalledTimes(1);
+  });
+
+  it('drops repeat calls inside the same window', () => {
+    const fn = jest.fn();
+    const throttled = makeTrailingThrottle(120, fn);
+    throttled();
+    throttled();
+    throttled();
+    jest.advanceTimersByTime(120);
+    expect(fn).toHaveBeenCalledTimes(1);
+  });
+
+  it('schedules again after a fire completes', () => {
+    const fn = jest.fn();
+    const throttled = makeTrailingThrottle(120, fn);
+    throttled();
+    jest.advanceTimersByTime(120);
+    throttled();
+    jest.advanceTimersByTime(120);
+    expect(fn).toHaveBeenCalledTimes(2);
+  });
+
+  it('cancel() drops a pending fire', () => {
+    const fn = jest.fn();
+    const throttled = makeTrailingThrottle(120, fn);
+    throttled();
+    throttled.cancel();
+    jest.advanceTimersByTime(120);
+    expect(fn).not.toHaveBeenCalled();
+  });
+
+  it('cancel() during idle is a no-op', () => {
+    const fn = jest.fn();
+    const throttled = makeTrailingThrottle(120, fn);
+    expect(() => throttled.cancel()).not.toThrow();
+    jest.advanceTimersByTime(120);
+    expect(fn).not.toHaveBeenCalled();
+  });
+
+  it('passes arguments from the scheduling call to the wrapped function', () => {
+    const fn = jest.fn();
+    const throttled = makeTrailingThrottle(50, fn);
+    throttled('hello', 42);
+    jest.advanceTimersByTime(50);
+    expect(fn).toHaveBeenCalledWith('hello', 42);
   });
 });
