@@ -63,69 +63,81 @@ function setupEventBusListeners() {
 }
 
 function initResizeHandles() {
-  const leftPanel = document.getElementById('panel-left');
-  const rightPanel = document.getElementById('panel-right');
-  const timelinePanel = document.getElementById('panel-timeline');
+  const root = document.documentElement;
   const resizeLeft = document.getElementById('resize-left');
   const resizeRight = document.getElementById('resize-right');
   const resizeTimeline = document.getElementById('resize-timeline');
 
-  let isResizing = false;
-  let currentHandle = null;
-  let startX, startY, startWidth, startHeight;
+  // Min/max constraints (px)
+  const LIB_MIN = 180;
+  const LIB_MAX = 400;
+  const PROPS_MIN = 220;
+  const PROPS_MAX = 420;
+  const TL_MIN = 180;
+  const TL_MAX = 540;
+
+  let dragging = null; // 'left' | 'right' | 'timeline' | null
+  let startX = 0;
+  let startY = 0;
+  let startSize = 0;
+
+  function readVarPx(name) {
+    const v = getComputedStyle(root).getPropertyValue(name).trim();
+    const n = parseFloat(v);
+    return Number.isFinite(n) ? n : 0;
+  }
+
+  function clamp(val, min, max) {
+    return Math.max(min, Math.min(max, val));
+  }
 
   resizeLeft.addEventListener('mousedown', (e) => {
-    isResizing = true;
-    currentHandle = 'left';
+    dragging = 'left';
     startX = e.clientX;
-    startWidth = leftPanel.offsetWidth;
+    startSize = readVarPx('--lib-w');
     resizeLeft.classList.add('dragging');
     e.preventDefault();
   });
 
   resizeRight.addEventListener('mousedown', (e) => {
-    isResizing = true;
-    currentHandle = 'right';
+    dragging = 'right';
     startX = e.clientX;
-    startWidth = rightPanel.offsetWidth;
+    startSize = readVarPx('--props-w');
     resizeRight.classList.add('dragging');
     e.preventDefault();
   });
 
   resizeTimeline.addEventListener('mousedown', (e) => {
-    isResizing = true;
-    currentHandle = 'timeline';
+    dragging = 'timeline';
     startY = e.clientY;
-    startHeight = timelinePanel.offsetHeight;
+    startSize = readVarPx('--tl-h');
     resizeTimeline.classList.add('dragging');
     e.preventDefault();
   });
 
   document.addEventListener('mousemove', (e) => {
-    if (!isResizing) return;
+    if (!dragging) return;
 
-    if (currentHandle === 'left') {
-      const newWidth = startWidth + (e.clientX - startX);
-      leftPanel.style.width = `${Math.max(150, Math.min(400, newWidth))}px`;
-    } else if (currentHandle === 'right') {
-      const newWidth = startWidth - (e.clientX - startX);
-      rightPanel.style.width = `${Math.max(180, Math.min(400, newWidth))}px`;
-    } else if (currentHandle === 'timeline') {
-      const newHeight = startHeight - (e.clientY - startY);
-      timelinePanel.style.height = `${Math.max(150, Math.min(500, newHeight))}px`;
+    if (dragging === 'left') {
+      const next = clamp(startSize + (e.clientX - startX), LIB_MIN, LIB_MAX);
+      root.style.setProperty('--lib-w', `${next}px`);
+    } else if (dragging === 'right') {
+      const next = clamp(startSize - (e.clientX - startX), PROPS_MIN, PROPS_MAX);
+      root.style.setProperty('--props-w', `${next}px`);
+    } else if (dragging === 'timeline') {
+      const next = clamp(startSize - (e.clientY - startY), TL_MIN, TL_MAX);
+      root.style.setProperty('--tl-h', `${next}px`);
     }
   });
 
   document.addEventListener('mouseup', () => {
-    if (isResizing) {
-      isResizing = false;
-      resizeLeft.classList.remove('dragging');
-      resizeRight.classList.remove('dragging');
-      resizeTimeline.classList.remove('dragging');
-      currentHandle = null;
-      resizePreviewCanvas();
-      updateCachedContainerWidth();
-    }
+    if (!dragging) return;
+    dragging = null;
+    resizeLeft.classList.remove('dragging');
+    resizeRight.classList.remove('dragging');
+    resizeTimeline.classList.remove('dragging');
+    resizePreviewCanvas();
+    updateCachedContainerWidth();
   });
 }
 
