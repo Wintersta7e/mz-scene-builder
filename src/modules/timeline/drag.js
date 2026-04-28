@@ -182,11 +182,21 @@ function startTimelineResize(e, evt, index, edge) {
   };
 
   const onStop = () => {
+    // Capture the currently-selected event reference BEFORE sortEvents
+    // potentially reorders the array, so we can recover the right index
+    // afterwards. Mirrors the recovery pattern in stopTimelineDrag.
+    const selectedEvt = state.selectedEventIndex >= 0 ? state.events[state.selectedEventIndex] : null;
+
     state.timelineDragEvt = null;
     state.timelineDragIndex = -1;
     document.removeEventListener('mousemove', onMove);
     document.removeEventListener('mouseup', onStop);
     sortEvents(state.events);
+
+    if (selectedEvt) {
+      state.selectedEventIndex = state.events.indexOf(selectedEvt);
+    }
+
     markDirty();
     eventBus.emit(Events.RENDER_TIMELINE);
     renderProperties();

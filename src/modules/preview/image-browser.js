@@ -409,8 +409,14 @@ function expandToPath(path) {
 
 // ---------- Wiring ----------
 
+let _libRefreshTimer = /** @type {ReturnType<typeof setTimeout> | null} */ (null);
 eventBus.on(Events.RENDER_TIMELINE, () => {
-  if (imageFlat.length > 0) renderLibraryList();
+  if (imageFlat.length === 0) return;
+  if (_libRefreshTimer) return; // already queued
+  _libRefreshTimer = setTimeout(() => {
+    _libRefreshTimer = null;
+    renderLibraryList();
+  }, 120);
 });
 
 eventBus.on(Events.IMAGES_LOADED, () => {

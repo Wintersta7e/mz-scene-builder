@@ -1356,6 +1356,11 @@ textarea.prop-input {
   background: linear-gradient(180deg, var(--ink-2), var(--ink-1));
   gap: 10px;
 }
+.transport-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
 .transport-btn {
   width: 28px;
   height: 28px;

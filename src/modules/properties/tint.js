@@ -81,10 +81,7 @@ export function renderTintProperties(ev, index) {
               value: ev[f.prop] ?? 0,
               min: f.min,
               max: f.max,
-              onChange: (v) => {
-                commit(ev, f.prop, v, index);
-                refresh();
-              }
+              onChange: (v) => commit(ev, f.prop, v, index)
             })
           )
         );
