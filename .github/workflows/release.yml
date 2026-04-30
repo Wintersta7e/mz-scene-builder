@@ -1,0 +1,68 @@
+name: Release
+
+# Triggers on every annotated `vX.Y.Z` tag push. Builds the Windows
+# portable + installer and the macOS dmg + zip in parallel and attaches
+# them to the GitHub Release matching the tag.
+#
+# Code signing is intentionally not configured: there is no signing
+# certificate, so electron-builder produces unsigned binaries. End users
+# get the standard Windows SmartScreen / macOS Gatekeeper warning on
+# first launch — same UX as the previous local builds.
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write # required to upload assets to the release
+
+jobs:
+  build:
+    name: Build (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest]
+    env:
+      # Disable electron-builder's auto-detection of macOS signing
+      # identities; without this the macOS build fails when no Developer
+      # ID is present in the runner keychain.
+      CSC_IDENTITY_AUTO_DISCOVERY: false
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - run: npm ci
+
+      - name: Build (Windows)
+        if: matrix.os == 'windows-latest'
+        run: npm run build:win
+
+      - name: Build (macOS)
+        if: matrix.os == 'macos-latest'
+        run: npm run build:mac
+
+      - name: Upload Windows artifacts
+        if: matrix.os == 'windows-latest'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          tag="${GITHUB_REF#refs/tags/}"
+          gh release upload "$tag" dist/*.exe --clobber
+
+      - name: Upload macOS artifacts
+        if: matrix.os == 'macos-latest'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          tag="${GITHUB_REF#refs/tags/}"
+          gh release upload "$tag" dist/*.dmg dist/*.zip --clobber
