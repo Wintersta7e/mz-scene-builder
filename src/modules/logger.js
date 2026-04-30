@@ -177,4 +177,4 @@ if (typeof PerformanceObserver !== 'undefined') {
   }
 }
 
-export { logger, LOG_LEVELS, isDev };
+export { logger, LOG_LEVELS, isDev, safeStringify };

@@ -153,4 +153,4 @@ const logger = {
   }
 };
 
-module.exports = { logger, LOG_LEVELS, isDev, attachFile, getLogFilePath };
+module.exports = { logger, LOG_LEVELS, isDev, attachFile, getLogFilePath, safeStringify };
