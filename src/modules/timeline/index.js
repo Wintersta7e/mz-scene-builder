@@ -9,8 +9,16 @@ import { eventBus, Events } from '../event-bus.js';
 import { renderMinimap, updateMinimapCursor } from './minimap.js';
 import { startTimelineDrag, startTimelineResize } from './drag.js';
 import { renderProperties } from '../properties/index.js';
+import { assignSubLanes } from '../utils.js';
 
 const PX_PER_FRAME_DEFAULT = 5; // Matches state.timelineScale's existing default
+
+// Sub-lane geometry. Each row inside a lane is BLOCK_HEIGHT tall, with
+// LANE_PADDING above the first row and below the last. The lane's CSS
+// `--sublane-count` drives both the visible flex-grow and the min-height.
+const BLOCK_HEIGHT = 20;
+const SUBLANE_GAP = 4;
+const LANE_PADDING = 4;
 
 /**
  * Lane metadata. Indices match TIMELINE_LANES from state.js.
@@ -23,6 +31,39 @@ const LANE_META = [
 ];
 
 const POINT_EVENT_TYPES = new Set(['rotatePicture', 'erasePicture']);
+
+/**
+ * Compute per-lane sub-lane assignments using greedy interval-scheduling
+ * over each lane's events. Returns a map keyed by event reference and a
+ * parallel `counts` array (one entry per lane) of max sub-lanes used.
+ */
+function computeSubLaneAssignments(events) {
+  const grouped = LANE_META.map(() => /** @type {Array<*>} */ ([]));
+  for (const ev of events) {
+    const laneIdx = getEventLane(ev.type);
+    if (laneIdx >= 0 && laneIdx < grouped.length) grouped[laneIdx].push(ev);
+  }
+
+  const assignments = new Map();
+  const counts = [];
+  for (let laneIdx = 0; laneIdx < grouped.length; laneIdx++) {
+    const laneEvents = grouped[laneIdx];
+    const { subLanes, maxSubLanes } = assignSubLanes(laneEvents, (ev) => {
+      const start = ev.startFrame || 0;
+      const dur = Math.max(1, getEventDuration(ev.type, ev));
+      return [start, start + dur];
+    });
+    for (let j = 0; j < laneEvents.length; j++) {
+      assignments.set(laneEvents[j], subLanes[j]);
+    }
+    counts.push(Math.max(1, maxSubLanes));
+  }
+  return { assignments, counts };
+}
+
+function computeSubLaneCounts(events) {
+  return computeSubLaneAssignments(events).counts;
+}
 
 // ============================================
 // Pure label helper
@@ -69,6 +110,10 @@ function renderLanesCol() {
     if (idx >= 0 && idx < counts.length) counts[idx]++;
   }
 
+  // Sub-lane counts must match what renderEventBlocks computes so the lane
+  // heads stay aligned with the rows on the right.
+  const subLaneCounts = computeSubLaneCounts(state.events);
+
   while (col.firstChild) col.removeChild(col.firstChild);
 
   for (let i = 0; i < LANE_META.length; i++) {
@@ -76,6 +121,7 @@ function renderLanesCol() {
     const head = document.createElement('div');
     head.className = 'lane-head';
     head.dataset.lane = meta.data;
+    head.style.setProperty('--sublane-count', String(subLaneCounts[i]));
 
     const swatch = document.createElement('div');
     swatch.className = 'swatch';
@@ -136,7 +182,10 @@ function renderEventBlocks() {
   track.style.width = `${length * px}px`;
   track.style.position = 'relative';
 
-  // 4 lane rows (CSS makes them flex 1 each within the track height)
+  const { assignments, counts } = computeSubLaneAssignments(state.events);
+
+  // 4 lane rows. Each row's height grows with its sub-lane count via the
+  // --sublane-count CSS variable (driven by flex-grow + min-height).
   const laneRows = [];
   for (let i = 0; i < LANE_META.length; i++) {
     const row = document.createElement('div');
@@ -144,6 +193,7 @@ function renderEventBlocks() {
     row.dataset.lane = LANE_META[i].data;
     row.dataset.laneIndex = String(i);
     row.style.position = 'relative';
+    row.style.setProperty('--sublane-count', String(counts[i]));
     track.appendChild(row);
     laneRows.push(row);
   }
@@ -162,6 +212,10 @@ function renderEventBlocks() {
 
     const start = ev.startFrame || 0;
     const dur = getEventDuration(ev.type, ev);
+    const subLane = assignments.get(ev) || 0;
+    block.dataset.sublane = String(subLane);
+    block.style.top = `${LANE_PADDING + subLane * (BLOCK_HEIGHT + SUBLANE_GAP)}px`;
+    block.style.height = `${BLOCK_HEIGHT}px`;
 
     if (POINT_EVENT_TYPES.has(ev.type)) {
       block.classList.add('is-point');
@@ -235,6 +289,23 @@ function initTimeline() {
   const els = getElements();
   const cursor = els.timelineCursor;
   const track = els.timelineEvents;
+
+  // Keep the lane-heads on the left scrolling in lockstep with the
+  // right-hand timeline so labels stay aligned with their rows when
+  // sub-lanes overflow the visible area.
+  const trackScroll = els.timelineTrack;
+  const lanesCol = els.timelineLanes;
+  if (trackScroll && lanesCol) {
+    trackScroll.addEventListener(
+      'scroll',
+      () => {
+        if (lanesCol.scrollTop !== trackScroll.scrollTop) {
+          lanesCol.scrollTop = trackScroll.scrollTop;
+        }
+      },
+      { passive: true }
+    );
+  }
 
   // Without this, the click that follows a grip mousedown bubbles to the
   // timeline-track click handler and snaps the cursor to a 10-frame grid.

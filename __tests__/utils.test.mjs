@@ -1,6 +1,13 @@
 import { jest } from '@jest/globals';
 
-let rgbToHex, hexToRgb, sortEvents, TYPE_PRIORITY, getNextInsertOrder, resetInsertOrderCounter, makeTrailingThrottle;
+let rgbToHex,
+  hexToRgb,
+  sortEvents,
+  TYPE_PRIORITY,
+  getNextInsertOrder,
+  resetInsertOrderCounter,
+  makeTrailingThrottle,
+  assignSubLanes;
 
 beforeAll(async () => {
   const mod = await import('../src/modules/utils.js');
@@ -11,7 +18,8 @@ beforeAll(async () => {
     TYPE_PRIORITY,
     getNextInsertOrder,
     resetInsertOrderCounter,
-    makeTrailingThrottle
+    makeTrailingThrottle,
+    assignSubLanes
   } = mod);
 });
 
@@ -318,5 +326,90 @@ describe('makeTrailingThrottle', () => {
     throttled('hello', 42);
     jest.advanceTimersByTime(50);
     expect(fn).toHaveBeenCalledWith('hello', 42);
+  });
+});
+
+describe('assignSubLanes', () => {
+  const range = (start, dur) => [start, start + dur];
+
+  it('returns empty result for empty input', () => {
+    const out = assignSubLanes([], () => [0, 0]);
+    expect(out).toEqual({ subLanes: [], maxSubLanes: 0 });
+  });
+
+  it('places non-overlapping events on a single sub-lane', () => {
+    const events = [
+      { id: 'a', start: 0, dur: 30 },
+      { id: 'b', start: 30, dur: 30 },
+      { id: 'c', start: 60, dur: 30 }
+    ];
+    const out = assignSubLanes(events, (e) => range(e.start, e.dur));
+    expect(out.maxSubLanes).toBe(1);
+    expect(out.subLanes).toEqual([0, 0, 0]);
+  });
+
+  it('promotes overlapping events to a new sub-lane', () => {
+    const events = [
+      { id: 'a', start: 0, dur: 60 },
+      { id: 'b', start: 30, dur: 60 }
+    ];
+    const out = assignSubLanes(events, (e) => range(e.start, e.dur));
+    expect(out.maxSubLanes).toBe(2);
+    expect(out.subLanes).toEqual([0, 1]);
+  });
+
+  it('reuses sub-lane 0 once an earlier event has ended', () => {
+    const events = [
+      { id: 'a', start: 0, dur: 30 },
+      { id: 'b', start: 10, dur: 30 },
+      { id: 'c', start: 50, dur: 30 }
+    ];
+    const out = assignSubLanes(events, (e) => range(e.start, e.dur));
+    expect(out.maxSubLanes).toBe(2);
+    // a ends at 30; b ends at 40; c starts at 50 -> picks first free sub-lane (0).
+    expect(out.subLanes).toEqual([0, 1, 0]);
+  });
+
+  it('assigns indices in original event order even when input is unsorted', () => {
+    const events = [
+      { id: 'late', start: 60, dur: 30 },
+      { id: 'early', start: 0, dur: 30 },
+      { id: 'mid', start: 30, dur: 30 }
+    ];
+    const out = assignSubLanes(events, (e) => range(e.start, e.dur));
+    expect(out.maxSubLanes).toBe(1);
+    // result is parallel to input array, so [late, early, mid] all share lane 0.
+    expect(out.subLanes).toEqual([0, 0, 0]);
+  });
+
+  it('handles three concurrent events by opening three sub-lanes', () => {
+    const events = [
+      { id: 'a', start: 0, dur: 100 },
+      { id: 'b', start: 10, dur: 100 },
+      { id: 'c', start: 20, dur: 100 }
+    ];
+    const out = assignSubLanes(events, (e) => range(e.start, e.dur));
+    expect(out.maxSubLanes).toBe(3);
+    expect(out.subLanes).toEqual([0, 1, 2]);
+  });
+
+  it('treats touching ranges (end == next start) as non-overlapping', () => {
+    const events = [
+      { id: 'a', start: 0, dur: 30 },
+      { id: 'b', start: 30, dur: 30 }
+    ];
+    const out = assignSubLanes(events, (e) => range(e.start, e.dur));
+    expect(out.maxSubLanes).toBe(1);
+    expect(out.subLanes).toEqual([0, 0]);
+  });
+
+  it('does not mutate the input array', () => {
+    const events = [
+      { id: 'a', start: 60, dur: 30 },
+      { id: 'b', start: 0, dur: 30 }
+    ];
+    const snapshot = [...events];
+    assignSubLanes(events, (e) => range(e.start, e.dur));
+    expect(events).toEqual(snapshot);
   });
 });

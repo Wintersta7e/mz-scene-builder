@@ -129,11 +129,15 @@ async function openExportModal() {
     pageDropdown.setItems([]);
     elements.doExport.disabled = true;
 
-    // Check if maps are ready (pre-rendered on project load)
+    // Show the modal immediately so the click feels responsive even on
+    // large projects where map prefetch hasn't finished yet.
+    elements.exportModal.style.display = 'grid';
+
     if (state.cachedMaps) {
       mapDropdown.setDisabled(false);
     } else {
-      // Fetch maps (fallback - shouldn't happen normally)
+      // Fallback: prefetch hadn't finished. Surface progress in the
+      // dropdown placeholder while the IPC parses MapInfos.json.
       mapDropdown.setPlaceholder('Loading maps...');
       mapDropdown.setDisabled(true);
 
@@ -141,7 +145,6 @@ async function openExportModal() {
       if (maps.error) {
         showError(`Error loading maps: ${maps.error}`);
         mapDropdown.setPlaceholder('Error loading maps');
-        elements.exportModal.style.display = 'grid';
         return;
       }
       state.cachedMaps = maps;
@@ -149,9 +152,6 @@ async function openExportModal() {
       mapDropdown.setPlaceholder('-- Select Map --');
       mapDropdown.setDisabled(false);
     }
-
-    // Show modal
-    elements.exportModal.style.display = 'grid';
   } catch (err) {
     logger.error('Failed to open export modal:', err);
     showError(`Failed to open export: ${err.message}`);

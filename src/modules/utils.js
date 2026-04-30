@@ -87,6 +87,61 @@ function makeTrailingThrottle(ms, fn) {
   return throttled;
 }
 
+/**
+ * Greedy interval-scheduling sub-lane assignment. Given a list of events
+ * and a function that yields each event's `[startFrame, endFrame)` range,
+ * returns an array of sub-lane indices parallel to the input plus the
+ * total number of sub-lanes used. Sub-lane 0 is the topmost row; events
+ * are placed on the lowest-numbered sub-lane whose previous event has
+ * already ended.
+ *
+ * The events array is not mutated. Internally it is processed in
+ * order-of-appearance (after a stable sort by start frame), so callers
+ * should pre-sort or provide events already in chronological order.
+ *
+ * @param {Array<*>} events
+ * @param {(ev: *) => [number, number]} getRange
+ * @returns {{ subLanes: number[], maxSubLanes: number }}
+ */
+function assignSubLanes(events, getRange) {
+  const n = events.length;
+  if (n === 0) return { subLanes: [], maxSubLanes: 0 };
+
+  // Sort indices by start frame (stable). We need to map back to original order.
+  const indices = events.map((_, i) => i);
+  indices.sort((a, b) => {
+    const [as] = getRange(events[a]);
+    const [bs] = getRange(events[b]);
+    if (as !== bs) return as - bs;
+    return a - b;
+  });
+
+  /** @type {number[]} */
+  const result = new Array(n);
+  /** @type {number[]} last endFrame per existing sub-lane */
+  const subLaneEnds = [];
+
+  for (const i of indices) {
+    const [start, end] = getRange(events[i]);
+    let placed = -1;
+    for (let s = 0; s < subLaneEnds.length; s++) {
+      if (subLaneEnds[s] <= start) {
+        placed = s;
+        break;
+      }
+    }
+    if (placed === -1) {
+      placed = subLaneEnds.length;
+      subLaneEnds.push(end);
+    } else {
+      subLaneEnds[placed] = end;
+    }
+    result[i] = placed;
+  }
+
+  return { subLanes: result, maxSubLanes: subLaneEnds.length };
+}
+
 export {
   rgbToHex,
   hexToRgb,
@@ -94,5 +149,6 @@ export {
   TYPE_PRIORITY,
   getNextInsertOrder,
   resetInsertOrderCounter,
-  makeTrailingThrottle
+  makeTrailingThrottle,
+  assignSubLanes
 };
