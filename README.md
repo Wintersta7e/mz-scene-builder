@@ -11,7 +11,9 @@ A visual timeline editor for creating cutscenes and picture sequences for RPG Ma
 > [`mz-interaction-builder`](https://github.com/Wintersta7e/mz-interaction-builder) (dialogue trees) ·
 > [`mz-scene-builder`](https://github.com/Wintersta7e/mz-scene-builder) (timelines / cutscenes)
 
-<img src="screenshots/01-main-editor.png" alt="Timeline Scene Builder — main editor view" width="720" />
+<p align="center">
+  <img src="screenshots/01-main-editor.png" alt="Timeline Scene Builder — main editor view" width="720" />
+</p>
 
 ## Features
 
