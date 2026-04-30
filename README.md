@@ -15,17 +15,19 @@ A visual timeline editor for creating cutscenes and picture sequences for RPG Ma
 
 ## Features
 
-- **Timeline Editor** - Visual timeline with lanes for Pictures, Effects, and Text
+- **Timeline Editor** - 4 visual lanes for Pictures, Effects, Text, and Timing; overlapping events stack into sub-rows automatically
 - **Timeline Minimap** - Overview bar showing all events with click-to-navigate
 - **Visual Preview** - Live 16:9 preview with drag-and-drop positioning
 - **Grid Overlay & Snap** - 64px grid for precise positioning
 - **Playback System** - Play through your scene with automatic text pausing
 - **8 Event Types** - Show/Move/Rotate/Tint/Erase Picture, Show Text, Wait, Screen Flash
-- **Image Browser** - Lazy-loading thumbnails with multi-select and search
+- **Image Browser** - Lazy-loading thumbnails with multi-select, search, and folder chips
+- **Workspace Modes** - Toggle Design / Preview / Inspect layouts; Spacebar plays / pauses
 - **Export Options** - Copy JSON to clipboard or export directly to map files
 - **Undo/Redo** - Full history support (50 entries)
 - **Auto-save** - Automatic backup every 3 minutes
 - **Drag & Drop** - Drop .mzscene files to open them
+- **Diagnostics** - F12 toggles DevTools; persistent log file at `%APPDATA%/Timeline Scene Builder/logs/main.log`
 
 ## Installation
 
@@ -52,25 +54,15 @@ npm start
 
 Drag and drop images directly on the 16:9 preview canvas. The grid overlay snaps to 64px increments.
 
-<img src="screenshots/02-preview-closeup.png" alt="Preview with multiple pictures and text" width="580" />
-
 ### Timeline
 
-Events are organized into lanes — Pictures, Effects, and Text — with color-coded blocks and a minimap for navigation.
-
-<img src="screenshots/03-timeline.png" alt="Timeline with picture and text events" width="580" />
+Events are organised into four colour-coded lanes — Pictures, Effects, Text, and Timing. Events that overlap in time are stacked into separate sub-rows so simultaneously-visible pictures (or simultaneous tints, texts, etc.) never visually collide. A minimap below the lanes provides click-to-navigate across the full scene.
 
 ### Properties
 
 Select any event to edit its properties in the right panel.
 
-<img src="screenshots/04-properties.png" alt="Text event properties panel" width="280" />
-
 ### Exporting
-
-<img src="screenshots/06-export-dialog.png" alt="Export to Map dialog" width="340" />
-
-<img src="screenshots/07-export-map-selection.png" alt="Map selection dropdown" width="340" />
 
 Select a target Map, Event, and Page — commands are inserted at the end of the selected event page.
 
@@ -109,7 +101,7 @@ Select a target Map, Event, and Page — commands are inserted at the end of the
 - **Runtime**: Electron 41
 - **Language**: Vanilla JavaScript (ES Modules in renderer, CJS in main/preload)
 - **Architecture**: Event bus with centralized state, contextIsolation + sandbox + CSP
-- **Testing**: Jest (121 tests, per-file coverage thresholds)
+- **Testing**: Jest (174 tests, per-file coverage thresholds)
 - **Linting**: ESLint (strict rules) + Prettier, enforced via husky pre-commit hooks
 - **Build**: electron-builder (NSIS + portable)
 
@@ -150,7 +142,7 @@ npm run format        # Prettier write
 npm run format:check  # Prettier check
 
 # Run tests
-npm test              # 121 tests
+npm test              # 174 tests
 npm run test:watch    # Watch mode
 npm run test:coverage # Coverage report
 
@@ -160,6 +152,16 @@ npm run build:mac
 ```
 
 Pre-commit hooks (husky + lint-staged) automatically run ESLint and Prettier on staged files.
+
+### Debug log
+
+Both the main and renderer processes write to a single rotating log file:
+
+- **Windows**: `%APPDATA%\Timeline Scene Builder\logs\main.log`
+- **macOS**: `~/Library/Logs/Timeline Scene Builder/main.log`
+- **Linux**: `~/.config/Timeline Scene Builder/logs/main.log`
+
+The previous session is preserved as `main.log.1`. The default level in production is `INFO`, which captures lifecycle and IPC events as well as `[WARN] slow:` lines for any frame-budget overrun and `[WARN] longtask:` lines for any main-thread block ≥ 50 ms. **F12** or **Ctrl+Shift+I** opens DevTools at any time for live inspection.
 
 ## License
 
