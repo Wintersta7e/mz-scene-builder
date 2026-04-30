@@ -11,6 +11,7 @@ import { renderMoveProperties } from './move.js';
 import { renderTintProperties } from './tint.js';
 import { renderTextProperties } from './text.js';
 import { renderRotateProperties, renderEraseProperties, renderWaitProperties, renderFlashProperties } from './other.js';
+import { logger } from '../logger.js';
 
 const SECTION_RENDERERS = {
   showPicture: renderPictureProperties,
@@ -46,19 +47,21 @@ export function showPlaceholder() {
 }
 
 export function renderProperties() {
-  const panel = getElements().propertiesPanel;
-  while (panel.firstChild) panel.removeChild(panel.firstChild);
+  logger.timed('renderProperties', () => {
+    const panel = getElements().propertiesPanel;
+    while (panel.firstChild) panel.removeChild(panel.firstChild);
 
-  const idx = state.selectedEventIndex;
-  const ev = idx >= 0 ? state.events[idx] : null;
-  if (!ev) {
-    showPlaceholder();
-    return;
-  }
+    const idx = state.selectedEventIndex;
+    const ev = idx >= 0 ? state.events[idx] : null;
+    if (!ev) {
+      showPlaceholder();
+      return;
+    }
 
-  panel.appendChild(buildEventTag(idx, ev));
-  panel.appendChild(buildTimingSection(ev, idx, { showDuration: TYPES_WITH_DURATION.has(ev.type) }));
+    panel.appendChild(buildEventTag(idx, ev));
+    panel.appendChild(buildTimingSection(ev, idx, { showDuration: TYPES_WITH_DURATION.has(ev.type) }));
 
-  const renderer = SECTION_RENDERERS[ev.type];
-  if (renderer) panel.appendChild(renderer(ev, idx));
+    const renderer = SECTION_RENDERERS[ev.type];
+    if (renderer) panel.appendChild(renderer(ev, idx));
+  });
 }

@@ -109,6 +109,10 @@ async function openExportModal() {
     return;
   }
 
+  return logger.timed('openExportModal', async () => openExportModalInner());
+}
+
+async function openExportModalInner() {
   try {
     const elements = getElements();
 

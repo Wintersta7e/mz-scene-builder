@@ -213,15 +213,16 @@ function wireTopRail() {
   const mainEl = document.querySelector('.main');
   for (const seg of segs) {
     seg.addEventListener('click', () => {
-      for (const s of segs) {
-        s.classList.toggle('is-active', s === seg);
-      }
-
       const mode = seg.dataset.mode || 'design';
-      if (mainEl) {
-        mainEl.classList.remove('mode-design', 'mode-preview', 'mode-inspect');
-        mainEl.classList.add(`mode-${mode}`);
-      }
+      logger.timed(`mode-switch:${mode}`, () => {
+        for (const s of segs) {
+          s.classList.toggle('is-active', s === seg);
+        }
+        if (mainEl) {
+          mainEl.classList.remove('mode-design', 'mode-preview', 'mode-inspect');
+          mainEl.classList.add(`mode-${mode}`);
+        }
+      });
 
       // Resize the preview canvas + minimap to fit the new layout
       // (deferred so the new grid template applies first).

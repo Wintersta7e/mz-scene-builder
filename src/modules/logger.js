@@ -12,7 +12,19 @@ const isDev = (typeof window !== 'undefined' && window.api && window.api.isDev) 
 // even when DevTools is closed. Dev keeps the full DEBUG firehose.
 let logLevel = isDev ? LOG_LEVELS.DEBUG : LOG_LEVELS.INFO;
 
-const SLOW_OP_THRESHOLD_MS = 50;
+// One-frame budget at 60 Hz. Anything wrapped in logger.timed that takes
+// longer than this drops at least one frame, which is what users feel as
+// "sluggish" even though nothing is technically broken.
+const SLOW_OP_THRESHOLD_MS = 16;
+// PerformanceObserver `longtask` reports anything blocking the main thread
+// for >= 50 ms (per spec). Used as a catch-all backstop — surfaces lag
+// from layout, paint, GC, third-party iframes, anything our wraps don't
+// see.
+const LONG_TASK_THRESHOLD_MS = 50;
+// Suppress longtask warnings during initial app paint; the first ~2 s
+// always contains a few legitimate long tasks (JS evaluation, full
+// initial layout).
+const STARTUP_GRACE_MS = 2000;
 
 function safeStringify(value) {
   if (value === null || value === undefined) return String(value);
@@ -143,6 +155,26 @@ if (typeof window !== 'undefined') {
   window.addEventListener('unhandledrejection', (e) => {
     logger.error('unhandledrejection:', e.reason);
   });
+}
+
+// Long Task observer — catches any main-thread block >= 50 ms regardless
+// of cause (JS, layout, paint, GC). Skips the initial paint window so
+// app-startup tasks don't flood the log.
+if (typeof PerformanceObserver !== 'undefined') {
+  try {
+    const obs = new PerformanceObserver((list) => {
+      for (const entry of list.getEntries()) {
+        if (entry.startTime < STARTUP_GRACE_MS) continue;
+        if (entry.duration < LONG_TASK_THRESHOLD_MS) continue;
+        logger.warn(
+          `longtask: ${entry.duration.toFixed(1)}ms (start=${entry.startTime.toFixed(0)}ms, name=${entry.name})`
+        );
+      }
+    });
+    obs.observe({ entryTypes: ['longtask'] });
+  } catch (_e) {
+    // longtask entry type not supported — skip silently.
+  }
 }
 
 export { logger, LOG_LEVELS, isDev };

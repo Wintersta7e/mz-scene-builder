@@ -190,9 +190,11 @@ function makeChip(label, folderValue, count, isActive) {
   chip.appendChild(countSpan);
 
   chip.addEventListener('click', () => {
-    state.libraryActiveFolder = folderValue;
-    renderFolderChips();
-    renderLibraryList();
+    logger.timed(`folder-chip-click:${folderValue || 'all'}`, () => {
+      state.libraryActiveFolder = folderValue;
+      renderFolderChips();
+      renderLibraryList();
+    });
   });
 
   return chip;
