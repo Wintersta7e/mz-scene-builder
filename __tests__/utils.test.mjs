@@ -412,4 +412,18 @@ describe('assignSubLanes', () => {
     assignSubLanes(events, (e) => range(e.start, e.dur));
     expect(events).toEqual(snapshot);
   });
+
+  it('preserves original order as a sort tie-break when start frames match', () => {
+    // Two events at the EXACT same start frame exercise the secondary
+    // tie-break in the internal sort (return a - b). Both overlap so
+    // they must occupy distinct sub-lanes; the earlier-indexed event
+    // should keep sub-lane 0 to mirror insertion order on the timeline.
+    const events = [
+      { id: 'first', start: 30, dur: 60 },
+      { id: 'second', start: 30, dur: 60 }
+    ];
+    const out = assignSubLanes(events, (e) => range(e.start, e.dur));
+    expect(out.maxSubLanes).toBe(2);
+    expect(out.subLanes).toEqual([0, 1]);
+  });
 });
