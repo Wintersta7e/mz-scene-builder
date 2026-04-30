@@ -2073,7 +2073,6 @@ textarea.prop-input {
   position: fixed;
   inset: 0;
   background: oklch(0 0 0 / 0.7);
-  backdrop-filter: blur(4px);
   z-index: 100;
   display: grid;
   place-items: center;
@@ -2368,11 +2367,6 @@ textarea.prop-input {
     visibility 0.15s;
 }
 
-.dropdown-container:hover .dropdown {
-  opacity: 1;
-  visibility: visible;
-  transform: translateY(0);
-}
 .dropdown.is-open {
   opacity: 1;
   visibility: visible;

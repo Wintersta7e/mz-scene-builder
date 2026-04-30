@@ -112,6 +112,11 @@ async function openExportModal() {
   try {
     const elements = getElements();
 
+    // Show the modal first — the user gets visual confirmation of the
+    // click before any dropdown reset work. The modal background
+    // already paints, then the resets run during the same frame.
+    elements.exportModal.style.display = 'grid';
+
     // Reset selections
     selectedMapId = null;
     selectedEventId = null;
@@ -128,10 +133,6 @@ async function openExportModal() {
     pageDropdown.setDisabled(true);
     pageDropdown.setItems([]);
     elements.doExport.disabled = true;
-
-    // Show the modal immediately so the click feels responsive even on
-    // large projects where map prefetch hasn't finished yet.
-    elements.exportModal.style.display = 'grid';
 
     if (state.cachedMaps) {
       mapDropdown.setDisabled(false);
@@ -232,8 +233,9 @@ function closeExportModal() {
   if (eventDropdown) eventDropdown.close();
   if (pageDropdown) pageDropdown.close();
 
-  // Clear map events cache (only needed while modal is open)
-  state.cachedMapEvents = {};
+  // Map events cache is kept across modal opens so re-exporting to the
+  // same map is instant. It is cleared on project change in
+  // openProjectPath.
 }
 
 async function doExportToMap() {

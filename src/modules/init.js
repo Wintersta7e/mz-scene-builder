@@ -237,18 +237,22 @@ function wireTopRail() {
     logger.info('Settings panel TBD (Plan F)');
   });
 
-  // ----- Recent button mirrors the existing recent-projects dropdown -----
+  // ----- Recent button toggles the recent-projects dropdown -----
   els.btnRecent.addEventListener('click', (e) => {
     const dd = document.getElementById('recent-projects-dropdown');
     if (!dd) return;
     dd.classList.toggle('is-open');
     e.stopPropagation();
   });
-  // Close the recent dropdown on click anywhere else
+  // Close the dropdown on any click outside both the trigger and the list.
+  // Uses composedPath so a click on a descendant of either still counts as
+  // "inside" — `e.target` alone may be an inner span / icon, which fooled
+  // the previous `e.target !== btnRecent` check.
   document.addEventListener('click', (e) => {
     const dd = document.getElementById('recent-projects-dropdown');
     if (!dd || !dd.classList.contains('is-open')) return;
-    if (e.target instanceof Node && !dd.contains(e.target) && e.target !== els.btnRecent) {
+    const path = e.composedPath();
+    if (!path.includes(dd) && !path.includes(els.btnRecent)) {
       dd.classList.remove('is-open');
     }
   });

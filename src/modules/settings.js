@@ -70,6 +70,9 @@ function updateRecentProjectsDropdown() {
     item.addEventListener('click', (e) => {
       e.stopPropagation();
       e.preventDefault();
+      // Close the dropdown right away so the user gets immediate
+      // feedback while the project loads in the background.
+      dropdown.classList.remove('is-open');
       eventBus.emit(Events.OPEN_RECENT_PROJECT, p);
     });
     dropdown.appendChild(item);
