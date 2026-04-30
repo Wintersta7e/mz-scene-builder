@@ -72,6 +72,15 @@ export default [
     }
   },
 
+  // Main-process modules (orchestration + IPC handlers)
+  {
+    files: ['src/main/**/*.js'],
+    languageOptions: {
+      globals: { ...globals.node },
+      sourceType: 'commonjs'
+    }
+  },
+
   // Renderer modules (contextIsolation: true — browser globals only, window.api from preload)
   {
     files: ['src/renderer.js', 'src/modules/**/*.js'],

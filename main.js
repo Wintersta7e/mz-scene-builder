@@ -1,26 +1,28 @@
-const { app, BrowserWindow, ipcMain, dialog, Menu } = require('electron');
-const path = require('path');
-const fs = require('fs');
-const fsPromises = fs.promises;
-const { convertToMZFormat, isPathSafe } = require('./src/lib/mz-converter');
+// ============================================
+// Electron Main Process — Orchestrator
+//
+// Window lifecycle, app-level wiring, log + crash hooks. IPC handlers
+// live in `src/main/ipc/` per-domain modules and are registered after
+// `app.whenReady()` so they can resolve `app.getPath()` and rely on the
+// main window already existing.
+// ============================================
+
+const { app, BrowserWindow, ipcMain, Menu } = require('electron');
+const path = require('node:path');
 const { logger, isDev, attachFile: attachLogFile, getLogFilePath } = require('./src/lib/main-logger');
+const { setMainWindow } = require('./src/main/state');
+const projectIpc = require('./src/main/ipc/project');
+const pictureIpc = require('./src/main/ipc/picture');
+const exportIpc = require('./src/main/ipc/export');
+const sceneIpc = require('./src/main/ipc/scene');
+const autosaveIpc = require('./src/main/ipc/autosave');
 
-// Async helper to check if path exists
-async function pathExists(p) {
-  try {
-    await fsPromises.access(p);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-// Use software rendering to avoid GPU errors
+// Use software rendering to avoid GPU errors on machines whose drivers
+// don't play well with Chromium's compositor.
 app.disableHardwareAcceleration();
 app.commandLine.appendSwitch('use-gl', 'swiftshader');
 
 let mainWindow;
-let projectPath = null;
 
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -36,12 +38,13 @@ function createWindow() {
       sandbox: true,
       webSecurity: true,
       preload: path.join(__dirname, 'preload.js'),
-      zoomFactor: 1.0 // No auto-scaling - user can adjust with Ctrl+/Ctrl-
+      zoomFactor: 1.0
     },
     title: 'Timeline Scene Builder'
   });
 
-  // Maximize and show window when ready
+  setMainWindow(mainWindow);
+
   mainWindow.once('ready-to-show', () => {
     mainWindow.maximize();
     mainWindow.show();
@@ -50,9 +53,10 @@ function createWindow() {
   logger.info('Window created');
   mainWindow.loadFile('src/index.html');
 
-  // Allow manual zoom with Ctrl+Plus/Minus, and let users open DevTools
-  // in production via F12 / Ctrl+Shift+I — needed because the default
-  // Electron menu (which carries those accelerators) is suppressed.
+  // Manual zoom (Ctrl+Plus/Minus/0) and DevTools toggle (F12 /
+  // Ctrl+Shift+I). The default Electron menu — which would normally
+  // carry these accelerators — is suppressed in production, so wire
+  // them locally.
   mainWindow.webContents.on('before-input-event', (event, input) => {
     if (input.control) {
       if (input.key === '=' || input.key === '+') {
@@ -82,15 +86,13 @@ function createWindow() {
     }
   }
 
-  // Open DevTools in dev mode
   if (process.argv.includes('--dev')) {
     mainWindow.webContents.openDevTools();
   }
 }
 
 app.whenReady().then(() => {
-  // Set up the persistent log file as soon as the app path is resolvable.
-  // Anything logged before this point goes to console only.
+  // Resolve the persistent log path now that `app.getPath` is available.
   attachLogFile(path.join(app.getPath('logs'), 'main.log'));
   logger.info('App ready', isDev ? '(dev mode)' : '(production mode)');
   logger.info('Log file:', getLogFilePath());
@@ -104,6 +106,14 @@ app.whenReady().then(() => {
   });
   Menu.setApplicationMenu(null); // Hide default menu bar
   createWindow();
+
+  // Register IPC handlers after the window exists so handlers that need
+  // the window (native dialogs in scene.js) can grab it via state.
+  projectIpc.register();
+  pictureIpc.register();
+  exportIpc.register();
+  sceneIpc.register();
+  autosaveIpc.register();
 });
 
 // Renderer-side log forwarding. The renderer dispatches each log call
@@ -137,402 +147,4 @@ app.on('activate', () => {
   if (BrowserWindow.getAllWindows().length === 0) {
     createWindow();
   }
-});
-
-// IPC Handlers
-
-// Open project folder
-ipcMain.handle('open-project', async () => {
-  const result = await dialog.showOpenDialog(mainWindow, {
-    properties: ['openDirectory'],
-    title: 'Select RPG Maker MZ Project Folder'
-  });
-
-  if (!result.canceled && result.filePaths.length > 0) {
-    projectPath = result.filePaths[0];
-
-    // Verify it's an MZ project
-    const gameFile = path.join(projectPath, 'game.rmmzproject');
-    if (!(await pathExists(gameFile))) {
-      logger.warn('Invalid MZ project folder (game.rmmzproject not found):', projectPath);
-      return { error: 'Not a valid RPG Maker MZ project folder (game.rmmzproject not found)' };
-    }
-
-    logger.info('Project opened:', projectPath);
-    return { path: projectPath };
-  }
-  return null;
-});
-
-// Set project path directly (for recent projects)
-ipcMain.handle('set-project-path', async (event, projPath) => {
-  if (!projPath || typeof projPath !== 'string' || !path.isAbsolute(projPath) || projPath.includes('\0')) {
-    return { error: 'Invalid project path' };
-  }
-
-  // Verify it's a valid RPG Maker MZ project
-  const gameFile = path.join(projPath, 'game.rmmzproject');
-  if (!(await pathExists(gameFile))) {
-    logger.warn('set-project-path: invalid MZ project folder:', projPath);
-    return { error: 'Not a valid RPG Maker MZ project folder' };
-  }
-
-  projectPath = projPath;
-  logger.info('Project path set:', projectPath);
-  return { success: true, path: projectPath };
-});
-
-// Get screen resolution from System.json
-ipcMain.handle('get-screen-resolution', async () => {
-  if (!projectPath) return { width: 816, height: 624 }; // Default RPG Maker MZ
-
-  const systemPath = path.join(projectPath, 'data', 'System.json');
-  if (!(await pathExists(systemPath))) {
-    return { width: 816, height: 624 }; // Default RPG Maker MZ
-  }
-
-  try {
-    const data = JSON.parse(await fsPromises.readFile(systemPath, 'utf8'));
-    const width = data.advanced?.screenWidth ?? 816;
-    const height = data.advanced?.screenHeight ?? 624;
-    logger.debug('Screen resolution:', width, 'x', height);
-    return { width, height };
-  } catch (e) {
-    logger.warn('Failed to read System.json, using defaults:', e.message);
-    return { width: 816, height: 624 }; // Default on error
-  }
-});
-
-// Get pictures folder structure (lazy loading - only folder names first)
-ipcMain.handle('get-pictures-folders', async () => {
-  if (!projectPath) return { error: 'No project loaded' };
-
-  const picturesPath = path.join(projectPath, 'img', 'pictures');
-  if (!(await pathExists(picturesPath))) {
-    logger.warn('Pictures folder not found:', picturesPath);
-    return { error: 'Pictures folder not found' };
-  }
-
-  logger.debug('Scanning pictures folders:', picturesPath);
-  return await scanDirectory(picturesPath, picturesPath);
-});
-
-async function scanDirectory(dirPath, basePath, depth = 0) {
-  const items = [];
-  let entries;
-  try {
-    entries = await fsPromises.readdir(dirPath, { withFileTypes: true });
-  } catch (e) {
-    logger.warn('Failed to read directory, skipping:', dirPath, e.message);
-    return items;
-  }
-
-  for (const entry of entries) {
-    const fullPath = path.join(dirPath, entry.name);
-    const relativePath = path.relative(basePath, fullPath);
-
-    if (entry.isDirectory()) {
-      // Skip claude_only folders
-      if (entry.name === 'claude_only') continue;
-
-      items.push({
-        type: 'folder',
-        name: entry.name,
-        path: relativePath.replace(/\\/g, '/'),
-        children: depth < 2 ? await scanDirectory(fullPath, basePath, depth + 1) : null // Lazy load deeper
-      });
-    } else if (entry.name.toLowerCase().endsWith('.png')) {
-      items.push({
-        type: 'file',
-        name: entry.name.replace('.png', ''),
-        path: relativePath.replace(/\\/g, '/').replace('.png', '')
-      });
-    }
-  }
-
-  return items;
-}
-
-// Get folder contents (for lazy loading) - returns both subfolders and images
-ipcMain.handle('get-folder-contents', async (event, folderPath) => {
-  if (!projectPath) return { error: 'No project loaded' };
-
-  const picturesBase = path.join(projectPath, 'img', 'pictures');
-  if (!isPathSafe(picturesBase, folderPath)) {
-    logger.warn('Blocked unsafe folder path:', folderPath);
-    return { error: 'Invalid folder path' };
-  }
-
-  const fullPath = path.join(picturesBase, folderPath);
-  if (!(await pathExists(fullPath))) {
-    logger.warn('Folder not found:', fullPath);
-    return { error: 'Folder not found' };
-  }
-
-  logger.debug('Loading folder contents:', folderPath);
-
-  const items = [];
-  let entries;
-  try {
-    entries = await fsPromises.readdir(fullPath, { withFileTypes: true });
-  } catch (e) {
-    logger.error('Failed to read folder contents:', fullPath, e.message);
-    return { error: `Failed to read folder: ${e.message}` };
-  }
-
-  for (const entry of entries) {
-    // Skip claude_only folders
-    if (entry.name === 'claude_only') continue;
-
-    if (entry.isDirectory()) {
-      const relativePath = path.join(folderPath, entry.name).replace(/\\/g, '/');
-      items.push({
-        type: 'folder',
-        name: entry.name,
-        path: relativePath,
-        children: null // Will be lazy loaded when expanded
-      });
-    } else if (entry.isFile() && entry.name.toLowerCase().endsWith('.png')) {
-      const relativePath = path.join(folderPath, entry.name.replace('.png', '')).replace(/\\/g, '/');
-      items.push({
-        type: 'file',
-        name: entry.name.replace('.png', ''),
-        path: relativePath
-      });
-    }
-  }
-
-  return items;
-});
-
-// Get thumbnail for lazy loading (returns base64)
-ipcMain.handle('get-thumbnail', async (event, imagePath) => {
-  if (!projectPath) return null;
-
-  const picturesBase = path.join(projectPath, 'img', 'pictures');
-  if (!isPathSafe(picturesBase, `${imagePath}.png`)) {
-    logger.warn('Blocked unsafe thumbnail path:', imagePath);
-    return null;
-  }
-
-  const fullPath = path.join(picturesBase, `${imagePath}.png`);
-  if (!(await pathExists(fullPath))) return null;
-
-  try {
-    const data = await fsPromises.readFile(fullPath);
-    return `data:image/png;base64,${data.toString('base64')}`;
-  } catch {
-    logger.debug('Failed to read thumbnail:', imagePath);
-    return null;
-  }
-});
-
-// Get full image path for preview
-ipcMain.handle('get-image-path', async (event, imagePath) => {
-  if (!projectPath) return null;
-
-  const picturesBase = path.join(projectPath, 'img', 'pictures');
-  if (!isPathSafe(picturesBase, `${imagePath}.png`)) {
-    logger.warn('Blocked unsafe image path:', imagePath);
-    return null;
-  }
-
-  const fullPath = path.join(picturesBase, `${imagePath}.png`);
-  if (!(await pathExists(fullPath))) return null;
-
-  return fullPath;
-});
-
-// Export events to a Map JSON file (insert into specific event)
-ipcMain.handle('export-to-map', async (event, { events: evtList, mapId, eventId, pageIndex }) => {
-  if (!projectPath) return { error: 'No project loaded' };
-
-  // Validate inputs from renderer
-  if (!Number.isInteger(mapId) || mapId < 1 || mapId > 999) {
-    return { error: 'Invalid map ID' };
-  }
-  if (!Number.isInteger(eventId) || eventId < 1) {
-    return { error: 'Invalid event ID' };
-  }
-  const safePageIndex = pageIndex ?? 0;
-  if (!Number.isInteger(safePageIndex) || safePageIndex < 0) {
-    return { error: 'Invalid page index' };
-  }
-
-  const mapFile = path.join(projectPath, 'data', `Map${String(mapId).padStart(3, '0')}.json`);
-  if (!(await pathExists(mapFile))) {
-    return { error: `Map file not found: Map${String(mapId).padStart(3, '0')}.json` };
-  }
-
-  logger.info('Export to map:', { mapId, eventId, pageIndex: safePageIndex });
-
-  try {
-    const mapData = JSON.parse(await fsPromises.readFile(mapFile, 'utf-8'));
-    const mzCommands = convertToMZFormat(evtList);
-
-    // Find the event
-    const mapEvent = mapData.events.find((e) => e && e.id === eventId);
-    if (!mapEvent) {
-      return { error: `Event ID ${eventId} not found in map` };
-    }
-
-    const page = mapEvent.pages[safePageIndex];
-    if (!page) {
-      return { error: `Page ${safePageIndex} not found in event` };
-    }
-
-    // Validate page structure
-    if (page.list.length === 0 || page.list[page.list.length - 1]?.code !== 0) {
-      return { error: 'Invalid event page structure: missing terminating command' };
-    }
-
-    // Replace existing content, keeping only the terminating {code: 0}
-    const terminator = page.list[page.list.length - 1];
-    page.list = [...mzCommands, terminator];
-
-    // Save the map file
-    await fsPromises.writeFile(mapFile, JSON.stringify(mapData, null, 2));
-
-    logger.info('Export success:', mzCommands.length, 'commands written');
-    return { success: true, commandCount: mzCommands.length };
-  } catch (e) {
-    logger.error('Export failed:', e.message);
-    return { error: e.message };
-  }
-});
-
-// Get list of maps in project
-ipcMain.handle('get-maps', async () => {
-  if (!projectPath) return { error: 'No project loaded' };
-
-  const mapInfoFile = path.join(projectPath, 'data', 'MapInfos.json');
-  if (!(await pathExists(mapInfoFile))) {
-    return { error: 'MapInfos.json not found' };
-  }
-
-  try {
-    const mapInfos = JSON.parse(await fsPromises.readFile(mapInfoFile, 'utf-8'));
-    const maps = mapInfos.filter((m) => m).map((m) => ({ id: m.id, name: m.name }));
-    logger.debug('Loaded', maps.length, 'maps');
-    return maps;
-  } catch (e) {
-    logger.error('Failed to load maps:', e.message);
-    return { error: e.message };
-  }
-});
-
-// Get events in a map
-ipcMain.handle('get-map-events', async (event, mapId) => {
-  if (!projectPath) return { error: 'No project loaded' };
-
-  if (!Number.isInteger(mapId) || mapId < 1 || mapId > 999) {
-    return { error: 'Invalid map ID' };
-  }
-
-  const mapFile = path.join(projectPath, 'data', `Map${String(mapId).padStart(3, '0')}.json`);
-  if (!(await pathExists(mapFile))) {
-    return { error: 'Map file not found' };
-  }
-
-  try {
-    const mapData = JSON.parse(await fsPromises.readFile(mapFile, 'utf-8'));
-    const events = mapData.events.filter((e) => e).map((e) => ({ id: e.id, name: e.name, pages: e.pages.length }));
-    logger.debug('Map', mapId, ':', events.length, 'events');
-    return events;
-  } catch (e) {
-    logger.error('Failed to load map events for map', mapId, ':', e.message);
-    return { error: e.message };
-  }
-});
-
-// Save scene to file
-ipcMain.handle('save-scene', async (event, sceneData) => {
-  try {
-    const result = await dialog.showSaveDialog(mainWindow, {
-      title: 'Save Scene',
-      defaultPath: projectPath ? path.join(projectPath, 'scenes') : undefined,
-      filters: [{ name: 'Scene Files', extensions: ['mzscene'] }]
-    });
-
-    if (!result.canceled && result.filePath) {
-      await fsPromises.writeFile(result.filePath, JSON.stringify(sceneData, null, 2));
-      logger.info('Scene saved:', result.filePath);
-      return result.filePath;
-    }
-    return null;
-  } catch (e) {
-    logger.error('Failed to save scene:', e.message);
-    return { error: e.message };
-  }
-});
-
-// Load scene from file
-ipcMain.handle('load-scene', async () => {
-  try {
-    const result = await dialog.showOpenDialog(mainWindow, {
-      title: 'Load Scene',
-      filters: [{ name: 'Scene Files', extensions: ['mzscene'] }],
-      properties: ['openFile']
-    });
-
-    if (!result.canceled && result.filePaths.length > 0) {
-      const data = await fsPromises.readFile(result.filePaths[0], 'utf-8');
-      logger.info('Scene loaded:', result.filePaths[0]);
-      return JSON.parse(data);
-    }
-    return null;
-  } catch (e) {
-    logger.error('Failed to load scene:', e.message);
-    return { error: e.message };
-  }
-});
-
-// Autosave handlers
-const os = require('os');
-const AUTOSAVE_PATH = path.join(os.tmpdir(), 'timeline-scene-builder', 'autosave.mzscene');
-
-async function ensureAutosaveDir() {
-  const dir = path.dirname(AUTOSAVE_PATH);
-  if (!(await pathExists(dir))) {
-    await fsPromises.mkdir(dir, { recursive: true });
-  }
-}
-
-ipcMain.handle('autosave-write', async (event, sceneData) => {
-  try {
-    await ensureAutosaveDir();
-    await fsPromises.writeFile(AUTOSAVE_PATH, JSON.stringify(sceneData, null, 2));
-    logger.debug('Autosave written');
-    return { success: true };
-  } catch (e) {
-    return { error: e.message };
-  }
-});
-
-ipcMain.handle('autosave-read', async () => {
-  try {
-    if (!(await pathExists(AUTOSAVE_PATH))) return null;
-    const data = await fsPromises.readFile(AUTOSAVE_PATH, 'utf-8');
-    logger.debug('Autosave read');
-    return JSON.parse(data);
-  } catch (e) {
-    logger.warn('Failed to read autosave file:', e.message);
-    return null;
-  }
-});
-
-ipcMain.handle('autosave-delete', async () => {
-  try {
-    if (await pathExists(AUTOSAVE_PATH)) {
-      await fsPromises.unlink(AUTOSAVE_PATH);
-      logger.debug('Autosave deleted');
-    }
-    return { success: true };
-  } catch (e) {
-    return { error: e.message };
-  }
-});
-
-ipcMain.handle('autosave-exists', async () => {
-  return await pathExists(AUTOSAVE_PATH);
 });
