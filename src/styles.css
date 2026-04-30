@@ -365,6 +365,7 @@ body::after {
   border-radius: 50%;
   background: oklch(0.75 0.18 145);
   box-shadow: 0 0 6px oklch(0.75 0.18 145 / 0.7);
+  animation: pulse 2.4s ease-in-out infinite;
 }
 @keyframes pulse {
   0%,

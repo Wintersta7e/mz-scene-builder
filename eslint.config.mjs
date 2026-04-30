@@ -117,6 +117,18 @@ export default [
     }
   },
 
+  // Dev scripts (profiling harness, fetch-fonts shim, etc.) — Node, not renderer.
+  {
+    files: ['scripts/**/*.{js,mjs}'],
+    languageOptions: {
+      globals: { ...globals.node },
+      sourceType: 'module'
+    },
+    rules: {
+      'no-console': 'off'
+    }
+  },
+
   // Prettier compat — must be last
   prettierConfig
 ];
