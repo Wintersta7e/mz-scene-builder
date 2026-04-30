@@ -3,7 +3,7 @@ const path = require('path');
 const fs = require('fs');
 const fsPromises = fs.promises;
 const { convertToMZFormat, isPathSafe } = require('./src/lib/mz-converter');
-const { logger, isDev } = require('./src/lib/main-logger');
+const { logger, isDev, attachFile: attachLogFile, getLogFilePath } = require('./src/lib/main-logger');
 
 // Async helper to check if path exists
 async function pathExists(p) {
@@ -50,7 +50,9 @@ function createWindow() {
   logger.info('Window created');
   mainWindow.loadFile('src/index.html');
 
-  // Allow manual zoom with Ctrl+Plus/Minus
+  // Allow manual zoom with Ctrl+Plus/Minus, and let users open DevTools
+  // in production via F12 / Ctrl+Shift+I — needed because the default
+  // Electron menu (which carries those accelerators) is suppressed.
   mainWindow.webContents.on('before-input-event', (event, input) => {
     if (input.control) {
       if (input.key === '=' || input.key === '+') {
@@ -62,9 +64,23 @@ function createWindow() {
       } else if (input.key === '0') {
         mainWindow.webContents.setZoomFactor(1.0);
         event.preventDefault();
+      } else if (input.shift && (input.key === 'I' || input.key === 'i')) {
+        toggleDevTools();
+        event.preventDefault();
       }
+    } else if (input.key === 'F12') {
+      toggleDevTools();
+      event.preventDefault();
     }
   });
+
+  function toggleDevTools() {
+    if (mainWindow.webContents.isDevToolsOpened()) {
+      mainWindow.webContents.closeDevTools();
+    } else {
+      mainWindow.webContents.openDevTools({ mode: 'detach' });
+    }
+  }
 
   // Open DevTools in dev mode
   if (process.argv.includes('--dev')) {
@@ -73,9 +89,42 @@ function createWindow() {
 }
 
 app.whenReady().then(() => {
+  // Set up the persistent log file as soon as the app path is resolvable.
+  // Anything logged before this point goes to console only.
+  attachLogFile(path.join(app.getPath('logs'), 'main.log'));
   logger.info('App ready', isDev ? '(dev mode)' : '(production mode)');
+  logger.info('Log file:', getLogFilePath());
+  logger.info('Versions:', {
+    app: app.getVersion(),
+    electron: process.versions.electron,
+    chrome: process.versions.chrome,
+    node: process.versions.node,
+    platform: process.platform,
+    arch: process.arch
+  });
   Menu.setApplicationMenu(null); // Hide default menu bar
   createWindow();
+});
+
+// Renderer-side log forwarding. The renderer dispatches each log call
+// through this IPC channel so main + renderer messages land in the same
+// chronological file. The payload is intentionally a plain object: the
+// renderer pre-stringifies its arguments to avoid IPC clone failures on
+// DOM nodes / functions.
+ipcMain.on('log-message', (_event, payload) => {
+  if (!payload || typeof payload !== 'object') return;
+  const level = String(payload.level || 'info').toLowerCase();
+  const args = Array.isArray(payload.args) ? payload.args : [];
+  const fn = logger[level] || logger.info;
+  fn('[renderer]', ...args);
+});
+
+// Crash hooks — make sure unhandled errors land in the file.
+process.on('uncaughtException', (err) => {
+  logger.error('uncaughtException:', err);
+});
+process.on('unhandledRejection', (reason) => {
+  logger.error('unhandledRejection:', reason);
 });
 
 app.on('window-all-closed', () => {

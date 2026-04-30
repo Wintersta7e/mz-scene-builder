@@ -199,40 +199,44 @@ function makeChip(label, folderValue, count, isActive) {
 }
 
 function renderLibraryList() {
-  const els = getElements();
-  const list = els.imageBrowser;
-  const searchInput = /** @type {HTMLInputElement} */ (els.imageSearch);
+  logger.timed('renderLibraryList', () => {
+    const els = getElements();
+    const list = els.imageBrowser;
+    const searchInput = /** @type {HTMLInputElement} */ (els.imageSearch);
 
-  const query = (searchInput.value || '').toLowerCase();
-  const folder = state.libraryActiveFolder;
+    const query = (searchInput.value || '').toLowerCase();
+    const folder = state.libraryActiveFolder;
 
-  computeImageUsage();
+    computeImageUsage();
 
-  if (thumbnailObserver) {
-    thumbnailObserver.disconnect();
-    thumbnailObserver = null;
-  }
+    if (thumbnailObserver) {
+      thumbnailObserver.disconnect();
+      thumbnailObserver = null;
+    }
 
-  while (list.firstChild) list.removeChild(list.firstChild);
-  let visibleCount = 0;
+    while (list.firstChild) list.removeChild(list.firstChild);
+    let visibleCount = 0;
 
-  for (const item of imageFlat) {
-    if (folder !== null && item.folder !== folder) continue;
-    if (query && !item.name.toLowerCase().includes(query) && !item.path.toLowerCase().includes(query)) continue;
+    for (const item of imageFlat) {
+      if (folder !== null && item.folder !== folder) continue;
+      if (query && !item.name.toLowerCase().includes(query) && !item.path.toLowerCase().includes(query)) {
+        continue;
+      }
 
-    const usage = usageCounts.get(item.path) || 0;
-    list.appendChild(buildLibItem(item, usage));
-    visibleCount++;
-  }
+      const usage = usageCounts.get(item.path) || 0;
+      list.appendChild(buildLibItem(item, usage));
+      visibleCount++;
+    }
 
-  els.libraryCount.textContent = String(visibleCount);
+    els.libraryCount.textContent = String(visibleCount);
 
-  if (visibleCount === 0) {
-    const empty = document.createElement('div');
-    empty.className = 'placeholder';
-    empty.textContent = imageFlat.length === 0 ? 'No images in project' : 'No matches';
-    list.appendChild(empty);
-  }
+    if (visibleCount === 0) {
+      const empty = document.createElement('div');
+      empty.className = 'placeholder';
+      empty.textContent = imageFlat.length === 0 ? 'No images in project' : 'No matches';
+      list.appendChild(empty);
+    }
+  });
 }
 
 /**

@@ -263,11 +263,14 @@ async function renderPreviewAtFrame(frame) {
   }
   _renderInFlight = true;
   _pendingFrame = null;
+  return logger.timed(`renderPreviewAtFrame(frame=${frame})`, async () => renderPreviewAtFrameInner(frame));
+}
+
+async function renderPreviewAtFrameInner(frame) {
   try {
     updateSlateAndRec(frame);
     updateFlashOverlay(frame);
     updateGridVisibility();
-    logger.time('renderPreviewAtFrame');
     logger.debug('renderPreviewAtFrame', { frame, eventsCount: state.events.length });
 
     const elements = getElements();
@@ -498,7 +501,6 @@ async function renderPreviewAtFrame(frame) {
     existingTexts.forEach((el) => el.remove());
 
     highlightSelectedImage();
-    logger.timeEnd('renderPreviewAtFrame');
   } catch (err) {
     logger.error('Failed to render preview:', err);
   } finally {

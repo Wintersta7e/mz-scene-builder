@@ -40,6 +40,16 @@ contextBridge.exposeInMainWorld('api', {
     return Promise.reject(new Error(`IPC channel "${channel}" is not allowed`));
   },
 
+  // Fire-and-forget log forwarding from renderer → main. Renderer pre-
+  // stringifies each argument (DOM nodes / functions are not cloneable).
+  log: (level, args) => {
+    try {
+      ipcRenderer.send('log-message', { level, args });
+    } catch (_e) {
+      // Swallow — logging must never crash the renderer.
+    }
+  },
+
   // Shell operations (limited)
   openExternal: (url) => {
     // Only allow specific URLs

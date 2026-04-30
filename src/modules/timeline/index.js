@@ -10,6 +10,7 @@ import { renderMinimap, updateMinimapCursor } from './minimap.js';
 import { startTimelineDrag, startTimelineResize } from './drag.js';
 import { renderProperties } from '../properties/index.js';
 import { assignSubLanes } from '../utils.js';
+import { logger } from '../logger.js';
 
 const PX_PER_FRAME_DEFAULT = 5; // Matches state.timelineScale's existing default
 
@@ -339,14 +340,16 @@ function initTimeline() {
 }
 
 function renderTimeline() {
-  renderLanesCol();
-  renderRuler();
-  renderEventBlocks();
-  renderTransportReadout();
-  updateTimelineCursor();
-  // Keep the existing minimap re-render hook — Task 7 swaps its internals
-  // from canvas to DOM but the function name stays the same.
-  if (typeof renderMinimap === 'function') renderMinimap();
+  logger.timed('renderTimeline', () => {
+    renderLanesCol();
+    renderRuler();
+    renderEventBlocks();
+    renderTransportReadout();
+    updateTimelineCursor();
+    // Keep the existing minimap re-render hook — Task 7 swaps its internals
+    // from canvas to DOM but the function name stays the same.
+    if (typeof renderMinimap === 'function') renderMinimap();
+  });
 }
 
 // Lightweight cursor-only update for playback (avoids full DOM rebuild at 60fps)
