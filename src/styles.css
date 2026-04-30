@@ -502,6 +502,16 @@ body::after {
   background: var(--ink-3);
   color: var(--text);
 }
+.icon-btn:disabled,
+.icon-btn[disabled] {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.icon-btn:disabled:hover,
+.icon-btn[disabled]:hover {
+  background: transparent;
+  color: var(--text-3);
+}
 
 /* ============= LIBRARY (LEFT) ============= */
 .library {
@@ -1375,6 +1385,15 @@ textarea.prop-input {
 .transport-btn:hover {
   background: var(--ink-3);
 }
+.transport-btn:disabled,
+.transport-btn[disabled] {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.transport-btn:disabled:hover,
+.transport-btn[disabled]:hover {
+  background: var(--ink-0);
+}
 .transport-btn.play.is-playing {
   background: oklch(0.66 0.21 25);
   border-color: oklch(0.66 0.21 25);
@@ -1456,6 +1475,16 @@ textarea.prop-input {
   cursor: pointer;
   font-family: var(--sans);
   font-weight: 500;
+}
+.event-chip:disabled,
+.event-chip[disabled] {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.event-chip:disabled:hover,
+.event-chip[disabled]:hover {
+  background: var(--ink-0);
+  border-color: var(--line);
 }
 .event-chip:hover {
   background: var(--ink-3);

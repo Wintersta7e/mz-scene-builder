@@ -2,6 +2,8 @@
 // Help & About Modals
 // ============================================
 
+import { APP_VERSION } from './state.js';
+
 /**
  * Trap focus within a modal element.
  * Returns a cleanup function to remove the event listener.
@@ -80,7 +82,7 @@ function showAboutModal() {
       <div class="modal-body">
         <div class="brand-mark" aria-hidden="true"></div>
         <h3>Timeline Scene Builder</h3>
-        <p class="version">v1.3.0</p>
+        <p class="version">v${APP_VERSION}</p>
         <p>By W1nterstale</p>
         <p><a href="#" class="about-github-link">GitHub</a></p>
       </div>

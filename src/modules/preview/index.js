@@ -11,6 +11,7 @@ import { eventBus, Events } from '../event-bus.js';
 import { getEventDuration, selectEvent } from '../events.js';
 import { startDrag, highlightSelectedImage, findImagesAtPoint } from './drag.js';
 import { renderTimeline } from '../timeline/index.js';
+import { renderProperties } from '../properties/index.js';
 import { continueFromText } from '../playback.js';
 
 // Image path cache — cleared on project change, capped to prevent unbounded growth
@@ -423,12 +424,14 @@ async function renderPreviewAtFrame(frame) {
             selectEvent(clickedImages[nextIdx]);
             highlightSelectedImage();
             renderTimeline();
+            renderProperties();
             return;
           }
         }
         selectEvent(evtIdx);
         highlightSelectedImage();
         renderTimeline();
+        renderProperties();
       };
     }
 
@@ -487,6 +490,7 @@ async function renderPreviewAtFrame(frame) {
         selectEvent(evtIdx);
         highlightSelectedImage();
         renderTimeline();
+        renderProperties();
       };
     }
 

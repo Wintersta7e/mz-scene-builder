@@ -2,6 +2,9 @@
 // Central State Store
 // ============================================
 
+// App metadata
+const APP_VERSION = '2.0.0';
+
 // Timeline constants
 const TIMELINE_LANES = ['Pictures', 'Effects', 'Text', 'Timing'];
 const LANE_HEIGHT = 24;
@@ -120,6 +123,8 @@ export {
   get,
   set,
   update,
+  // App metadata
+  APP_VERSION,
   // Constants
   TIMELINE_LANES,
   LANE_HEIGHT,
