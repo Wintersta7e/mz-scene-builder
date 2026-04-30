@@ -32,8 +32,6 @@ async function openProject() {
 
 async function openProjectPath(projPath) {
   try {
-    const elements = getElements();
-
     const result = await api.invoke('set-project-path', projPath);
     if (result.error) {
       showError(result.error);
@@ -52,15 +50,17 @@ async function openProjectPath(projPath) {
     markClean();
 
     state.projectPath = projPath;
+    eventBus.emit(Events.SCENE_PATH_CHANGED);
     logger.info('Project opened:', projPath);
-    elements.projectName.textContent = projPath.split(/[/\\]/).pop();
     enableButtons(true);
+
+    // Kick off the maps prefetch concurrently with folder/screen IO so
+    // the export modal feels responsive on large projects.
+    prefetchMaps();
+
     await loadFolderStructure();
     await loadScreenResolution();
     addRecentProject(projPath);
-
-    // Prefetch maps list for export modal (don't await - let it load in background)
-    prefetchMaps();
 
     // Render timeline to show empty state
     eventBus.emit(Events.RENDER_TIMELINE);

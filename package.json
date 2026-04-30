@@ -1,7 +1,7 @@
 {
   "name": "timeline-scene-builder",
   "productName": "Timeline Scene Builder",
-  "version": "1.3.0",
+  "version": "2.0.0",
   "description": "Visual timeline editor for creating cutscenes and picture sequences",
   "main": "main.js",
   "scripts": {
@@ -17,7 +17,8 @@
     "lint:fix": "node node_modules/eslint/bin/eslint.js . --fix",
     "format": "node node_modules/prettier/bin/prettier.cjs --write .",
     "format:check": "node node_modules/prettier/bin/prettier.cjs --check .",
-    "prepare": "husky"
+    "prepare": "husky",
+    "fetch-fonts": "bash scripts/fetch-fonts.sh"
   },
   "keywords": [
     "rpg-maker",
@@ -51,6 +52,8 @@
     "globals": "^17.5.0",
     "husky": "^9.1.7",
     "jest": "^30.3.0",
+    "jest-environment-jsdom": "^30.3.0",
+    "jsdom": "^29.1.1",
     "lint-staged": "^16.4.0",
     "prettier": "^3.8.3"
   },

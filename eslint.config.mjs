@@ -72,6 +72,15 @@ export default [
     }
   },
 
+  // Main-process modules (orchestration + IPC handlers)
+  {
+    files: ['src/main/**/*.js'],
+    languageOptions: {
+      globals: { ...globals.node },
+      sourceType: 'commonjs'
+    }
+  },
+
   // Renderer modules (contextIsolation: true — browser globals only, window.api from preload)
   {
     files: ['src/renderer.js', 'src/modules/**/*.js'],
@@ -114,6 +123,18 @@ export default [
     files: ['*.config.js', '*.config.mjs'],
     languageOptions: {
       globals: { ...globals.node }
+    }
+  },
+
+  // Dev scripts (profiling harness, fetch-fonts shim, etc.) — Node, not renderer.
+  {
+    files: ['scripts/**/*.{js,mjs}'],
+    languageOptions: {
+      globals: { ...globals.node },
+      sourceType: 'module'
+    },
+    rules: {
+      'no-console': 'off'
     }
   },
 

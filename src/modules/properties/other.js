@@ -1,174 +1,130 @@
-// ============================================
-// Other Property Panels (Rotate, Erase, Wait, Flash)
-// ============================================
+// src/modules/properties/other.js
+//
+// Rotate / Erase / Wait / Flash sections. Each is small.
 
-import { getElements } from '../elements.js';
-import { markDirty } from '../undo-redo.js';
-import { rgbToHex, hexToRgb } from '../utils.js';
-import { bindInput } from './bind-input.js';
-import { eventBus, Events } from '../event-bus.js';
+import { buildSection, buildRow, buildCell, buildSlider, buildColorBubble, commit } from './shared.js';
 
-function renderRotateProperties(evt) {
-  const elements = getElements();
+const FLASH_COLORS = [
+  { name: 'White', r: 255, g: 255, b: 255, css: 'rgb(255, 255, 255)' },
+  { name: 'Red', r: 255, g: 64, b: 64, css: 'rgb(255, 64, 64)' },
+  { name: 'Yellow', r: 255, g: 255, b: 64, css: 'rgb(255, 255, 64)' },
+  { name: 'Cyan', r: 64, g: 255, b: 255, css: 'rgb(64, 255, 255)' }
+];
 
-  elements.propertiesPanel.innerHTML = `
-    <div class="property-group">
-      <h4>Target</h4>
-      <div class="property-row">
-        <span class="property-label">Picture #:</span>
-        <div class="property-input">
-          <input type="number" id="prop-picture-number" value="${evt.pictureNumber}" min="1" max="100">
-        </div>
-      </div>
-    </div>
-    <div class="property-group">
-      <h4>Rotation</h4>
-      <div class="property-row">
-        <span class="property-label">Speed:</span>
-        <div class="property-input">
-          <input type="number" id="prop-speed" value="${evt.speed}" min="-90" max="90">
-        </div>
-      </div>
-      <p style="color: var(--text-dim); font-size: 9px; margin-top: 4px;">
-        0 = stop, + = clockwise, - = counter-clockwise
-      </p>
-    </div>
-  `;
-
-  bindInput('prop-picture-number', 'pictureNumber', 'number');
-  bindInput('prop-speed', 'speed', 'number');
+export function renderRotateProperties(ev, index) {
+  const wrap = document.createElement('div');
+  wrap.appendChild(
+    buildSection('Target', (body) => {
+      body.appendChild(
+        buildCell({
+          label: 'PIC #',
+          value: ev.pictureNumber ?? 1,
+          onChange: (v) => commit(ev, 'pictureNumber', Math.max(1, Math.min(100, /** @type {number} */ (v))), index)
+        })
+      );
+    })
+  );
+  wrap.appendChild(
+    buildSection('Rotation', (body) => {
+      body.appendChild(
+        buildRow(
+          'Speed',
+          buildSlider({
+            value: ev.speed ?? 0,
+            min: -90,
+            max: 90,
+            onChange: (v) => commit(ev, 'speed', v, index)
+          })
+        )
+      );
+    })
+  );
+  return wrap;
 }
 
-function renderEraseProperties(evt) {
-  const elements = getElements();
-
-  elements.propertiesPanel.innerHTML = `
-    <div class="property-group">
-      <h4>Target</h4>
-      <div class="property-row">
-        <span class="property-label">Picture #:</span>
-        <div class="property-input">
-          <input type="number" id="prop-picture-number" value="${evt.pictureNumber}" min="1" max="100">
-        </div>
-      </div>
-      <p style="color: var(--text-dim); font-size: 9px; margin-top: 4px;">
-        Removes the picture from the screen.
-      </p>
-    </div>
-  `;
-
-  bindInput('prop-picture-number', 'pictureNumber', 'number');
+export function renderEraseProperties(ev, index) {
+  const wrap = document.createElement('div');
+  wrap.appendChild(
+    buildSection('Target', (body) => {
+      body.appendChild(
+        buildCell({
+          label: 'PIC #',
+          value: ev.pictureNumber ?? 1,
+          onChange: (v) => commit(ev, 'pictureNumber', Math.max(1, Math.min(100, /** @type {number} */ (v))), index)
+        })
+      );
+    })
+  );
+  return wrap;
 }
 
-function renderWaitProperties(evt) {
-  const elements = getElements();
-
-  elements.propertiesPanel.innerHTML = `
-    <div class="property-group">
-      <h4>Wait</h4>
-      <div class="property-row">
-        <span class="property-label">Frames:</span>
-        <div class="property-input">
-          <input type="number" id="prop-frames" value="${evt.frames}" min="1">
-        </div>
-      </div>
-      <div class="property-row">
-        <span class="property-label">Seconds:</span>
-        <div class="property-input">
-          <span>${(evt.frames / 60).toFixed(2)}s @ 60fps</span>
-        </div>
-      </div>
-    </div>
-  `;
-
-  bindInput('prop-frames', 'frames', 'number');
+export function renderWaitProperties() {
+  // Wait shows its frame count via the timing block (LEN cell). No
+  // type-specific fields yet.
+  return document.createElement('div');
 }
 
-function renderFlashProperties(evt) {
-  const elements = getElements();
-  const hexColor = rgbToHex(evt.red, evt.green, evt.blue);
+export function renderFlashProperties(ev, index) {
+  const wrap = document.createElement('div');
 
-  elements.propertiesPanel.innerHTML = `
-    <div class="property-group">
-      <h4>Flash Color</h4>
-      <div class="property-row">
-        <span class="property-label">Color:</span>
-        <div class="property-input" style="display: flex; gap: 6px; align-items: center;">
-          <input type="color" id="prop-flash-color" value="${hexColor}" style="width: 50px; height: 24px; padding: 0; border: none;">
-          <span id="prop-flash-preview" style="font-size: 9px;">(${evt.red}, ${evt.green}, ${evt.blue})</span>
-        </div>
-      </div>
-      <div class="property-row">
-        <span class="property-label">Intensity:</span>
-        <div class="property-input">
-          <input type="range" id="prop-intensity" value="${evt.intensity}" min="0" max="255" style="width: 80px;">
-          <span id="prop-intensity-val">${evt.intensity}</span>
-        </div>
-      </div>
-      <div class="color-presets" style="display: flex; gap: 3px; margin-top: 6px;">
-        <button class="btn btn-sm flash-preset" data-r="255" data-g="255" data-b="255" style="background: #fff; width: 20px; height: 20px; padding: 0;" title="White"></button>
-        <button class="btn btn-sm flash-preset" data-r="255" data-g="0" data-b="0" style="background: #f00; width: 20px; height: 20px; padding: 0;" title="Red"></button>
-        <button class="btn btn-sm flash-preset" data-r="0" data-g="255" data-b="0" style="background: #0f0; width: 20px; height: 20px; padding: 0;" title="Green"></button>
-        <button class="btn btn-sm flash-preset" data-r="0" data-g="0" data-b="255" style="background: #00f; width: 20px; height: 20px; padding: 0;" title="Blue"></button>
-        <button class="btn btn-sm flash-preset" data-r="255" data-g="255" data-b="0" style="background: #ff0; width: 20px; height: 20px; padding: 0;" title="Yellow"></button>
-        <button class="btn btn-sm flash-preset" data-r="255" data-g="0" data-b="255" style="background: #f0f; width: 20px; height: 20px; padding: 0;" title="Magenta"></button>
-        <button class="btn btn-sm flash-preset" data-r="0" data-g="255" data-b="255" style="background: #0ff; width: 20px; height: 20px; padding: 0;" title="Cyan"></button>
-      </div>
-    </div>
-    <div class="property-group">
-      <h4>Timing</h4>
-      <div class="property-row">
-        <span class="property-label">Duration:</span>
-        <div class="property-input">
-          <input type="number" id="prop-duration" value="${evt.duration}" min="1"> frames
-        </div>
-      </div>
-      <div class="property-row">
-        <span class="property-label">Wait:</span>
-        <div class="property-input">
-          <input type="checkbox" id="prop-wait" ${evt.wait ? 'checked' : ''}>
-        </div>
-      </div>
-    </div>
-  `;
+  // Lazy re-render so the bubble + active-preset highlight update after commits.
+  function refresh() {
+    import('./index.js').then((m) => m.renderProperties()).catch(() => {});
+  }
 
-  bindInput('prop-duration', 'duration', 'number');
-  bindInput('prop-wait', 'wait', 'boolean');
+  // Compose preview color from MZ-native red/green/blue. Defaults match the
+  // exporter's defaults (255/255/255 → white) at src/lib/mz-converter.js:141.
+  const r = ev.red ?? 255;
+  const g = ev.green ?? 255;
+  const b = ev.blue ?? 255;
+  const previewCss = `rgb(${r}, ${g}, ${b})`;
+  const activePreset = FLASH_COLORS.find((p) => p.r === r && p.g === g && p.b === b);
 
-  // Color picker handler
-  const colorPicker = document.getElementById('prop-flash-color');
-  const preview = document.getElementById('prop-flash-preview');
-  colorPicker.addEventListener('input', () => {
-    const rgb = hexToRgb(colorPicker.value);
-    evt.red = rgb.r;
-    evt.green = rgb.g;
-    evt.blue = rgb.b;
-    preview.textContent = `(${evt.red}, ${evt.green}, ${evt.blue})`;
-    markDirty();
-    eventBus.emit(Events.RENDER_TIMELINE);
-  });
+  wrap.appendChild(
+    buildSection('Flash', (body) => {
+      const row = document.createElement('div');
+      row.className = 'tint-row';
+      row.appendChild(buildColorBubble({ color: previewCss, glow: true }));
 
-  // Intensity slider handler
-  const intensitySlider = document.getElementById('prop-intensity');
-  const intensityVal = document.getElementById('prop-intensity-val');
-  intensitySlider.addEventListener('input', () => {
-    evt.intensity = parseInt(intensitySlider.value, 10);
-    intensityVal.textContent = evt.intensity;
-    markDirty();
-    eventBus.emit(Events.RENDER_TIMELINE);
-  });
+      const presets = document.createElement('div');
+      presets.className = 'tint-presets';
+      for (const p of FLASH_COLORS) {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = `tint-preset${activePreset && activePreset.name === p.name ? ' is-active' : ''}`;
+        btn.title = p.name;
+        btn.style.background = p.css;
+        btn.textContent = p.name.slice(0, 4).toUpperCase();
+        btn.addEventListener('click', () => {
+          commit(ev, 'red', p.r, index);
+          commit(ev, 'green', p.g, index);
+          commit(ev, 'blue', p.b, index);
+          // Reset gray (the screenFlash event type doesn't export gray, but
+          // some scenes carry it from older code paths — clear it for safety).
+          commit(ev, 'gray', 0, index);
+          refresh();
+        });
+        presets.appendChild(btn);
+      }
+      row.appendChild(presets);
+      body.appendChild(row);
 
-  // Color presets
-  document.querySelectorAll('.flash-preset').forEach((btn) => {
-    btn.addEventListener('click', () => {
-      evt.red = parseInt(btn.dataset.r, 10);
-      evt.green = parseInt(btn.dataset.g, 10);
-      evt.blue = parseInt(btn.dataset.b, 10);
-      renderFlashProperties(evt);
-      markDirty();
-      eventBus.emit(Events.RENDER_TIMELINE);
-    });
-  });
+      // Intensity: stored 0-255, displayed 0-100. Default 170 → ~67%.
+      const storedIntensity = ev.intensity ?? 170;
+      body.appendChild(
+        buildRow(
+          'Intensity',
+          buildSlider({
+            value: Math.round((storedIntensity / 255) * 100),
+            min: 0,
+            max: 100,
+            unit: '%',
+            onChange: (v) => commit(ev, 'intensity', Math.round((v / 100) * 255), index)
+          })
+        )
+      );
+    })
+  );
+
+  return wrap;
 }
-
-export { renderRotateProperties, renderEraseProperties, renderWaitProperties, renderFlashProperties };

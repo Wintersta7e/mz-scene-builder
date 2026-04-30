@@ -18,8 +18,9 @@ function getEventLane(type) {
       return 0;
     case 'tintPicture':
     case 'screenFlash':
-    case 'wait':
       return 1;
+    case 'wait':
+      return 3;
     case 'showText':
       return 2;
     default:
@@ -188,7 +189,8 @@ function deleteSelectedEvent() {
     logger.debug('Delete event:', evt.type, 'at index', state.selectedEventIndex);
     saveState('delete event');
     state.events.splice(state.selectedEventIndex, 1);
-    state.selectedEventIndex = Math.min(state.selectedEventIndex, state.events.length - 1);
+    const newIndex = state.events.length === 0 ? -1 : Math.min(state.selectedEventIndex, state.events.length - 1);
+    selectEvent(newIndex);
     eventBus.emit(Events.RENDER);
   }
 }
@@ -197,6 +199,7 @@ function selectEvent(index) {
   const elements = getElements();
   state.selectedEventIndex = index;
   elements.deleteEvent.disabled = index < 0;
+  elements.duplicateEvent.disabled = index < 0;
 }
 
 function duplicateSelectedEvent() {
@@ -226,8 +229,8 @@ function duplicateSelectedEvent() {
 function clearImageSelection() {
   const elements = getElements();
   state.selectedImages.clear();
-  elements.imageBrowser.querySelectorAll('.image-item.selected').forEach((item) => {
-    item.classList.remove('selected');
+  elements.imageBrowser.querySelectorAll('.lib-item.is-active').forEach((item) => {
+    item.classList.remove('is-active');
   });
 }
 
@@ -243,7 +246,7 @@ async function clearScene() {
 
   saveState('clear scene');
   state.events = [];
-  state.selectedEventIndex = -1;
+  selectEvent(-1);
   state.currentFrame = 0;
   eventBus.emit(Events.RENDER);
 }

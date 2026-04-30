@@ -109,8 +109,17 @@ async function openExportModal() {
     return;
   }
 
+  return logger.timed('openExportModal', async () => openExportModalInner());
+}
+
+async function openExportModalInner() {
   try {
     const elements = getElements();
+
+    // Show the modal first — the user gets visual confirmation of the
+    // click before any dropdown reset work. The modal background
+    // already paints, then the resets run during the same frame.
+    elements.exportModal.style.display = 'grid';
 
     // Reset selections
     selectedMapId = null;
@@ -129,11 +138,11 @@ async function openExportModal() {
     pageDropdown.setItems([]);
     elements.doExport.disabled = true;
 
-    // Check if maps are ready (pre-rendered on project load)
     if (state.cachedMaps) {
       mapDropdown.setDisabled(false);
     } else {
-      // Fetch maps (fallback - shouldn't happen normally)
+      // Fallback: prefetch hadn't finished. Surface progress in the
+      // dropdown placeholder while the IPC parses MapInfos.json.
       mapDropdown.setPlaceholder('Loading maps...');
       mapDropdown.setDisabled(true);
 
@@ -141,7 +150,6 @@ async function openExportModal() {
       if (maps.error) {
         showError(`Error loading maps: ${maps.error}`);
         mapDropdown.setPlaceholder('Error loading maps');
-        elements.exportModal.style.display = 'flex';
         return;
       }
       state.cachedMaps = maps;
@@ -149,9 +157,6 @@ async function openExportModal() {
       mapDropdown.setPlaceholder('-- Select Map --');
       mapDropdown.setDisabled(false);
     }
-
-    // Show modal
-    elements.exportModal.style.display = 'flex';
   } catch (err) {
     logger.error('Failed to open export modal:', err);
     showError(`Failed to open export: ${err.message}`);
@@ -232,8 +237,9 @@ function closeExportModal() {
   if (eventDropdown) eventDropdown.close();
   if (pageDropdown) pageDropdown.close();
 
-  // Clear map events cache (only needed while modal is open)
-  state.cachedMapEvents = {};
+  // Map events cache is kept across modal opens so re-exporting to the
+  // same map is instant. It is cleared on project change in
+  // openProjectPath.
 }
 
 async function doExportToMap() {

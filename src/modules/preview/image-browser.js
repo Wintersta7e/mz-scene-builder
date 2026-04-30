@@ -1,190 +1,332 @@
-// ============================================
-// Image Browser (Left Panel)
-// ============================================
+// src/modules/preview/image-browser.js
+//
+// Library renderer: flat list of images filtered by folder chips and a
+// search box. The legacy recursive folder-tree was replaced with this
+// flat + chip pattern in Plan B of the Director's Console redesign.
+//
+// DOM is constructed programmatically (createElement + textContent);
+// no innerHTML to keep XSS surface zero and stay onside of the
+// pre-commit security hook.
 
-// Use secure API exposed via preload script
-const api = window.api;
 import { state } from '../state.js';
 import { getElements } from '../elements.js';
 import { saveState, markDirty } from '../undo-redo.js';
-import { sortEvents } from '../utils.js';
+import { sortEvents, makeTrailingThrottle } from '../utils.js';
 import { createDefaultEvent, clearImageSelection, getEventDuration } from '../events.js';
-import { eventBus, Events } from '../event-bus.js';
 import { logger } from '../logger.js';
+import { eventBus, Events } from '../event-bus.js';
 
-function escapeHtml(text) {
-  return String(text)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
-}
+const api = window.api;
 
-// IntersectionObserver for lazy-loading thumbnails when visible
+// ---------- Module-local state ----------
+
+/** @type {IntersectionObserver | null} */
 let thumbnailObserver = null;
+
+/** @type {Array<any> | null} */
+let _treeRoot = null;
+
+/**
+ * Flat snapshot of every image in the project, derived from the folder
+ * tree on project load.
+ * @type {Array<{ name: string; path: string; folder: string }>}
+ */
+let imageFlat = [];
+
+/**
+ * Top-level folder names (sorted), derived from the folder tree.
+ * @type {string[]}
+ */
+let topFolders = [];
+
+/**
+ * Per-image usage counts (path -> N), derived from state.events.
+ * @type {Map<string, number>}
+ */
+let usageCounts = new Map();
+
+/** Folder paths whose lazy `get-folder-contents` IPC is currently in flight. */
+const _lazyLoading = /** @type {Set<string>} */ (new Set());
+
+// ---------- Helpers ----------
+
 function getThumbnailObserver() {
-  if (!thumbnailObserver) {
-    thumbnailObserver = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            const el = entry.target;
-            if (!el.dataset.thumbLoaded) {
-              el.dataset.thumbLoaded = 'true';
-              loadThumbnail(el, el.dataset.path);
-            }
-            thumbnailObserver.unobserve(el);
-          }
-        });
-      },
-      { rootMargin: '100px' }
-    ); // Load slightly before visible
-  }
+  if (thumbnailObserver) return thumbnailObserver;
+  thumbnailObserver = new IntersectionObserver(
+    (entries) => {
+      for (const entry of entries) {
+        if (entry.isIntersecting) {
+          loadThumbnail(/** @type {HTMLElement} */ (entry.target));
+          thumbnailObserver?.unobserve(entry.target);
+        }
+      }
+    },
+    { root: getElements().imageBrowser, rootMargin: '120px' }
+  );
   return thumbnailObserver;
 }
 
-async function loadThumbnail(el, path) {
+/**
+ * Lazy-load a thumbnail into a `.lib-thumb-img` background-image.
+ * The IPC channel `get-thumbnail` returns a base64 data URL.
+ *
+ * @param {HTMLElement} libItem
+ */
+async function loadThumbnail(libItem) {
+  const path = libItem.dataset.path;
+  if (!path) return;
+  const thumbImg = /** @type {HTMLElement | null} */ (libItem.querySelector('.lib-thumb-img'));
+  if (!thumbImg || libItem.dataset.thumbLoaded === '1') return;
+
   try {
-    const thumb = await api.invoke('get-thumbnail', path);
-    if (thumb && thumb.startsWith('data:image/png;base64,')) {
-      const thumbEl = el.querySelector('.image-thumb');
-      thumbEl.style.backgroundImage = `url(${thumb})`;
-      thumbEl.style.backgroundSize = 'contain';
-      thumbEl.style.backgroundRepeat = 'no-repeat';
-      thumbEl.style.backgroundPosition = 'center';
+    const url = await api.invoke('get-thumbnail', path);
+    if (typeof url === 'string' && url.startsWith('data:image/png;base64,')) {
+      thumbImg.style.backgroundImage = `url("${url}")`;
+      libItem.dataset.thumbLoaded = '1';
     }
   } catch (err) {
-    logger.error('Failed to load thumbnail:', path, err);
+    logger.warn('Thumbnail load failed for', path, err);
   }
 }
 
-function renderFolderTree(container, items, isRoot = true) {
-  if (isRoot) {
+/**
+ * Walk the folder tree, returning a flat list of every leaf file.
+ *
+ * @param {Array<any>} items
+ * @param {string} parent — running path prefix
+ * @param {string} topFolder — top-level folder name (empty if root)
+ * @returns {Array<{ name: string; path: string; folder: string }>}
+ */
+function flattenImageTree(items, parent = '', topFolder = '') {
+  /** @type {Array<{ name: string; path: string; folder: string }>} */
+  const out = [];
+  for (const item of items) {
+    if (item.type === 'folder') {
+      const folderName = topFolder || item.name;
+      const childPath = parent ? `${parent}/${item.name}` : item.name;
+      if (item.children) {
+        out.push(...flattenImageTree(item.children, childPath, folderName));
+      } else if (!_lazyLoading.has(item.path)) {
+        // Lazy folder: trigger load. The in-flight guard prevents repeat
+        // IPC calls for the same path while the previous request is still
+        // outstanding (re-flatten can be called many times before resolve).
+        _lazyLoading.add(item.path);
+        api
+          .invoke('get-folder-contents', item.path)
+          .then((contents) => {
+            _lazyLoading.delete(item.path);
+            if (contents && !contents.error) {
+              item.children = contents;
+              eventBus.emit(Events.IMAGES_LOADED);
+            }
+          })
+          .catch((err) => {
+            _lazyLoading.delete(item.path);
+            logger.warn('Lazy folder load failed', item.path, err);
+          });
+      }
+    } else if (item.type === 'file') {
+      out.push({ name: item.name, path: item.path, folder: topFolder });
+    }
+  }
+  return out;
+}
+
+/**
+ * Recompute per-image usage counts from state.events.
+ */
+function computeImageUsage() {
+  /** @type {Map<string, number>} */
+  const m = new Map();
+  for (const ev of state.events) {
+    if (ev.type === 'showPicture' && ev.imageName) {
+      m.set(ev.imageName, (m.get(ev.imageName) || 0) + 1);
+    }
+  }
+  usageCounts = m;
+}
+
+// ---------- Renderers ----------
+
+function renderFolderChips() {
+  const els = getElements();
+  const container = els.libraryFolders;
+  const active = state.libraryActiveFolder;
+
+  /** @type {Map<string, number>} */
+  const counts = new Map();
+  counts.set('__all__', imageFlat.length);
+  for (const f of topFolders) {
+    counts.set(f, imageFlat.filter((it) => it.folder === f).length);
+  }
+
+  while (container.firstChild) container.removeChild(container.firstChild);
+
+  container.appendChild(makeChip('All', null, counts.get('__all__') || 0, active === null));
+  for (const folder of topFolders) {
+    container.appendChild(makeChip(folder, folder, counts.get(folder) || 0, active === folder));
+  }
+}
+
+/**
+ * @param {string} label
+ * @param {string | null} folderValue
+ * @param {number} count
+ * @param {boolean} isActive
+ * @returns {HTMLButtonElement}
+ */
+function makeChip(label, folderValue, count, isActive) {
+  const chip = document.createElement('button');
+  chip.type = 'button';
+  chip.className = `folder-chip${isActive ? ' is-active' : ''}`;
+  chip.setAttribute('role', 'tab');
+  chip.setAttribute('aria-selected', String(isActive));
+
+  chip.appendChild(document.createTextNode(label));
+
+  const countSpan = document.createElement('span');
+  countSpan.className = 'count';
+  countSpan.textContent = String(count);
+  chip.appendChild(countSpan);
+
+  chip.addEventListener('click', () => {
+    logger.timed(`folder-chip-click:${folderValue || 'all'}`, () => {
+      state.libraryActiveFolder = folderValue;
+      renderFolderChips();
+      renderLibraryList();
+    });
+  });
+
+  return chip;
+}
+
+function renderLibraryList() {
+  logger.timed('renderLibraryList', () => {
+    const els = getElements();
+    const list = els.imageBrowser;
+    const searchInput = /** @type {HTMLInputElement} */ (els.imageSearch);
+
+    const query = (searchInput.value || '').toLowerCase();
+    const folder = state.libraryActiveFolder;
+
+    computeImageUsage();
+
     if (thumbnailObserver) {
       thumbnailObserver.disconnect();
       thumbnailObserver = null;
     }
-    container.innerHTML = '';
-  }
 
-  for (const item of items) {
-    if (item.type === 'folder') {
-      const folderEl = document.createElement('div');
-      folderEl.className = 'folder-item';
-      folderEl.innerHTML = `
-        <div class="folder-header">
-          <span class="folder-icon">📁</span>
-          <span class="folder-name">${escapeHtml(item.name)}</span>
-        </div>
-        <div class="folder-children"></div>
-      `;
+    while (list.firstChild) list.removeChild(list.firstChild);
+    let visibleCount = 0;
 
-      const header = folderEl.querySelector('.folder-header');
-      const children = folderEl.querySelector('.folder-children');
-
-      header.addEventListener('click', async () => {
-        if (folderEl.dataset.loading === 'true') return;
-
-        const wasExpanded = folderEl.classList.contains('expanded');
-        folderEl.classList.toggle('expanded');
-        header.querySelector('.folder-icon').textContent = wasExpanded ? '📁' : '📂';
-
-        if (!wasExpanded && item.children === null) {
-          folderEl.dataset.loading = 'true';
-          children.innerHTML = '<p class="placeholder">Loading...</p>';
-          try {
-            const contents = await api.invoke('get-folder-contents', item.path);
-            children.innerHTML = '';
-            if (contents && !contents.error) {
-              item.children = contents;
-              renderFolderTree(children, contents, false);
-            } else {
-              logger.warn('Failed to load folder:', item.path, contents?.error);
-              children.innerHTML = '<p class="placeholder">Failed to load</p>';
-            }
-          } catch (err) {
-            logger.error('Error loading folder:', item.path, err);
-            children.innerHTML = '<p class="placeholder">Failed to load</p>';
-          }
-          folderEl.dataset.loading = '';
-        }
-      });
-
-      if (item.children) {
-        renderFolderTree(children, item.children, false);
+    for (const item of imageFlat) {
+      if (folder !== null && item.folder !== folder) continue;
+      if (query && !item.name.toLowerCase().includes(query) && !item.path.toLowerCase().includes(query)) {
+        continue;
       }
 
-      container.appendChild(folderEl);
-    } else if (item.type === 'file') {
-      container.appendChild(createImageItem(item));
+      const usage = usageCounts.get(item.path) || 0;
+      list.appendChild(buildLibItem(item, usage));
+      visibleCount++;
     }
-  }
+
+    els.libraryCount.textContent = String(visibleCount);
+
+    if (visibleCount === 0) {
+      const empty = document.createElement('div');
+      empty.className = 'placeholder';
+      empty.textContent = imageFlat.length === 0 ? 'No images in project' : 'No matches';
+      list.appendChild(empty);
+    }
+  });
 }
 
-function createImageItem(item) {
+/**
+ * @param {{ name: string; path: string; folder: string }} item
+ * @param {number} usage
+ * @returns {HTMLDivElement}
+ */
+function buildLibItem(item, usage) {
   const el = document.createElement('div');
-  el.className = 'image-item';
+  el.className = 'lib-item';
   el.dataset.path = item.path;
-  el.innerHTML = `
-    <div class="image-thumb" style="background: var(--bg-input);"></div>
-    <span class="image-name">${escapeHtml(item.name)}</span>
-  `;
+  el.draggable = true;
 
-  // Observe for visibility-based thumbnail loading
+  const thumb = document.createElement('div');
+  thumb.className = 'lib-thumb';
+  const thumbImg = document.createElement('div');
+  thumbImg.className = 'lib-thumb-img';
+  thumb.appendChild(thumbImg);
+
+  const meta = document.createElement('div');
+  meta.className = 'lib-meta';
+
+  const name = document.createElement('div');
+  name.className = 'lib-name';
+  name.textContent = item.name;
+  meta.appendChild(name);
+
+  const info = document.createElement('div');
+  info.className = 'lib-info';
+  if (usage > 0) {
+    const used = document.createElement('span');
+    used.className = 'used';
+    used.textContent = `used \xd7${usage}`;
+    info.appendChild(used);
+  } else {
+    const folderSpan = document.createElement('span');
+    folderSpan.textContent = item.folder || '/';
+    info.appendChild(folderSpan);
+  }
+  meta.appendChild(info);
+
+  el.appendChild(thumb);
+  el.appendChild(meta);
+
   getThumbnailObserver().observe(el);
 
-  el.addEventListener('click', (e) => {
-    handleImageClick(el, item.path, e);
-  });
-
-  el.addEventListener('dblclick', () => {
-    addSelectedImagesAsEvents();
+  el.addEventListener('click', (e) => handleImageClick(el, item.path, e));
+  el.addEventListener('dblclick', () => addSelectedImagesAsEvents());
+  el.addEventListener('dragstart', (e) => {
+    e.dataTransfer?.setData('text/plain', item.path);
+    e.dataTransfer?.setData('application/x-mzscene-image', item.path);
+    if (e.dataTransfer) e.dataTransfer.effectAllowed = 'copy';
   });
 
   return el;
 }
 
+// ---------- Selection ----------
+
+/**
+ * @param {HTMLElement} el
+ * @param {string} path
+ * @param {MouseEvent} e
+ */
 function handleImageClick(el, path, e) {
-  const elements = getElements();
-
-  if (e.ctrlKey || e.metaKey) {
-    if (state.selectedImages.has(path)) {
-      state.selectedImages.delete(path);
-      el.classList.remove('selected');
-    } else {
-      state.selectedImages.add(path);
-      el.classList.add('selected');
-    }
-  } else if (e.shiftKey && state.lastClickedImage) {
-    const allItems = Array.from(elements.imageBrowser.querySelectorAll('.image-item'));
-    const startIndex = allItems.findIndex((item) => item.dataset.path === state.lastClickedImage);
-    const endIndex = allItems.findIndex((item) => item.dataset.path === path);
-
-    if (startIndex !== -1 && endIndex !== -1) {
-      const min = Math.min(startIndex, endIndex);
-      const max = Math.max(startIndex, endIndex);
-
-      for (let i = min; i <= max; i++) {
-        const itemPath = allItems[i].dataset.path;
-        state.selectedImages.add(itemPath);
-        allItems[i].classList.add('selected');
-      }
-    }
+  const isMulti = e.ctrlKey || e.metaKey || e.shiftKey;
+  if (!isMulti) state.selectedImages.clear();
+  if (state.selectedImages.has(path)) {
+    state.selectedImages.delete(path);
+    el.classList.remove('is-active');
   } else {
-    clearImageSelection();
     state.selectedImages.add(path);
-    el.classList.add('selected');
+    el.classList.add('is-active');
   }
-
   state.lastClickedImage = path;
+  if (!isMulti) {
+    const list = getElements().imageBrowser;
+    for (const other of list.querySelectorAll('.lib-item.is-active')) {
+      if (other !== el) other.classList.remove('is-active');
+    }
+  }
 }
 
 function addSelectedImagesAsEvents() {
   if (state.selectedImages.size === 0) return;
 
   const elements = getElements();
-  const allItems = Array.from(elements.imageBrowser.querySelectorAll('.image-item'));
+  const allItems = Array.from(elements.imageBrowser.querySelectorAll('.lib-item'));
   const orderedPaths = allItems
     .filter((item) => state.selectedImages.has(item.dataset.path))
     .map((item) => item.dataset.path);
@@ -236,66 +378,112 @@ function addSelectedImagesAsEvents() {
   eventBus.emit(Events.RENDER);
 }
 
+// ---------- Public API ----------
+
+/**
+ * @param {HTMLElement} _container — kept for API compat; ignored
+ * @param {Array<any>} items — folder/file tree
+ */
+function renderFolderTree(_container, items) {
+  _treeRoot = items;
+  imageFlat = flattenImageTree(items);
+  topFolders = Array.from(new Set(imageFlat.map((it) => it.folder).filter(Boolean))).sort();
+  state.libraryActiveFolder = null;
+  renderFolderChips();
+  renderLibraryList();
+}
+
 function filterImages() {
-  const elements = getElements();
-  const query = elements.imageSearch.value.toLowerCase();
-  const items = elements.imageBrowser.querySelectorAll('.image-item');
-  const folders = elements.imageBrowser.querySelectorAll('.folder-item');
-
-  if (!query) {
-    items.forEach((item) => (item.style.display = ''));
-    folders.forEach((folder) => (folder.style.display = ''));
-
-    folders.forEach((folder) => {
-      folder.classList.remove('expanded');
-      const icon = folder.querySelector('.folder-icon');
-      if (icon) icon.textContent = '📁';
-    });
-
-    const selectedEvent = state.events[state.selectedEventIndex];
-    if (selectedEvent && selectedEvent.type === 'showPicture' && selectedEvent.imageName) {
-      expandToPath(selectedEvent.imageName);
-    }
-    return;
-  }
-
-  items.forEach((item) => {
-    const name = item.querySelector('.image-name').textContent.toLowerCase();
-    item.style.display = name.includes(query) ? '' : 'none';
-  });
-
-  folders.forEach((folder) => {
-    const hasVisible = Array.from(folder.querySelectorAll('.image-item')).some((item) => item.style.display !== 'none');
-    folder.style.display = hasVisible ? '' : 'none';
-    if (hasVisible) {
-      folder.classList.add('expanded');
-      const icon = folder.querySelector('.folder-icon');
-      if (icon) icon.textContent = '📂';
-    }
-  });
+  renderLibraryList();
 }
 
-function expandToPath(imagePath) {
-  if (!imagePath) return;
+/**
+ * @param {string} path
+ */
+function expandToPath(path) {
+  const item = imageFlat.find((it) => it.path === path);
+  if (!item) return;
 
-  const elements = getElements();
-  const pathParts = imagePath.split('/');
-  pathParts.pop();
+  if (item.folder && state.libraryActiveFolder !== item.folder) {
+    state.libraryActiveFolder = item.folder;
+    renderFolderChips();
+    renderLibraryList();
+  }
 
-  let currentPath = '';
-  for (const part of pathParts) {
-    currentPath = currentPath ? `${currentPath}/${part}` : part;
-
-    const folders = elements.imageBrowser.querySelectorAll('.folder-item');
-    for (const folder of folders) {
-      const folderName = folder.querySelector('.folder-name');
-      if (folderName && folderName.textContent === part) {
-        folder.classList.add('expanded');
-        const icon = folder.querySelector('.folder-icon');
-        if (icon) icon.textContent = '📂';
-      }
-    }
+  const els = getElements();
+  const target = /** @type {HTMLElement | null} */ (
+    els.imageBrowser.querySelector(`.lib-item[data-path="${CSS.escape(path)}"]`)
+  );
+  if (target) {
+    target.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    target.classList.add('is-flash');
+    setTimeout(() => target.classList.remove('is-flash'), 800);
   }
 }
 
-export { renderFolderTree, createImageItem, handleImageClick, addSelectedImagesAsEvents, filterImages, expandToPath };
+// ---------- Wiring ----------
+
+/**
+ * Lightweight refresh path: walk the existing .lib-item nodes and rewrite
+ * only the `used Nx` / folder-name span. This is what RENDER_TIMELINE
+ * actually needs — a full rebuild was the slowest interaction in large
+ * projects (1500+ DOM nodes recreated every 120 ms during any timeline
+ * change).
+ */
+function updateLibraryUsageBadges() {
+  const els = getElements();
+  const list = els.imageBrowser;
+  if (!list) return;
+  computeImageUsage();
+  for (const el of list.querySelectorAll('.lib-item')) {
+    const path = /** @type {HTMLElement} */ (el).dataset.path;
+    if (!path) continue;
+    const info = el.querySelector('.lib-info');
+    if (!info) continue;
+    const usage = usageCounts.get(path) || 0;
+    while (info.firstChild) info.removeChild(info.firstChild);
+    if (usage > 0) {
+      const used = document.createElement('span');
+      used.className = 'used';
+      used.textContent = `used \xd7${usage}`;
+      info.appendChild(used);
+    } else {
+      const folderSpan = document.createElement('span');
+      const fromFlat = imageFlat.find((it) => it.path === path);
+      folderSpan.textContent = (fromFlat && fromFlat.folder) || '/';
+      info.appendChild(folderSpan);
+    }
+  }
+}
+
+const refreshBadgesThrottled = makeTrailingThrottle(120, updateLibraryUsageBadges);
+
+// Both RENDER (full app render — fires on add/delete/duplicate/clear)
+// and RENDER_TIMELINE (drag/resize stop) need to refresh the usage
+// badges. The throttle bounds spam if both fire close together.
+function scheduleBadgeRefresh() {
+  if (imageFlat.length > 0) refreshBadgesThrottled();
+}
+eventBus.on(Events.RENDER, scheduleBadgeRefresh);
+eventBus.on(Events.RENDER_TIMELINE, scheduleBadgeRefresh);
+
+eventBus.on(Events.IMAGES_LOADED, () => {
+  if (!_treeRoot) return;
+  // Cancel any pending badge refresh — the full rebuild below covers it.
+  refreshBadgesThrottled.cancel();
+  imageFlat = flattenImageTree(_treeRoot);
+  topFolders = Array.from(new Set(imageFlat.map((it) => it.folder).filter(Boolean))).sort();
+  renderFolderChips();
+  renderLibraryList();
+});
+
+export {
+  renderFolderTree,
+  filterImages,
+  expandToPath,
+  addSelectedImagesAsEvents,
+  handleImageClick,
+  loadThumbnail,
+  getThumbnailObserver,
+  flattenImageTree
+};

@@ -2,6 +2,8 @@
 // Help & About Modals
 // ============================================
 
+import { APP_VERSION } from './state.js';
+
 /**
  * Trap focus within a modal element.
  * Returns a cleanup function to remove the event listener.
@@ -77,16 +79,13 @@ function showAboutModal() {
         <h3>About</h3>
         <button class="btn-close">&times;</button>
       </div>
-      <div class="about-content">
-        <div class="about-icon">
-          <img src="../assets/icon.png" alt="Timeline Scene Builder" width="64" height="64">
-        </div>
-        <div class="about-title">Timeline Scene Builder</div>
-        <div class="about-version">Version 1.3.0</div>
-        <div class="about-author">By W1nterstale</div>
-        <div class="about-links">
-          <a href="#" class="about-github-link">GitHub</a>
-        </div>
+      <div class="modal-body">
+        <div class="brand-mark" aria-hidden="true"></div>
+        <h3>Timeline Scene Builder</h3>
+        <p class="version">v${APP_VERSION}</p>
+        <p>By W1nterstale</p>
+        <p><a href="#" class="about-github-link">GitHub</a></p>
+        <p class="about-hint">Developer tools: <kbd>F12</kbd> or <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>I</kbd></p>
       </div>
     </div>
   `;
@@ -116,83 +115,35 @@ function showShortcutsModal() {
         <h3>Keyboard Shortcuts</h3>
         <button class="btn-close">&times;</button>
       </div>
-      <div class="shortcuts-content">
-        <div class="shortcut-group">
-          <h4>General</h4>
-          <div class="shortcut-row">
-            <span class="shortcut-desc">Undo</span>
-            <span class="shortcut-key">Ctrl+Z</span>
-          </div>
-          <div class="shortcut-row">
-            <span class="shortcut-desc">Redo</span>
-            <span class="shortcut-key">Ctrl+Shift+Z / Ctrl+Y</span>
-          </div>
-          <div class="shortcut-row">
-            <span class="shortcut-desc">Save Scene</span>
-            <span class="shortcut-key">Ctrl+S</span>
-          </div>
-          <div class="shortcut-row">
-            <span class="shortcut-desc">Show Help</span>
-            <span class="shortcut-key">F1</span>
-          </div>
-        </div>
-        <div class="shortcut-group">
-          <h4>Events</h4>
-          <div class="shortcut-row">
-            <span class="shortcut-desc">Insert Picture</span>
-            <span class="shortcut-key">Ctrl+P</span>
-          </div>
-          <div class="shortcut-row">
-            <span class="shortcut-desc">Insert Text</span>
-            <span class="shortcut-key">Ctrl+T</span>
-          </div>
-          <div class="shortcut-row">
-            <span class="shortcut-desc">Delete Selected</span>
-            <span class="shortcut-key">Delete</span>
-          </div>
-          <div class="shortcut-row">
-            <span class="shortcut-desc">Copy Event</span>
-            <span class="shortcut-key">Ctrl+C</span>
-          </div>
-          <div class="shortcut-row">
-            <span class="shortcut-desc">Paste Event</span>
-            <span class="shortcut-key">Ctrl+V</span>
-          </div>
-          <div class="shortcut-row">
-            <span class="shortcut-desc">Duplicate Event</span>
-            <span class="shortcut-key">Ctrl+D</span>
-          </div>
-        </div>
-        <div class="shortcut-group">
-          <h4>Image Movement</h4>
-          <div class="shortcut-row">
-            <span class="shortcut-desc">Move 1 pixel</span>
-            <span class="shortcut-key">Arrow Keys</span>
-          </div>
-          <div class="shortcut-row">
-            <span class="shortcut-desc">Move 10 pixels</span>
-            <span class="shortcut-key">Shift+Arrow Keys</span>
-          </div>
-        </div>
-        <div class="shortcut-group">
-          <h4>Timeline</h4>
-          <div class="shortcut-row">
-            <span class="shortcut-desc">Move playhead 10 frames</span>
-            <span class="shortcut-key">Ctrl+Arrow Left/Right</span>
-          </div>
-          <div class="shortcut-row">
-            <span class="shortcut-desc">Move playhead 1 frame</span>
-            <span class="shortcut-key">Ctrl+Shift+Arrow Left/Right</span>
-          </div>
-          <div class="shortcut-row">
-            <span class="shortcut-desc">Jump to frame (snap)</span>
-            <span class="shortcut-key">Click</span>
-          </div>
-          <div class="shortcut-row">
-            <span class="shortcut-desc">Jump to exact frame</span>
-            <span class="shortcut-key">Shift+Click</span>
-          </div>
-        </div>
+      <div class="modal-body">
+        <h4>General</h4>
+        <dl>
+          <dt><kbd>Ctrl+Z</kbd></dt><dd>Undo</dd>
+          <dt><kbd>Ctrl+Shift+Z</kbd> / <kbd>Ctrl+Y</kbd></dt><dd>Redo</dd>
+          <dt><kbd>Ctrl+S</kbd></dt><dd>Save Scene</dd>
+          <dt><kbd>F1</kbd></dt><dd>Show Help</dd>
+        </dl>
+        <h4>Events</h4>
+        <dl>
+          <dt><kbd>Ctrl+P</kbd></dt><dd>Insert Picture</dd>
+          <dt><kbd>Ctrl+T</kbd></dt><dd>Insert Text</dd>
+          <dt><kbd>Delete</kbd></dt><dd>Delete Selected</dd>
+          <dt><kbd>Ctrl+C</kbd></dt><dd>Copy Event</dd>
+          <dt><kbd>Ctrl+V</kbd></dt><dd>Paste Event</dd>
+          <dt><kbd>Ctrl+D</kbd></dt><dd>Duplicate Event</dd>
+        </dl>
+        <h4>Image Movement</h4>
+        <dl>
+          <dt><kbd>Arrow Keys</kbd></dt><dd>Move 1 pixel</dd>
+          <dt><kbd>Shift+Arrow</kbd></dt><dd>Move 10 pixels</dd>
+        </dl>
+        <h4>Timeline</h4>
+        <dl>
+          <dt><kbd>Ctrl+←/→</kbd></dt><dd>Move playhead 10 frames</dd>
+          <dt><kbd>Ctrl+Shift+←/→</kbd></dt><dd>Move playhead 1 frame</dd>
+          <dt><kbd>Click</kbd></dt><dd>Jump to frame (snap)</dd>
+          <dt><kbd>Shift+Click</kbd></dt><dd>Jump to exact frame</dd>
+        </dl>
       </div>
     </div>
   `;
@@ -203,4 +154,4 @@ function showShortcutsModal() {
   modal.querySelector('.btn-close').focus();
 }
 
-export { showAboutModal, showShortcutsModal };
+export { showAboutModal, showShortcutsModal, setupModal };

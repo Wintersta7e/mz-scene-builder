@@ -103,6 +103,11 @@ const Events = {
 
   // Project events
   PROJECT_LOADED: 'project:loaded', // Project was loaded
+  IMAGES_LOADED: 'project:images-loaded', // payload: none
+  SCENE_PATH_CHANGED: 'scene:path-changed', // Scene/project path was set or cleared
+
+  // Autosave
+  AUTOSAVE_SUCCESS: 'autosave:success', // payload: { timestamp: number }
 
   // Recent project events
   OPEN_RECENT_PROJECT: 'project:open-recent'

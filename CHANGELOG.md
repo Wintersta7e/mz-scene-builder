@@ -2,61 +2,128 @@
 
 All notable changes to Timeline Scene Builder will be documented in this file.
 
-## [1.3.1] - Unreleased
+## [2.0.0] - Unreleased
 
-### Developer Experience
+Major UI redesign — the "Director's Console" — plus a new diagnostics
+surface and substantial performance work.
 
-- Tightened ESLint: 11 new rules (curly, no-shadow, no-throw-literal, radix, prefer-template, object-shorthand, etc.), no-unused-vars escalated to error
-- Enabled `strict: true` in jsconfig.json for strict null checks and type inference
-- Added per-file Jest coverage thresholds on fully-tested modules (mz-converter, event-bus, utils)
-- CI now runs Prettier format check and `npm audit --omit=dev` security scan
-- Added husky + lint-staged pre-commit hooks (ESLint --fix + Prettier on staged files)
+### UI redesign
 
-### Fixed
+- New application shell: top rail with project name, save indicator, and
+  workspace mode switcher (Design / Preview / Inspect)
+- Image library reworked: folder chips, richer thumbnails, search,
+  multi-select, drag-and-drop dragstart payloads
+- Stage preview rebuilt: percent-based positioning, snap-to-grid,
+  vignette, REC indicator, slate / clapper readout, full-frame flash
+  overlay
+- Timeline now has 4 lanes (Pictures, Effects, Text, **Timing** — new);
+  overlapping events stack into separate sub-rows automatically;
+  minimap uses DOM pills instead of canvas; transport readout chips +
+  inline event-add bar
+- Inspector rebuilt around a 13-builder primitives library; per-type
+  sections rewritten programmatically; empty state with cog icon
+- Spacebar plays / pauses; modal restyle; bundled Inter, JetBrains
+  Mono, and Instrument Serif fonts (self-hosted, font-src in CSP)
 
-- Timeline drag reverting the wrong event on text overlap
-- Autosave recovery losing events (were overwritten by project load)
-- `||` coercing valid falsy values across all event types in export — opacity 0, scale 0, duration 0 now export correctly
-- Property inputs zeroing mid-keystroke during editing
-- Double render on Delete key
-- `processedTextEvents` not cleared on scene change
-- Export dropdown ordering in cache-hit path
-- `DEFAULT_DURATION` inconsistency between image-browser and state.js
+### Added
 
-### Security
+- **Persistent file logging.** Both processes write to a single rotating
+  log file at platform-standard paths (`%APPDATA%/Timeline Scene
+Builder/logs/main.log` on Windows). Renderer entries are forwarded
+  via a `log-message` IPC channel so they interleave with main entries
+  chronologically. `main.log.1` keeps the previous session.
+- **DevTools accelerators in production.** F12 and Ctrl+Shift+I toggle
+  DevTools (the suppressed Electron menu used to make these
+  inaccessible). Hint added to the About modal.
+- **Slow-op timing.** `logger.timed(label, fn)` wraps `renderTimeline`,
+  `renderLibraryList`, `renderPreviewAtFrame`, `renderProperties`,
+  mode switches, folder-chip clicks, and `openExportModal`. Anything
+  exceeding the 16 ms one-frame budget logs a `[WARN] slow:` line.
+- **Long Task observer.** A `PerformanceObserver('longtask')` logs any
+  main-thread block ≥ 50 ms — catches lag from layout, paint, and GC
+  that the JS wraps don't see. First 2 s skipped to ignore startup.
+- Crash hooks in both processes route uncaught exceptions and
+  unhandled rejections to the log file.
+- Headless renderer profile harness at `scripts/profile.mjs`.
+- jsdom-backed test harness (`__tests__/_dom-harness.mjs`) plus smoke
+  tests for `renderTimeline` (5) and `renderProperties` (3).
+- Greedy interval-scheduling sub-lane assignment (`assignSubLanes`)
+  for overlap-aware timeline rendering.
 
-- Added Content-Security-Policy meta tag
-- Fixed innerHTML injection vectors in confirm dialog, image browser, image picker, and properties panel
-- Fixed `openExternal` hostname check allowing domain suffix collisions
-- Added explicit `webSecurity: true` to Electron window preferences
+### Changed
+
+- Default production log level bumped from `WARN` to `INFO`.
+- IPC handlers split out of `main.js` into `src/main/ipc/*.js`
+  (project, picture, export, scene, autosave). `main.js` is now a
+  150-line orchestrator. Behaviour preserved exactly.
+- README hero screenshot replaced and centred; legacy per-feature
+  screenshots removed; Features section reflects the new lane model
+  and diagnostics surface.
+
+### Fixed (post-redesign user-test fixes)
+
+- Recent-projects dropdown re-anchored to its own trigger; previously
+  surfaced under the wrong button and was clipped by `.rail`'s
+  `overflow: hidden`
+- Inspector now refreshes when a sprite or text element is selected
+  from the stage (the cycle-through-stacked-pictures path included)
+- Disabled-state styling added for `.transport-btn`, `.event-chip`,
+  `.icon-btn` so disabled buttons no longer look identical to enabled
+- About modal version reads from a single `APP_VERSION` constant
+- Recent dropdown closes immediately on item-click and uses
+  `composedPath()` for outside-click detection
+- Recent dropdown no longer hover-activates — pure click-toggle
+- `assignSubLanes` tie-break test restored 100% statement / line
+  coverage on `utils.js`
 
 ### Performance
 
-- Timeline playback no longer rebuilds the entire DOM at 60fps — uses lightweight cursor-only updates
-- Minimap uses cursor-only updates during playback
-- Eliminated O(n^2) indexOf in preview rendering
+- Library list: full DOM rebuild on every `RENDER_TIMELINE` replaced
+  with an incremental badge update (~70-140 ms → sub-ms in jsdom)
+- `content-visibility: auto` on `.lib-item` so offscreen entries skip
+  layout / paint
+- Modal `backdrop-filter: blur(4px)` removed — was the export-modal
+  open lag culprit on large projects
+- Map-events cache persists across modal opens; cleared only on
+  project change. Maps prefetch fires concurrently with folder /
+  screen IO at project load
+- Export modal shows immediately, then loads maps with placeholder
+
+### Tests
+
+- 121 → **200** total tests, 12 suites
+- New: 8 `assignSubLanes` cases, 12 throttle / selection-recovery
+  cases, 8 logger-stringify cases, 8 DOM-render smoke tests, plus
+  the previously-listed coverage uplifts
+- Coverage uplift: `properties/index.js` 0% → 96.66%,
+  `timeline/index.js` 0% → 73.79%, `properties/shared.js` 0% →
+  64.14%, `properties/picture.js` 0% → 60.86%
+
+### Pre-redesign work consolidated under 2.0.0
+
+The following changes were originally tracked as `1.3.1 Unreleased`
+and never tagged separately — they ship as part of 2.0.0.
+
+- Tightened ESLint (11 new rules, `no-unused-vars` escalated to error)
+- Enabled `strict: true` in jsconfig.json
+- Per-file Jest coverage thresholds on fully-tested modules
+- CI runs Prettier format check and `npm audit --omit=dev`
+- husky + lint-staged pre-commit hooks
+- Added Content-Security-Policy meta tag (extended in 2.0.0 with
+  `font-src 'self'`)
+- Fixed innerHTML injection vectors in confirm dialog, image browser,
+  image picker, and properties panel
+- Fixed `openExternal` hostname check allowing domain suffix collisions
+- Added explicit `webSecurity: true` to Electron window preferences
+- Timeline playback uses cursor-only updates (no DOM rebuild at 60fps)
+- Eliminated O(n²) indexOf in preview rendering
 - Debounced window resize and image search handlers
-- Removed `will-change: transform` from virtual dropdown items
-
-### Improved
-
-- Added try/catch to save-scene, load-scene, and directory scanning IPC handlers
-- User notification on drag-drop load failure, folder structure errors, and repeated autosave failures
-- Protected localStorage operations against QuotaExceededError
-- Added focus trap, Escape-to-close, and focus restore to confirm dialogs
-- Added aria-labels to toolbar buttons and minimap canvas
-- Replaced unconditional `outline: none` with `focus-visible` pattern
-- Changed semantic `<footer>` to `<section>` for timeline
-- Added debounced undo state for arrow key image movement
-- Added critical DOM element null-checks at init
-
-### Removed
-
-- 5 unused event bus constants (STATE_CHANGED, EVENT_SELECTED, FRAME_CHANGED, SCENE_SAVED, SCENE_LOADED)
-- Orphan SCENE_LOADED event listener
-- Duplicate `getPreviewScale()` function (consolidated to preview/index.js)
-- Dead CSS rules (`.btn[title]`, duplicate selectors)
-- Notification keyframes from JS (moved to styles.css)
+- Try/catch on save-scene, load-scene, and directory scanning IPC
+- localStorage protected against QuotaExceededError
+- Confirm dialogs gain focus trap, Escape-to-close, focus restore
+- ARIA labels on toolbar buttons and minimap
+- 5 unused event-bus constants removed
+- Duplicate `getPreviewScale()` consolidated
 
 ## [1.3.0] - 2026-02-26
 

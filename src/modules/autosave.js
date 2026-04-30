@@ -38,6 +38,7 @@ async function performAutosave() {
     if (result.success) {
       logger.debug('Autosaved');
       state._autosaveFailCount = 0;
+      eventBus.emit(Events.AUTOSAVE_SUCCESS, { timestamp: Date.now() });
     } else {
       state._autosaveFailCount = (state._autosaveFailCount || 0) + 1;
       logger.warn('Autosave returned error:', result.error);

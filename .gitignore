@@ -39,3 +39,7 @@ pids/
 *.pid
 *.seed
 *.pid.lock
+
+# Local agent tooling state
+.codex
+.serena/

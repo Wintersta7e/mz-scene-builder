@@ -11,6 +11,7 @@ import { eventBus, Events } from '../event-bus.js';
 import { getEventDuration, selectEvent } from '../events.js';
 import { startDrag, highlightSelectedImage, findImagesAtPoint } from './drag.js';
 import { renderTimeline } from '../timeline/index.js';
+import { renderProperties } from '../properties/index.js';
 import { continueFromText } from '../playback.js';
 
 // Image path cache — cleared on project change, capped to prevent unbounded growth
@@ -23,16 +24,96 @@ function clearImagePathCache() {
   imagePathCache.clear();
 }
 
-function escapeHtml(text) {
-  return String(text)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
+eventBus.on(Events.PROJECT_LOADED, clearImagePathCache);
+
+/**
+ * Format a 60fps frame index as MM:SS.
+ * @param {number} frame
+ * @returns {string}
+ */
+function formatT(frame) {
+  const totalSec = Math.max(0, Math.floor(frame / 60));
+  const mm = String(Math.floor(totalSec / 60)).padStart(2, '0');
+  const ss = String(totalSec % 60).padStart(2, '0');
+  return `${mm}:${ss}`;
 }
 
-eventBus.on(Events.PROJECT_LOADED, clearImagePathCache);
+/**
+ * Push the current frame, scene name, and playback state into the slate
+ * cells + REC indicator. Cheap; safe to call every render.
+ * @param {number} frame
+ */
+function updateSlateAndRec(frame) {
+  const els = getElements();
+
+  const scene = state.currentScenePath
+    ? state.currentScenePath
+        .split(/[\\/]/)
+        .pop()
+        ?.replace(/\.mzscene$/i, '') || 'Untitled'
+    : 'Untitled';
+  if (els.slateScene.textContent !== scene) els.slateScene.textContent = scene;
+
+  const t = formatT(frame);
+  if (els.slateTime.textContent !== t) els.slateTime.textContent = t;
+
+  const f = String(frame).padStart(4, '0');
+  if (els.slateFrame.textContent !== f) els.slateFrame.textContent = f;
+
+  els.stageRec.classList.toggle('is-playing', state.isPlaying);
+  const newRecLabel = state.isPlaying ? 'Live' : 'Idle';
+  if (els.stageRecLabel.textContent !== newRecLabel) {
+    els.stageRecLabel.textContent = newRecLabel;
+  }
+}
+
+/**
+ * Compute and apply the flash overlay opacity for the given frame.
+ * Looks for a screenFlash event whose [start, start+duration] window
+ * contains the frame; uses opacity = (1 - progress) * intensity/100.
+ * @param {number} frame
+ */
+function updateFlashOverlay(frame) {
+  const els = getElements();
+  const flashEl = els.stageFlash;
+
+  /** @type {any} */
+  let active = null;
+  for (const ev of state.events) {
+    if (ev.type !== 'screenFlash') continue;
+    const start = ev.startFrame ?? 0;
+    const dur = ev.duration ?? 30;
+    if (frame >= start && frame < start + dur) {
+      active = ev;
+      break;
+    }
+  }
+
+  if (!active) {
+    flashEl.style.opacity = '0';
+    return;
+  }
+
+  const start = active.startFrame ?? 0;
+  const dur = Math.max(1, active.duration ?? 30);
+  const progress = Math.min(1, Math.max(0, (frame - start) / dur));
+  const intensity = (active.intensity ?? 170) / 255;
+  flashEl.style.opacity = String((1 - progress) * intensity);
+
+  // Compose flash color from MZ-native RGB. Falls back to white if no fields set.
+  const r = active.red ?? 255;
+  const g = active.green ?? 255;
+  const b = active.blue ?? 255;
+  flashEl.style.background = `rgb(${r}, ${g}, ${b})`;
+}
+
+/**
+ * Toggle the grid overlay visibility on the stage frame.
+ */
+function updateGridVisibility() {
+  const gridEl = document.getElementById('preview-grid');
+  if (gridEl) gridEl.classList.toggle('visible', state.gridVisible);
+}
 
 function getPreviewScale() {
   const elements = getElements();
@@ -70,29 +151,64 @@ function resizePreviewCanvas() {
   renderPreviewAtFrame(state.currentFrame);
 }
 
+/**
+ * Apply a picture's computed state (x/y/scale/opacity/etc.) to a
+ * `.stage-pic` IMG element. Position is percent-of-frame so the new
+ * CSS Grid layout drives the visible size — no manual scale factor
+ * needed.
+ *
+ * @param {HTMLImageElement} img
+ * @param {any} pictureState — accumulated state from showPicture +
+ *   subsequent move/tint/rotate/erase events. Carries x, y (MZ-native
+ *   pixels relative to state.screenWidth/Height), scaleX/scaleY (pct),
+ *   opacity (0–255), blend (0–3), origin (0=top-left, 1=center),
+ *   rotation, rotationSpeed, tint { r, g, b, gray }.
+ */
 function applyPictureState(img, pictureState) {
-  const scale = getPreviewScale();
-  const x = pictureState.x * scale;
-  const y = pictureState.y * scale;
-  const scaleX = (pictureState.scaleX / 100) * scale;
-  const scaleY = (pictureState.scaleY / 100) * scale;
+  const xPct = (pictureState.x / state.screenWidth) * 100;
+  const yPct = (pictureState.y / state.screenHeight) * 100;
 
   img.style.position = 'absolute';
-  img.style.left = `${x}px`;
-  img.style.top = `${y}px`;
+  img.style.left = `${xPct}%`;
+  img.style.top = `${yPct}%`;
 
+  const scaleX = pictureState.scaleX / 100;
+  const scaleY = pictureState.scaleY / 100;
   const rotation = pictureState.rotation !== 0 ? ` rotate(${pictureState.rotation}deg)` : '';
   img.style.transform = `scale(${scaleX}, ${scaleY})${rotation}`;
   img.style.transformOrigin = pictureState.origin === 1 ? 'center' : 'top left';
 
-  img.style.opacity = pictureState.opacity / 255;
+  img.style.opacity = String(pictureState.opacity / 255);
   img.style.mixBlendMode = ['normal', 'lighten', 'multiply', 'screen'][pictureState.blend] || 'normal';
   img.style.pointerEvents = 'auto';
   img.style.cursor = 'pointer';
   img.style.zIndex = '1';
 
-  // Apply tint
-  const tint = pictureState.tint;
+  applyTintFilter(img, pictureState.tint);
+
+  if (pictureState.rotationSpeed !== 0) {
+    img.classList.add('rotating');
+    img.style.setProperty('--rotation-speed', `${Math.abs(pictureState.rotationSpeed) * 0.1}s`);
+    img.style.setProperty('--rotation-direction', pictureState.rotationSpeed > 0 ? 'normal' : 'reverse');
+  } else {
+    img.classList.remove('rotating');
+    img.style.removeProperty('--rotation-speed');
+    img.style.removeProperty('--rotation-direction');
+  }
+}
+
+/**
+ * Apply a per-picture tint as a chain of CSS filters. Per-picture (NOT
+ * full-frame) — preserves MZ semantics where tintPicture targets a
+ * specific picture number, not the whole screen.
+ *
+ * Ported verbatim from the legacy applyPictureState's tint section so
+ * the visual output is unchanged from the previous renderer.
+ *
+ * @param {HTMLImageElement} img
+ * @param {{ r: number; g: number; b: number; gray: number }} tint
+ */
+function applyTintFilter(img, tint) {
   const filters = [];
 
   if (tint.r !== 0 || tint.g !== 0 || tint.b !== 0 || tint.gray !== 0) {
@@ -138,12 +254,6 @@ function applyPictureState(img, pictureState) {
   } else {
     img.style.filter = '';
   }
-
-  if (pictureState.rotationSpeed !== 0) {
-    img.classList.add('rotating');
-    img.style.setProperty('--rotation-speed', `${Math.abs(pictureState.rotationSpeed) * 0.1}s`);
-    img.style.setProperty('--rotation-direction', pictureState.rotationSpeed > 0 ? 'normal' : 'reverse');
-  }
 }
 
 async function renderPreviewAtFrame(frame) {
@@ -153,8 +263,14 @@ async function renderPreviewAtFrame(frame) {
   }
   _renderInFlight = true;
   _pendingFrame = null;
+  return logger.timed(`renderPreviewAtFrame(frame=${frame})`, async () => renderPreviewAtFrameInner(frame));
+}
+
+async function renderPreviewAtFrameInner(frame) {
   try {
-    logger.time('renderPreviewAtFrame');
+    updateSlateAndRec(frame);
+    updateFlashOverlay(frame);
+    updateGridVisibility();
     logger.debug('renderPreviewAtFrame', { frame, eventsCount: state.events.length });
 
     const elements = getElements();
@@ -262,12 +378,9 @@ async function renderPreviewAtFrame(frame) {
 
     // Collect existing picture elements for DOM reuse
     const existingImages = new Map();
-    canvas.querySelectorAll('.preview-image').forEach((el) => {
-      existingImages.set(el.dataset.pictureNumber, el);
+    canvas.querySelectorAll('.stage-pic').forEach((el) => {
+      existingImages.set(/** @type {HTMLElement} */ (el).dataset.pictureNumber, /** @type {HTMLImageElement} */ (el));
     });
-
-    // Track which picture numbers are active this frame
-    const activePictureNumbers = new Set();
 
     // Render pictures (reuse DOM elements where possible)
     for (let i = 0; i < sortedPictures.length; i++) {
@@ -279,7 +392,6 @@ async function renderPreviewAtFrame(frame) {
         continue;
       }
 
-      activePictureNumbers.add(pictureNumber);
       let img = existingImages.get(pictureNumber);
 
       if (img) {
@@ -292,11 +404,10 @@ async function renderPreviewAtFrame(frame) {
       } else {
         // Create new element
         img = document.createElement('img');
-        img.className = 'preview-image';
-        img.dataset.eventIndex = pictureState.eventIndex;
-        img.dataset.pictureNumber = pictureNumber;
-        img.src = imgPath;
-        img.style.position = 'absolute';
+        img.className = 'stage-pic';
+        img.dataset.eventIndex = String(pictureState.eventIndex);
+        img.dataset.pictureNumber = String(pictureNumber);
+        img.setAttribute('src', imgPath);
         canvas.appendChild(img);
       }
 
@@ -316,12 +427,14 @@ async function renderPreviewAtFrame(frame) {
             selectEvent(clickedImages[nextIdx]);
             highlightSelectedImage();
             renderTimeline();
+            renderProperties();
             return;
           }
         }
         selectEvent(evtIdx);
         highlightSelectedImage();
         renderTimeline();
+        renderProperties();
       };
     }
 
@@ -330,11 +443,10 @@ async function renderPreviewAtFrame(frame) {
 
     // Collect existing text elements for DOM reuse
     const existingTexts = new Map();
-    canvas.querySelectorAll('.preview-text').forEach((el) => {
-      existingTexts.set(el.dataset.eventIndex, el);
+    canvas.querySelectorAll('.stage-text').forEach((el) => {
+      existingTexts.set(/** @type {HTMLElement} */ (el).dataset.eventIndex, /** @type {HTMLElement} */ (el));
     });
 
-    // Render text events (reuse DOM elements where possible)
     for (let textIdx = 0; textIdx < state.events.length; textIdx++) {
       const evt = state.events[textIdx];
       if (evt.type !== 'showText' || !evt.text) continue;
@@ -343,30 +455,32 @@ async function renderPreviewAtFrame(frame) {
       if (frame < evtStart || frame > evtEnd) continue;
 
       const eventIndex = String(textIdx);
-
-      const safeText = escapeHtml(evt.text || '').replace(/\n/g, '<br>');
-      const waitHint = state.waitingForTextClick ? '<div class="text-continue-hint">▼ Click to continue</div>' : '';
-      const contentHtml = `<div class="preview-text-content">${safeText}${waitHint}</div>`;
-
-      const positions = ['top', 'middle', 'bottom'];
-      const bgStyles = ['window', 'dim', 'transparent'];
-
       let textBox = existingTexts.get(eventIndex);
-      if (textBox) {
-        // Reuse — update content and attributes
-        textBox.innerHTML = contentHtml;
-        textBox.dataset.position = positions[evt.position] || 'bottom';
-        textBox.dataset.background = bgStyles[evt.background] || 'window';
-        existingTexts.delete(eventIndex);
-      } else {
-        // Create new
+      if (!textBox) {
         textBox = document.createElement('div');
-        textBox.className = 'preview-text';
+        textBox.className = 'stage-text';
         textBox.dataset.eventIndex = eventIndex;
-        textBox.dataset.position = positions[evt.position] || 'bottom';
-        textBox.dataset.background = bgStyles[evt.background] || 'window';
-        textBox.innerHTML = contentHtml;
         canvas.appendChild(textBox);
+      } else {
+        existingTexts.delete(eventIndex);
+      }
+
+      // Programmatic content build — preserves newlines without innerHTML.
+      while (textBox.firstChild) textBox.removeChild(textBox.firstChild);
+      const lines = String(evt.text || '').split(/\n/);
+      lines.forEach((line, i) => {
+        if (i > 0) textBox.appendChild(document.createElement('br'));
+        textBox.appendChild(document.createTextNode(line));
+      });
+
+      if (state.waitingForTextClick) {
+        textBox.classList.add('waiting');
+        const hint = document.createElement('div');
+        hint.className = 'text-continue-hint';
+        hint.textContent = '▼ Click to continue';
+        textBox.appendChild(hint);
+      } else {
+        textBox.classList.remove('waiting');
       }
 
       const evtIdx = parseInt(eventIndex, 10);
@@ -379,20 +493,14 @@ async function renderPreviewAtFrame(frame) {
         selectEvent(evtIdx);
         highlightSelectedImage();
         renderTimeline();
+        renderProperties();
       };
-
-      if (state.waitingForTextClick) {
-        textBox.classList.add('waiting');
-      } else {
-        textBox.classList.remove('waiting');
-      }
     }
 
     // Remove stale text elements
     existingTexts.forEach((el) => el.remove());
 
     highlightSelectedImage();
-    logger.timeEnd('renderPreviewAtFrame');
   } catch (err) {
     logger.error('Failed to render preview:', err);
   } finally {
@@ -405,4 +513,20 @@ async function renderPreviewAtFrame(frame) {
   }
 }
 
-export { getPreviewScale, resizePreviewCanvas, renderPreviewAtFrame };
+/**
+ * Sync the stage frame's aspect-ratio (via CSS vars) and the resolution
+ * readout chip with the current project's screen dimensions.
+ */
+function updateStageGeometry() {
+  const root = document.documentElement;
+  root.style.setProperty('--stage-w', String(state.screenWidth));
+  root.style.setProperty('--stage-h', String(state.screenHeight));
+
+  // Readout chip: "816 × 624"-style label
+  const readout = document.querySelector('.stage-readout .res');
+  if (readout) {
+    readout.textContent = `${state.screenWidth} \xd7 ${state.screenHeight}`;
+  }
+}
+
+export { getPreviewScale, resizePreviewCanvas, renderPreviewAtFrame, updateStageGeometry };

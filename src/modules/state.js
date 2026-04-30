@@ -2,8 +2,11 @@
 // Central State Store
 // ============================================
 
+// App metadata
+const APP_VERSION = '2.0.0';
+
 // Timeline constants
-const TIMELINE_LANES = ['Pictures', 'Effects', 'Text'];
+const TIMELINE_LANES = ['Pictures', 'Effects', 'Text', 'Timing'];
 const LANE_HEIGHT = 24;
 const MAX_UNDO_STACK = 50;
 const MAX_RECENT_PROJECTS = 5;
@@ -71,6 +74,9 @@ const state = {
   selectedImages: new Set(),
   lastClickedImage: null,
 
+  // Library filter (non-serialized; resets on project reload)
+  libraryActiveFolder: /** @type {string | null} */ (null),
+
   // Drag state
   isDragging: false,
   dragStartX: 0,
@@ -117,6 +123,8 @@ export {
   get,
   set,
   update,
+  // App metadata
+  APP_VERSION,
   // Constants
   TIMELINE_LANES,
   LANE_HEIGHT,

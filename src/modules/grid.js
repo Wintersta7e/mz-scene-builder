@@ -19,17 +19,11 @@ function toggleSnapToGrid() {
 }
 
 function updateGridButton() {
-  const btn = document.getElementById('btn-toggle-grid');
-  if (btn) {
-    btn.classList.toggle('active', state.gridVisible);
-  }
+  // Visual state is managed by refreshStageToggles in init.js via .is-on.
 }
 
 function updateSnapButton() {
-  const btn = document.getElementById('btn-toggle-snap');
-  if (btn) {
-    btn.classList.toggle('active', state.snapToGrid);
-  }
+  // Visual state is managed by refreshStageToggles in init.js via .is-on.
 }
 
 function snapPosition(value) {

@@ -1,51 +1,123 @@
-// ============================================
-// Move Picture Properties
-// ============================================
+// src/modules/properties/move.js
+//
+// Move Picture section — target position with path viz, scale, opacity,
+// duration, easing.
 
-import { getElements } from '../elements.js';
-import { bindInput } from './bind-input.js';
-import { targetGroupHtml, positionGroupHtml, scaleGroupHtml, effectsGroupHtml, bindCoreInputs } from './shared.js';
+import {
+  buildSection,
+  buildRow,
+  buildPair,
+  buildCell,
+  buildSelect,
+  buildSlider,
+  buildPathMini,
+  commit
+} from './shared.js';
 
-function renderMoveProperties(evt) {
-  const elements = getElements();
+export function renderMoveProperties(ev, index) {
+  const wrap = document.createElement('div');
 
-  elements.propertiesPanel.innerHTML = `
-    ${targetGroupHtml(evt)}
-    ${positionGroupHtml(evt)}
-    ${scaleGroupHtml(evt)}
-    ${effectsGroupHtml(evt)}
-    <div class="property-group">
-      <h4>Animation</h4>
-      <div class="property-row">
-        <span class="property-label">Duration:</span>
-        <div class="property-input">
-          <input type="number" id="prop-duration" value="${evt.duration}" min="1"> frames
-        </div>
-      </div>
-      <div class="property-row">
-        <span class="property-label">Easing:</span>
-        <div class="property-input">
-          <select id="prop-easing">
-            <option value="0" ${evt.easingType === 0 ? 'selected' : ''}>Constant</option>
-            <option value="1" ${evt.easingType === 1 ? 'selected' : ''}>Ease In</option>
-            <option value="2" ${evt.easingType === 2 ? 'selected' : ''}>Ease Out</option>
-            <option value="3" ${evt.easingType === 3 ? 'selected' : ''}>Ease In/Out</option>
-          </select>
-        </div>
-      </div>
-      <div class="property-row">
-        <span class="property-label">Wait:</span>
-        <div class="property-input">
-          <input type="checkbox" id="prop-wait" ${evt.wait ? 'checked' : ''}>
-        </div>
-      </div>
-    </div>
-  `;
+  // Quick re-render helper to refresh the path-mini viz after X/Y change.
+  // Lazy-imported to avoid a circular dep with index.js.
+  function refresh() {
+    import('./index.js').then((m) => m.renderProperties()).catch(() => {});
+  }
 
-  bindCoreInputs();
-  bindInput('prop-duration', 'duration', 'number');
-  bindInput('prop-easing', 'easingType', 'number');
-  bindInput('prop-wait', 'wait', 'boolean');
+  // ----- Target picture -----
+  wrap.appendChild(
+    buildSection('Target', (body) => {
+      body.appendChild(
+        buildCell({
+          label: 'PIC #',
+          value: ev.pictureNumber ?? 1,
+          onChange: (v) => commit(ev, 'pictureNumber', Math.max(1, Math.min(100, /** @type {number} */ (v))), index)
+        })
+      );
+    })
+  );
+
+  // ----- Destination -----
+  wrap.appendChild(
+    buildSection('Destination', (body) => {
+      body.appendChild(
+        buildPair(
+          buildCell({
+            label: '→ X',
+            value: ev.x || 0,
+            unit: 'px',
+            onChange: (v) => {
+              commit(ev, 'x', /** @type {number} */ (v), index);
+              refresh();
+            }
+          }),
+          buildCell({
+            label: '→ Y',
+            value: ev.y || 0,
+            unit: 'px',
+            onChange: (v) => {
+              commit(ev, 'y', /** @type {number} */ (v), index);
+              refresh();
+            }
+          })
+        )
+      );
+      body.appendChild(buildRow('Path', buildPathMini({ toX: ev.x || 0, toY: ev.y || 0 }), true));
+    })
+  );
+
+  // ----- Scale -----
+  wrap.appendChild(
+    buildSection('Scale', (body) => {
+      body.appendChild(
+        buildPair(
+          buildCell({
+            label: 'X',
+            value: ev.scaleX ?? 100,
+            unit: '%',
+            onChange: (v) => commit(ev, 'scaleX', /** @type {number} */ (v), index)
+          }),
+          buildCell({
+            label: 'Y',
+            value: ev.scaleY ?? 100,
+            unit: '%',
+            onChange: (v) => commit(ev, 'scaleY', /** @type {number} */ (v), index)
+          })
+        )
+      );
+    })
+  );
+
+  // ----- Effects -----
+  wrap.appendChild(
+    buildSection('Effects', (body) => {
+      body.appendChild(
+        buildRow(
+          'Opacity',
+          buildSlider({
+            value: ev.opacity ?? 255,
+            min: 0,
+            max: 255,
+            onChange: (v) => commit(ev, 'opacity', v, index)
+          })
+        )
+      );
+      body.appendChild(
+        buildRow(
+          'Easing',
+          buildSelect({
+            value: ev.easingType ?? 0,
+            options: [
+              { value: 0, label: 'Linear' },
+              { value: 1, label: 'Ease In' },
+              { value: 2, label: 'Ease Out' },
+              { value: 3, label: 'Ease In-Out' }
+            ],
+            onChange: (v) => commit(ev, 'easingType', v, index)
+          })
+        )
+      );
+    })
+  );
+
+  return wrap;
 }
-
-export { renderMoveProperties };
