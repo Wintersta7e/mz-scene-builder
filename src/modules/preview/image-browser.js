@@ -458,9 +458,14 @@ function updateLibraryUsageBadges() {
 
 const refreshBadgesThrottled = makeTrailingThrottle(120, updateLibraryUsageBadges);
 
-eventBus.on(Events.RENDER_TIMELINE, () => {
+// Both RENDER (full app render — fires on add/delete/duplicate/clear)
+// and RENDER_TIMELINE (drag/resize stop) need to refresh the usage
+// badges. The throttle bounds spam if both fire close together.
+function scheduleBadgeRefresh() {
   if (imageFlat.length > 0) refreshBadgesThrottled();
-});
+}
+eventBus.on(Events.RENDER, scheduleBadgeRefresh);
+eventBus.on(Events.RENDER_TIMELINE, scheduleBadgeRefresh);
 
 eventBus.on(Events.IMAGES_LOADED, () => {
   if (!_treeRoot) return;
