@@ -2181,6 +2181,23 @@ textarea.prop-input {
 .modal-about a:hover {
   text-decoration: underline;
 }
+.modal-about .about-hint {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line-soft);
+  font-size: 11px;
+  color: var(--text-3);
+}
+.modal-about .about-hint kbd {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--text-2);
+  padding: 1px 5px;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  background: var(--ink-1);
+  margin: 0 2px;
+}
 
 /* Shortcuts modal — keyboard reference table */
 .modal-shortcuts .modal-body {

@@ -85,6 +85,7 @@ function showAboutModal() {
         <p class="version">v${APP_VERSION}</p>
         <p>By W1nterstale</p>
         <p><a href="#" class="about-github-link">GitHub</a></p>
+        <p class="about-hint">Developer tools: <kbd>F12</kbd> or <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>I</kbd></p>
       </div>
     </div>
   `;
