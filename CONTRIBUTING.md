@@ -23,26 +23,46 @@ npm run dev
 
 ```
 src/
-├── lib/
-│   └── mz-converter.js    # MZ format conversion + path security (CJS)
-├── modules/
-│   ├── state.js            # Central state store
-│   ├── event-bus.js        # Pub/sub module communication
-│   ├── init.js             # Bootstrap and event binding
-│   ├── events.js           # Event creation/manipulation
-│   ├── export.js           # RPG Maker JSON export
-│   ├── file-ops.js         # Save/load .mzscene files
-│   ├── playback.js         # Timeline playback
-│   ├── undo-redo.js        # History stack
-│   ├── timeline/           # Timeline rendering, minimap, drag
-│   ├── preview/            # Canvas preview, image browser
-│   └── properties/         # Property panels per event type
+├── lib/                       # Shared CJS — used by both processes
+│   ├── mz-converter.js        # MZ format conversion + path security
+│   └── main-logger.js         # Main-process logger (file + console)
+├── main/                      # Main-process modules
+│   ├── state.js               # Shared mutable state (projectPath, mainWindow)
+│   ├── util.js                # Small main-side helpers (pathExists)
+│   └── ipc/
+│       ├── project.js         # open-project, set-project-path, get-screen-resolution
+│       ├── picture.js         # get-pictures-folders, get-folder-contents, get-thumbnail, get-image-path
+│       ├── export.js          # get-maps, get-map-events, export-to-map
+│       ├── scene.js           # save-scene, load-scene
+│       └── autosave.js        # autosave-write/read/delete/exists
+├── modules/                   # Renderer (ES Modules)
+│   ├── state.js               # Central state store + APP_VERSION
+│   ├── event-bus.js           # Pub/sub module communication
+│   ├── init.js                # Bootstrap and event binding
+│   ├── events.js              # Event creation / lane assignment / duration
+│   ├── export.js              # RPG Maker JSON export coordinator
+│   ├── file-ops.js            # Save / load .mzscene files
+│   ├── playback.js            # Timeline playback
+│   ├── undo-redo.js           # History stack
+│   ├── keyboard.js            # Keyboard shortcuts
+│   ├── elements.js            # Cached DOM lookup ($)
+│   ├── grid.js                # Grid + snap toggles
+│   ├── modals.js              # About / Shortcuts modals
+│   ├── notifications.js       # Toast notifications
+│   ├── settings.js            # localStorage settings + recent projects
+│   ├── autosave.js            # Renderer-side autosave loop
+│   ├── logger.js              # Renderer logger (forwards to main file)
+│   ├── components/
+│   │   └── virtual-dropdown.js
+│   ├── timeline/              # Timeline rendering, minimap, drag, resize
+│   ├── preview/               # Stage rendering, image browser, image picker, drag
+│   └── properties/            # Inspector dispatcher + per-type panels + shared primitives
 ├── index.html
 ├── styles.css
-└── renderer.js             # ESM entry point
+└── renderer.js                # ESM entry point
 ```
 
-**Module system:** Renderer uses ES Modules (`src/modules/`), main process uses CommonJS (`main.js`, `preload.js`, `src/lib/`).
+**Module system:** Renderer uses ES Modules (`src/modules/`); main process uses CommonJS (`main.js`, `preload.js`, `src/main/`, `src/lib/`).
 
 ## Quality Checks
 
@@ -51,7 +71,7 @@ All checks must pass before submitting a PR:
 ```bash
 npm run lint          # ESLint (strict rules)
 npm run format:check  # Prettier formatting
-npm test              # Jest unit tests (121 tests)
+npm test              # Jest unit + DOM smoke tests (200 tests, 12 suites)
 ```
 
 CI runs these automatically on every pull request, along with `npm audit` for dependency vulnerabilities.

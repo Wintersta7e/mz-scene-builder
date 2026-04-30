@@ -4,6 +4,9 @@ A visual timeline editor for creating cutscenes and picture sequences for RPG Ma
 
 ![Electron](https://img.shields.io/badge/Electron-41-47848F?logo=electron)
 ![JavaScript](https://img.shields.io/badge/JavaScript-ES2022-F7DF1E?logo=javascript)
+[![CI](https://github.com/Wintersta7e/mz-scene-builder/actions/workflows/ci.yml/badge.svg)](https://github.com/Wintersta7e/mz-scene-builder/actions/workflows/ci.yml)
+![Tests](https://img.shields.io/badge/Tests-200%20passing-success)
+[![code style: prettier](https://img.shields.io/badge/code_style-prettier-ff69b4.svg)](https://prettier.io/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE.txt)
 
 > **Part of [MZ DevKit](https://github.com/topics/mz-devkit)** — a suite of visual tools for RPG Maker MZ:
@@ -103,7 +106,7 @@ Select a target Map, Event, and Page — commands are inserted at the end of the
 - **Runtime**: Electron 41
 - **Language**: Vanilla JavaScript (ES Modules in renderer, CJS in main/preload)
 - **Architecture**: Event bus with centralized state, contextIsolation + sandbox + CSP
-- **Testing**: Jest (174 tests, per-file coverage thresholds)
+- **Testing**: Jest (200 tests, per-file coverage thresholds, jsdom-backed DOM smoke tests)
 - **Linting**: ESLint (strict rules) + Prettier, enforced via husky pre-commit hooks
 - **Build**: electron-builder (NSIS + portable)
 
@@ -144,7 +147,7 @@ npm run format        # Prettier write
 npm run format:check  # Prettier check
 
 # Run tests
-npm test              # 174 tests
+npm test              # 200 tests
 npm run test:watch    # Watch mode
 npm run test:coverage # Coverage report
 
