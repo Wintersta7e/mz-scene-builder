@@ -365,7 +365,6 @@ body::after {
   border-radius: 50%;
   background: oklch(0.75 0.18 145);
   box-shadow: 0 0 6px oklch(0.75 0.18 145 / 0.7);
-  animation: pulse 2.4s ease-in-out infinite;
 }
 @keyframes pulse {
   0%,
@@ -616,6 +615,11 @@ body::after {
   border-radius: 7px;
   cursor: grab;
   position: relative;
+  /* Skip layout + paint for offscreen items so a 1500-image library does
+     not reflow on every panel resize / timeline change. Intrinsic size
+     matches the rendered height (44 px thumb + 12 px padding). */
+  content-visibility: auto;
+  contain-intrinsic-size: 56px;
   transition:
     border-color 0.12s,
     transform 0.08s;

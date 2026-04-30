@@ -417,17 +417,49 @@ function expandToPath(path) {
 
 // ---------- Wiring ----------
 
-const refreshLibraryThrottled = makeTrailingThrottle(120, renderLibraryList);
+/**
+ * Lightweight refresh path: walk the existing .lib-item nodes and rewrite
+ * only the `used Nx` / folder-name span. This is what RENDER_TIMELINE
+ * actually needs — a full rebuild was the slowest interaction in large
+ * projects (1500+ DOM nodes recreated every 120 ms during any timeline
+ * change).
+ */
+function updateLibraryUsageBadges() {
+  const els = getElements();
+  const list = els.imageBrowser;
+  if (!list) return;
+  computeImageUsage();
+  for (const el of list.querySelectorAll('.lib-item')) {
+    const path = /** @type {HTMLElement} */ (el).dataset.path;
+    if (!path) continue;
+    const info = el.querySelector('.lib-info');
+    if (!info) continue;
+    const usage = usageCounts.get(path) || 0;
+    while (info.firstChild) info.removeChild(info.firstChild);
+    if (usage > 0) {
+      const used = document.createElement('span');
+      used.className = 'used';
+      used.textContent = `used \xd7${usage}`;
+      info.appendChild(used);
+    } else {
+      const folderSpan = document.createElement('span');
+      const fromFlat = imageFlat.find((it) => it.path === path);
+      folderSpan.textContent = (fromFlat && fromFlat.folder) || '/';
+      info.appendChild(folderSpan);
+    }
+  }
+}
+
+const refreshBadgesThrottled = makeTrailingThrottle(120, updateLibraryUsageBadges);
 
 eventBus.on(Events.RENDER_TIMELINE, () => {
-  if (imageFlat.length > 0) refreshLibraryThrottled();
+  if (imageFlat.length > 0) refreshBadgesThrottled();
 });
 
 eventBus.on(Events.IMAGES_LOADED, () => {
   if (!_treeRoot) return;
-  // The full re-render below makes any throttled RENDER_TIMELINE refresh
-  // redundant — drop it so we don't double-render 120 ms later.
-  refreshLibraryThrottled.cancel();
+  // Cancel any pending badge refresh — the full rebuild below covers it.
+  refreshBadgesThrottled.cancel();
   imageFlat = flattenImageTree(_treeRoot);
   topFolders = Array.from(new Set(imageFlat.map((it) => it.folder).filter(Boolean))).sort();
   renderFolderChips();
