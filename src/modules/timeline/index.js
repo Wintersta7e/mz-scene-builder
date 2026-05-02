@@ -2,33 +2,30 @@
 // Timeline Dispatcher
 // ============================================
 
-import { state } from '../state.js';
+import { state, LANE_DATA } from '../state.js';
 import { getElements } from '../elements.js';
 import { getEventLane, getEventDuration, selectEvent } from '../events.js';
 import { eventBus, Events } from '../event-bus.js';
 import { renderMinimap, updateMinimapCursor } from './minimap.js';
 import { startTimelineDrag, startTimelineResize } from './drag.js';
 import { renderProperties } from '../properties/index.js';
-import { assignSubLanes } from '../utils.js';
+import { assignSubLanes, clamp, clearChildren, formatFrameNumber, formatFrameTime } from '../utils.js';
 import { logger } from '../logger.js';
 
-const PX_PER_FRAME_DEFAULT = 5; // Matches state.timelineScale's existing default
+const PX_PER_FRAME_DEFAULT = 5;
 
-// Sub-lane geometry. Each row inside a lane is BLOCK_HEIGHT tall, with
-// LANE_PADDING above the first row and below the last. The lane's CSS
-// `--sublane-count` drives both the visible flex-grow and the min-height.
+// Each row inside a lane is BLOCK_HEIGHT tall, with LANE_PADDING above the
+// first row and below the last. The lane's CSS `--sublane-count` drives
+// both the visible flex-grow and the min-height.
 const BLOCK_HEIGHT = 20;
 const SUBLANE_GAP = 4;
 const LANE_PADDING = 4;
 
-/**
- * Lane metadata. Indices match TIMELINE_LANES from state.js.
- */
-const LANE_META = [
-  { name: 'Pictures', code: 'PIC', data: 'picture' },
-  { name: 'Effects', code: 'FX', data: 'effect' },
-  { name: 'Text', code: 'TXT', data: 'text' },
-  { name: 'Timing', code: 'AUX', data: 'aux' }
+const LANE_LABELS = [
+  { name: 'Pictures', code: 'PIC' },
+  { name: 'Effects', code: 'FX' },
+  { name: 'Text', code: 'TXT' },
+  { name: 'Timing', code: 'AUX' }
 ];
 
 const POINT_EVENT_TYPES = new Set(['rotatePicture', 'erasePicture']);
@@ -39,7 +36,7 @@ const POINT_EVENT_TYPES = new Set(['rotatePicture', 'erasePicture']);
  * parallel `counts` array (one entry per lane) of max sub-lanes used.
  */
 function computeSubLaneAssignments(events) {
-  const grouped = LANE_META.map(() => /** @type {Array<*>} */ ([]));
+  const grouped = LANE_LABELS.map(() => /** @type {Array<*>} */ ([]));
   for (const ev of events) {
     const laneIdx = getEventLane(ev.type);
     if (laneIdx >= 0 && laneIdx < grouped.length) grouped[laneIdx].push(ev);
@@ -60,10 +57,6 @@ function computeSubLaneAssignments(events) {
     counts.push(Math.max(1, maxSubLanes));
   }
   return { assignments, counts };
-}
-
-function computeSubLaneCounts(events) {
-  return computeSubLaneAssignments(events).counts;
 }
 
 // ============================================
@@ -101,7 +94,7 @@ function getTimelineEventLabel(evt) {
  * Render the 4 lane heads in the lanes column. Each shows: lane-colored
  * swatch, name, and mono `CODE · N clip(s)` line.
  */
-function renderLanesCol() {
+function renderLanesCol(subLaneCounts) {
   const els = getElements();
   const col = els.timelineLanes;
 
@@ -111,17 +104,13 @@ function renderLanesCol() {
     if (idx >= 0 && idx < counts.length) counts[idx]++;
   }
 
-  // Sub-lane counts must match what renderEventBlocks computes so the lane
-  // heads stay aligned with the rows on the right.
-  const subLaneCounts = computeSubLaneCounts(state.events);
+  clearChildren(col);
 
-  while (col.firstChild) col.removeChild(col.firstChild);
-
-  for (let i = 0; i < LANE_META.length; i++) {
-    const meta = LANE_META[i];
+  for (let i = 0; i < LANE_LABELS.length; i++) {
+    const meta = LANE_LABELS[i];
     const head = document.createElement('div');
     head.className = 'lane-head';
-    head.dataset.lane = meta.data;
+    head.dataset.lane = LANE_DATA[i];
     head.style.setProperty('--sublane-count', String(subLaneCounts[i]));
 
     const swatch = document.createElement('div');
@@ -154,7 +143,7 @@ function renderRuler() {
   const length = state.timelineLength;
   const px = state.timelineScale || PX_PER_FRAME_DEFAULT;
 
-  while (ruler.firstChild) ruler.removeChild(ruler.firstChild);
+  clearChildren(ruler);
   ruler.style.width = `${length * px}px`;
 
   for (let f = 0; f <= length; f += 30) {
@@ -173,25 +162,21 @@ function renderRuler() {
  * by CSS via .is-point::after). Duration events get edge handles for
  * resize. Selected event gets the `.is-selected` class.
  */
-function renderEventBlocks() {
+function renderEventBlocks(assignments, counts) {
   const els = getElements();
   const track = els.timelineEvents;
   const length = state.timelineLength;
   const px = state.timelineScale || PX_PER_FRAME_DEFAULT;
 
-  while (track.firstChild) track.removeChild(track.firstChild);
+  clearChildren(track);
   track.style.width = `${length * px}px`;
   track.style.position = 'relative';
 
-  const { assignments, counts } = computeSubLaneAssignments(state.events);
-
-  // 4 lane rows. Each row's height grows with its sub-lane count via the
-  // --sublane-count CSS variable (driven by flex-grow + min-height).
   const laneRows = [];
-  for (let i = 0; i < LANE_META.length; i++) {
+  for (let i = 0; i < LANE_LABELS.length; i++) {
     const row = document.createElement('div');
     row.className = 'lane-row';
-    row.dataset.lane = LANE_META[i].data;
+    row.dataset.lane = LANE_DATA[i];
     row.dataset.laneIndex = String(i);
     row.style.position = 'relative';
     row.style.setProperty('--sublane-count', String(counts[i]));
@@ -208,7 +193,7 @@ function renderEventBlocks() {
     const block = document.createElement('div');
     block.className = 'event-block';
     block.dataset.eventIndex = String(i);
-    block.dataset.lane = LANE_META[laneIdx].data;
+    block.dataset.lane = LANE_DATA[laneIdx];
     if (i === state.selectedEventIndex) block.classList.add('is-selected');
 
     const start = ev.startFrame || 0;
@@ -256,21 +241,21 @@ function renderEventBlocks() {
   }
 }
 
+/** Update only the cells that change with currentFrame (playback hot path). */
+function updateTransportFrameTime() {
+  const els = getElements();
+  els.readoutFrame.textContent = formatFrameNumber(state.currentFrame);
+  els.readoutTime.textContent = formatFrameTime(state.currentFrame);
+}
+
 /**
- * Update the transport readout chip cells. Frame is 4-digit zero-padded;
- * Time is SS:FF where SS = floor(frame/60) and FF = frame % 60; Length
- * is the editable input (skip update if user is currently typing in it);
- * Events is the total count.
+ * Full transport-readout refresh. Use for structural changes (event count
+ * delta, timeline-length change). Per-frame playback updates use
+ * updateTransportFrameTime instead.
  */
 function renderTransportReadout() {
   const els = getElements();
-  const frame = state.currentFrame;
-
-  els.readoutFrame.textContent = String(frame).padStart(4, '0');
-
-  const secs = String(Math.floor(frame / 60)).padStart(2, '0');
-  const ff = String(frame % 60).padStart(2, '0');
-  els.readoutTime.textContent = `${secs}:${ff}`;
+  updateTransportFrameTime();
 
   const lengthInput = /** @type {HTMLInputElement} */ (els.timelineLengthInput);
   if (document.activeElement !== lengthInput) {
@@ -323,7 +308,7 @@ function initTimeline() {
       const rect = track.getBoundingClientRect();
       const px = state.timelineScale || PX_PER_FRAME_DEFAULT;
       const x = mouseEvt.clientX - rect.left + track.scrollLeft;
-      const frame = Math.max(0, Math.min(state.timelineLength, Math.round(x / px)));
+      const frame = clamp(Math.round(x / px), 0, state.timelineLength);
       state.currentFrame = frame;
       updateTimelineCursor();
       eventBus.emit(Events.RENDER_PREVIEW, frame);
@@ -341,18 +326,21 @@ function initTimeline() {
 
 function renderTimeline() {
   logger.timed('renderTimeline', () => {
-    renderLanesCol();
+    const { assignments, counts } = computeSubLaneAssignments(state.events);
+    renderLanesCol(counts);
     renderRuler();
-    renderEventBlocks();
+    renderEventBlocks(assignments, counts);
     renderTransportReadout();
     updateTimelineCursor();
-    // Keep the existing minimap re-render hook — Task 7 swaps its internals
-    // from canvas to DOM but the function name stays the same.
-    if (typeof renderMinimap === 'function') renderMinimap();
+    renderMinimap();
   });
 }
 
-// Lightweight cursor-only update for playback (avoids full DOM rebuild at 60fps)
+/**
+ * Lightweight playhead update for playback (60fps). Only touches the
+ * cursor element + minimap cursor — the transport readout's frame/time
+ * cells are updated by callers that change those values, not here.
+ */
 function updateTimelineCursor() {
   const els = getElements();
   const cursor = els.timelineCursor;
@@ -360,20 +348,16 @@ function updateTimelineCursor() {
 
   cursor.style.left = `${state.currentFrame * px}px`;
 
-  // Build (or reuse) the grip badge that displays the current frame.
-  // Lives on the playhead's top edge per the design.
   let grip = /** @type {HTMLElement | null} */ (cursor.querySelector('.playhead-grip'));
   if (!grip) {
     grip = document.createElement('div');
     grip.className = 'playhead-grip';
     cursor.appendChild(grip);
   }
-  grip.textContent = `${String(state.currentFrame).padStart(4, '0')}f`;
+  grip.textContent = `${formatFrameNumber(state.currentFrame)}f`;
 
-  // Keep the transport readout cells in lockstep with the playhead.
-  if (els.readoutFrame) renderTransportReadout();
+  updateTransportFrameTime();
 
-  // Update selected highlight without full rebuild
   const prevSelected = els.timelineEvents.querySelector('.event-block.is-selected');
   if (prevSelected) {
     const prevIdx = parseInt(prevSelected.dataset.eventIndex, 10);
