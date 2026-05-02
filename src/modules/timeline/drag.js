@@ -111,6 +111,19 @@ function durationField(evt) {
 const MIN_LENGTH = 8; // frames
 
 /**
+ * After a sort that may have reordered the events array, recover the new
+ * index of the previously-selected event by reference equality. Returns
+ * -1 if there was no selection or the event no longer exists in the array.
+ *
+ * @param {Array<any>} events
+ * @param {any | null} selectedEvt — event reference captured BEFORE the sort
+ * @returns {number}
+ */
+function recoverSelectedIndex(events, selectedEvt) {
+  return selectedEvt ? events.indexOf(selectedEvt) : -1;
+}
+
+/**
  * Pure resize math for an event block — no DOM, no state mutation.
  * Used by startTimelineResize at every mousemove tick. Extracted so
  * unit tests can verify the contract (preserve right edge, preserve
@@ -125,19 +138,6 @@ const MIN_LENGTH = 8; // frames
  * }} args
  * @returns {{ startFrame: number; duration: number }}
  */
-/**
- * After a sort that may have reordered the events array, recover the new
- * index of the previously-selected event by reference equality. Returns
- * -1 if there was no selection or the event no longer exists in the array.
- *
- * @param {Array<any>} events
- * @param {any | null} selectedEvt — event reference captured BEFORE the sort
- * @returns {number}
- */
-function recoverSelectedIndex(events, selectedEvt) {
-  return selectedEvt ? events.indexOf(selectedEvt) : -1;
-}
-
 function computeResize({ edge, startFrame, startDur, deltaFrames, minLength = MIN_LENGTH }) {
   const startRight = startFrame + startDur;
   if (edge === 'right') {
