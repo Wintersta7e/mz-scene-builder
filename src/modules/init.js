@@ -14,7 +14,8 @@ import { toggleGrid, toggleSnapToGrid } from './grid.js';
 import { showAboutModal, showShortcutsModal } from './modals.js';
 import { startAutosave, stopAutosave, checkAutosaveRecovery } from './autosave.js';
 import { initTimeline, renderTimeline, onTimelineClick, updateTimelineCursor } from './timeline/index.js';
-import { initMinimapEvents, teardownMinimapEvents, updateCachedContainerWidth } from './timeline/minimap.js';
+import { initMinimapEvents, teardownMinimapEvents } from './timeline/minimap.js';
+import { clamp } from './utils.js';
 import { renderProperties } from './properties/index.js';
 import { renderPreviewAtFrame, resizePreviewCanvas, updateStageGeometry } from './preview/index.js';
 import { closeImagePicker } from './preview/image-picker.js';
@@ -94,15 +95,6 @@ function initResizeHandles() {
     return Number.isFinite(n) ? n : 0;
   }
 
-  /**
-   * @param {number} val
-   * @param {number} min
-   * @param {number} max
-   */
-  function clamp(val, min, max) {
-    return Math.max(min, Math.min(max, val));
-  }
-
   resizeLeft.addEventListener('mousedown', (e) => {
     dragging = 'left';
     startX = e.clientX;
@@ -149,7 +141,6 @@ function initResizeHandles() {
     resizeRight.classList.remove('dragging');
     resizeTimeline.classList.remove('dragging');
     resizePreviewCanvas();
-    updateCachedContainerWidth();
   });
 }
 
@@ -224,12 +215,7 @@ function wireTopRail() {
         }
       });
 
-      // Resize the preview canvas + minimap to fit the new layout
-      // (deferred so the new grid template applies first).
-      requestAnimationFrame(() => {
-        resizePreviewCanvas();
-        updateCachedContainerWidth();
-      });
+      requestAnimationFrame(resizePreviewCanvas);
     });
   }
 

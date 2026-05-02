@@ -5,28 +5,16 @@
 // 5px-tall .minimap-event div positioned by (start/length)% width and
 // (laneIndex * 7 + 4)px from the top. Click anywhere on the track to
 // jump the playhead.
-//
-// Plan D switched this from canvas-based rendering to DOM pills — the
-// canvas approach didn't share the design's lane-color CSS tokens.
 
-import { state } from '../state.js';
+import { state, LANE_DATA } from '../state.js';
 import { eventBus, Events } from '../event-bus.js';
 import { getEventLane, getEventDuration } from '../events.js';
+import { clamp, clearChildren } from '../utils.js';
 
-let _resizeHandler = null;
 let _minimapInitialized = false;
-
-const LANE_DATA = ['picture', 'effect', 'text', 'aux'];
 
 function getTrack() {
   return document.getElementById('minimap-track');
-}
-
-function updateCachedContainerWidth() {
-  // No-op since the canvas->DOM minimap rewrite. Function kept for API
-  // compatibility — external callers (init.js resize-handler tail) still
-  // invoke it. Plan F or later may rename/remove if no live callers
-  // depend on the side effect.
 }
 
 function renderMinimap() {
@@ -35,7 +23,7 @@ function renderMinimap() {
 
   const length = Math.max(1, state.timelineLength);
 
-  while (track.firstChild) track.removeChild(track.firstChild);
+  clearChildren(track);
 
   for (const ev of state.events) {
     const start = ev.startFrame || 0;
@@ -44,7 +32,7 @@ function renderMinimap() {
 
     const pill = document.createElement('div');
     pill.className = 'minimap-event';
-    pill.dataset.lane = LANE_DATA[laneIdx] || 'pic';
+    pill.dataset.lane = LANE_DATA[laneIdx];
     pill.style.left = `${(start / length) * 100}%`;
     pill.style.width = `${Math.max(0.5, (dur / length) * 100)}%`;
     pill.style.top = `${laneIdx * 7 + 4}px`;
@@ -59,17 +47,6 @@ function updateMinimapCursor() {
   cursor.style.left = `${(state.currentFrame / length) * 100}%`;
 }
 
-function updateMinimapViewport() {
-  // Placeholder: in the legacy canvas-based renderer, this drew a viewport
-  // rectangle showing the visible portion of the main timeline track. The
-  // new design uses a click-to-jump model and doesn't show a viewport
-  // overlay. Kept as a no-op so external callers (renderTimeline) don't
-  // need updating; Plan F can decide whether to bring it back.
-  const viewport = document.getElementById('minimap-viewport');
-  if (!viewport) return;
-  viewport.style.display = 'none';
-}
-
 /**
  * @param {MouseEvent} e
  */
@@ -79,7 +56,7 @@ function handleMinimapClick(e) {
   const rect = track.getBoundingClientRect();
   const x = e.clientX - rect.left;
   const length = Math.max(1, state.timelineLength);
-  const frame = Math.max(0, Math.min(length, Math.round((x / rect.width) * length)));
+  const frame = clamp(Math.round((x / rect.width) * length), 0, length);
   state.currentFrame = frame;
   updateMinimapCursor();
   eventBus.emit(Events.RENDER_PREVIEW, frame);
@@ -92,9 +69,6 @@ function initMinimapEvents() {
   const track = getTrack();
   if (!track) return;
   track.addEventListener('click', handleMinimapClick);
-  _resizeHandler = updateCachedContainerWidth;
-  window.addEventListener('resize', _resizeHandler);
-  updateCachedContainerWidth();
 }
 
 function teardownMinimapEvents() {
@@ -102,18 +76,6 @@ function teardownMinimapEvents() {
   _minimapInitialized = false;
   const track = getTrack();
   if (track) track.removeEventListener('click', handleMinimapClick);
-  if (_resizeHandler) {
-    window.removeEventListener('resize', _resizeHandler);
-    _resizeHandler = null;
-  }
 }
 
-export {
-  renderMinimap,
-  updateMinimapCursor,
-  updateMinimapViewport,
-  handleMinimapClick,
-  initMinimapEvents,
-  teardownMinimapEvents,
-  updateCachedContainerWidth
-};
+export { renderMinimap, updateMinimapCursor, handleMinimapClick, initMinimapEvents, teardownMinimapEvents };
