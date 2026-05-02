@@ -7,6 +7,10 @@ const APP_VERSION = '2.0.0';
 
 // Timeline constants
 const TIMELINE_LANES = ['Pictures', 'Effects', 'Text', 'Timing'];
+// CSS data-lane tokens, parallel to TIMELINE_LANES — used by [data-lane=...]
+// rules in styles.css to colour timeline lanes, event blocks, chips, the
+// minimap pills, and inspector tags.
+const LANE_DATA = ['picture', 'effect', 'text', 'aux'];
 const LANE_HEIGHT = 24;
 const MAX_UNDO_STACK = 50;
 const MAX_RECENT_PROJECTS = 5;
@@ -127,6 +131,7 @@ export {
   APP_VERSION,
   // Constants
   TIMELINE_LANES,
+  LANE_DATA,
   LANE_HEIGHT,
   MAX_UNDO_STACK,
   MAX_RECENT_PROJECTS,

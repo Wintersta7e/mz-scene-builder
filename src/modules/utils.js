@@ -2,9 +2,55 @@
 // Utility Functions
 // ============================================
 
+/**
+ * @param {number} v
+ * @param {number} min
+ * @param {number} max
+ */
+function clamp(v, min, max) {
+  return Math.max(min, Math.min(max, v));
+}
+
+/**
+ * Remove every child of `el` in place.
+ * @param {Element} el
+ */
+function clearChildren(el) {
+  while (el.firstChild) el.removeChild(el.firstChild);
+}
+
+/**
+ * Zero-pad a frame counter for display.
+ * @param {number} frame
+ * @param {number} [width]
+ */
+function formatFrameNumber(frame, width = 4) {
+  return String(frame).padStart(width, '0');
+}
+
+/**
+ * Format a frame count as a time string.
+ * - `'ss:ff'` (default): seconds:frames within the second.
+ * - `'mm:ss'`: minutes:seconds.
+ *
+ * @param {number} frame
+ * @param {'ss:ff' | 'mm:ss'} [mode]
+ */
+function formatFrameTime(frame, mode = 'ss:ff') {
+  if (mode === 'mm:ss') {
+    const totalSec = Math.max(0, Math.floor(frame / 60));
+    const mm = String(Math.floor(totalSec / 60)).padStart(2, '0');
+    const ss = String(totalSec % 60).padStart(2, '0');
+    return `${mm}:${ss}`;
+  }
+  const ss = String(Math.floor(frame / 60)).padStart(2, '0');
+  const ff = String(frame % 60).padStart(2, '0');
+  return `${ss}:${ff}`;
+}
+
 function rgbToHex(r, g, b) {
   const toHex = (c) => {
-    const hex = Math.max(0, Math.min(255, Math.round(c))).toString(16);
+    const hex = clamp(Math.round(c), 0, 255).toString(16);
     return hex.length === 1 ? `0${hex}` : hex;
   };
   return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
@@ -143,6 +189,10 @@ function assignSubLanes(events, getRange) {
 }
 
 export {
+  clamp,
+  clearChildren,
+  formatFrameNumber,
+  formatFrameTime,
   rgbToHex,
   hexToRgb,
   sortEvents,
