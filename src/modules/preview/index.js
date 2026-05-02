@@ -13,6 +13,7 @@ import { startDrag, highlightSelectedImage, findImagesAtPoint } from './drag.js'
 import { renderTimeline } from '../timeline/index.js';
 import { renderProperties } from '../properties/index.js';
 import { continueFromText } from '../playback.js';
+import { clamp, clearChildren, formatFrameNumber, formatFrameTime } from '../utils.js';
 
 // Image path cache — cleared on project change, capped to prevent unbounded growth
 const IMAGE_PATH_CACHE_MAX = 500;
@@ -27,15 +28,62 @@ function clearImagePathCache() {
 eventBus.on(Events.PROJECT_LOADED, clearImagePathCache);
 
 /**
- * Format a 60fps frame index as MM:SS.
- * @param {number} frame
- * @returns {string}
+ * Bind drag + click handlers on a freshly-created `.stage-pic` element.
+ * Reads the live event index from `dataset.eventIndex` so the same
+ * handlers stay valid when the element is reused across frames with a
+ * different event behind it.
+ *
+ * @param {HTMLImageElement} img
  */
-function formatT(frame) {
-  const totalSec = Math.max(0, Math.floor(frame / 60));
-  const mm = String(Math.floor(totalSec / 60)).padStart(2, '0');
-  const ss = String(totalSec % 60).padStart(2, '0');
-  return `${mm}:${ss}`;
+function bindStagePicHandlers(img) {
+  img.onmousedown = (e) => {
+    const evtIdx = parseInt(img.dataset.eventIndex || '-1', 10);
+    if (evtIdx < 0) return;
+    startDrag(e, img, state.events[evtIdx], evtIdx);
+  };
+  img.onclick = (e) => {
+    e.stopPropagation();
+    const evtIdx = parseInt(img.dataset.eventIndex || '-1', 10);
+    if (evtIdx < 0) return;
+    if (evtIdx === state.selectedEventIndex) {
+      const clickedImages = findImagesAtPoint(e.clientX, e.clientY);
+      if (clickedImages.length > 1) {
+        const currentIdx = clickedImages.indexOf(evtIdx);
+        const nextIdx = (currentIdx + 1) % clickedImages.length;
+        selectEvent(clickedImages[nextIdx]);
+        highlightSelectedImage();
+        renderTimeline();
+        renderProperties();
+        return;
+      }
+    }
+    selectEvent(evtIdx);
+    highlightSelectedImage();
+    renderTimeline();
+    renderProperties();
+  };
+}
+
+/**
+ * Bind a click handler on a freshly-created `.stage-text` element. Reads
+ * the live event index from `dataset.eventIndex` (see bindStagePicHandlers).
+ *
+ * @param {HTMLElement} textBox
+ */
+function bindStageTextHandler(textBox) {
+  textBox.onclick = (e) => {
+    e.stopPropagation();
+    if (state.waitingForTextClick && state.isPlaying) {
+      continueFromText();
+      return;
+    }
+    const evtIdx = parseInt(textBox.dataset.eventIndex || '-1', 10);
+    if (evtIdx < 0) return;
+    selectEvent(evtIdx);
+    highlightSelectedImage();
+    renderTimeline();
+    renderProperties();
+  };
 }
 
 /**
@@ -54,10 +102,10 @@ function updateSlateAndRec(frame) {
     : 'Untitled';
   if (els.slateScene.textContent !== scene) els.slateScene.textContent = scene;
 
-  const t = formatT(frame);
+  const t = formatFrameTime(frame, 'mm:ss');
   if (els.slateTime.textContent !== t) els.slateTime.textContent = t;
 
-  const f = String(frame).padStart(4, '0');
+  const f = formatFrameNumber(frame);
   if (els.slateFrame.textContent !== f) els.slateFrame.textContent = f;
 
   els.stageRec.classList.toggle('is-playing', state.isPlaying);
@@ -96,7 +144,7 @@ function updateFlashOverlay(frame) {
 
   const start = active.startFrame ?? 0;
   const dur = Math.max(1, active.duration ?? 30);
-  const progress = Math.min(1, Math.max(0, (frame - start) / dur));
+  const progress = clamp((frame - start) / dur, 0, 1);
   const intensity = (active.intensity ?? 170) / 255;
   flashEl.style.opacity = String((1 - progress) * intensity);
 
@@ -395,47 +443,22 @@ async function renderPreviewAtFrameInner(frame) {
       let img = existingImages.get(pictureNumber);
 
       if (img) {
-        // Reuse existing element — update src only if changed
         if (img.src !== imgPath) {
           img.src = imgPath;
         }
-        img.dataset.eventIndex = pictureState.eventIndex;
+        img.dataset.eventIndex = String(pictureState.eventIndex);
         existingImages.delete(pictureNumber);
       } else {
-        // Create new element
         img = document.createElement('img');
         img.className = 'stage-pic';
         img.dataset.eventIndex = String(pictureState.eventIndex);
         img.dataset.pictureNumber = String(pictureNumber);
         img.setAttribute('src', imgPath);
+        bindStagePicHandlers(img);
         canvas.appendChild(img);
       }
 
       applyPictureState(img, pictureState);
-
-      // Re-bind event listeners (cheap operation, ensures correct closure values)
-      const clonedImg = img;
-      const evtIdx = pictureState.eventIndex;
-      clonedImg.onmousedown = (e) => startDrag(e, clonedImg, state.events[evtIdx], evtIdx);
-      clonedImg.onclick = (e) => {
-        e.stopPropagation();
-        if (evtIdx === state.selectedEventIndex) {
-          const clickedImages = findImagesAtPoint(e.clientX, e.clientY);
-          if (clickedImages.length > 1) {
-            const currentIdx = clickedImages.indexOf(evtIdx);
-            const nextIdx = (currentIdx + 1) % clickedImages.length;
-            selectEvent(clickedImages[nextIdx]);
-            highlightSelectedImage();
-            renderTimeline();
-            renderProperties();
-            return;
-          }
-        }
-        selectEvent(evtIdx);
-        highlightSelectedImage();
-        renderTimeline();
-        renderProperties();
-      };
     }
 
     // Remove stale picture elements no longer in this frame
@@ -460,13 +483,14 @@ async function renderPreviewAtFrameInner(frame) {
         textBox = document.createElement('div');
         textBox.className = 'stage-text';
         textBox.dataset.eventIndex = eventIndex;
+        bindStageTextHandler(textBox);
         canvas.appendChild(textBox);
       } else {
         existingTexts.delete(eventIndex);
       }
 
       // Programmatic content build — preserves newlines without innerHTML.
-      while (textBox.firstChild) textBox.removeChild(textBox.firstChild);
+      clearChildren(textBox);
       const lines = String(evt.text || '').split(/\n/);
       lines.forEach((line, i) => {
         if (i > 0) textBox.appendChild(document.createElement('br'));
@@ -482,19 +506,6 @@ async function renderPreviewAtFrameInner(frame) {
       } else {
         textBox.classList.remove('waiting');
       }
-
-      const evtIdx = parseInt(eventIndex, 10);
-      textBox.onclick = (e) => {
-        e.stopPropagation();
-        if (state.waitingForTextClick && state.isPlaying) {
-          continueFromText();
-          return;
-        }
-        selectEvent(evtIdx);
-        highlightSelectedImage();
-        renderTimeline();
-        renderProperties();
-      };
     }
 
     // Remove stale text elements

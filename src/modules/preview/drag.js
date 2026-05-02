@@ -6,6 +6,7 @@ import { state } from '../state.js';
 import { getElements } from '../elements.js';
 import { saveState, markDirty } from '../undo-redo.js';
 import { eventBus, Events } from '../event-bus.js';
+import { clamp } from '../utils.js';
 
 function findImagesAtPoint(clientX, clientY) {
   const elements = getElements();
@@ -95,10 +96,10 @@ function onDrag(e) {
   newY = Math.round(newY);
 
   // Clamp to a generous box around the visible frame so dragged sprites
-  // don't disappear off the page (preserved from the legacy behavior).
+  // don't disappear off the page.
   const margin = Math.max(state.screenWidth, state.screenHeight) / 2;
-  newX = Math.max(-margin, Math.min(state.screenWidth + margin, newX));
-  newY = Math.max(-margin, Math.min(state.screenHeight + margin, newY));
+  newX = clamp(newX, -margin, state.screenWidth + margin);
+  newY = clamp(newY, -margin, state.screenHeight + margin);
 
   state.dragEvt.x = newX;
   state.dragEvt.y = newY;
