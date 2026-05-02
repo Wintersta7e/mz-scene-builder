@@ -12,41 +12,29 @@ import {
   buildSlider,
   buildOriginPad,
   buildImagePickerControl,
+  buildTargetPictureSection,
   commit
 } from './shared.js';
 
-export function renderPictureProperties(ev, index) {
+export function renderPictureProperties(ev) {
   const wrap = document.createElement('div');
 
-  // ----- Image -----
   wrap.appendChild(
     buildSection('Image', (body) => {
       body.appendChild(
         buildImagePickerControl({
           imageName: ev.imageName || '',
           // openImagePicker writes the chosen path directly to the
-          // currently-selected event's imageName via selectPickerImage,
-          // then emits Events.RENDER which retriggers renderProperties().
+          // currently-selected event's imageName, then emits Events.RENDER
+          // which retriggers renderProperties().
           onPick: () => openImagePicker()
         })
       );
     })
   );
 
-  // ----- Target -----
-  wrap.appendChild(
-    buildSection('Target', (body) => {
-      body.appendChild(
-        buildCell({
-          label: 'PIC #',
-          value: ev.pictureNumber ?? 1,
-          onChange: (v) => commit(ev, 'pictureNumber', Math.max(1, Math.min(100, /** @type {number} */ (v))), index)
-        })
-      );
-    })
-  );
+  wrap.appendChild(buildTargetPictureSection(ev));
 
-  // ----- Position -----
   wrap.appendChild(
     buildSection('Position', (body) => {
       body.appendChild(
@@ -54,7 +42,7 @@ export function renderPictureProperties(ev, index) {
           'Origin',
           buildOriginPad({
             origin: ev.origin || 0,
-            onChange: (origin) => commit(ev, 'origin', origin, index)
+            onChange: (origin) => commit(ev, 'origin', origin)
           })
         )
       );
@@ -64,20 +52,19 @@ export function renderPictureProperties(ev, index) {
             label: 'X',
             value: ev.x || 0,
             unit: 'px',
-            onChange: (v) => commit(ev, 'x', /** @type {number} */ (v), index)
+            onChange: (v) => commit(ev, 'x', /** @type {number} */ (v))
           }),
           buildCell({
             label: 'Y',
             value: ev.y || 0,
             unit: 'px',
-            onChange: (v) => commit(ev, 'y', /** @type {number} */ (v), index)
+            onChange: (v) => commit(ev, 'y', /** @type {number} */ (v))
           })
         )
       );
     })
   );
 
-  // ----- Scale -----
   wrap.appendChild(
     buildSection('Scale', (body) => {
       body.appendChild(
@@ -86,20 +73,19 @@ export function renderPictureProperties(ev, index) {
             label: 'X',
             value: ev.scaleX ?? 100,
             unit: '%',
-            onChange: (v) => commit(ev, 'scaleX', /** @type {number} */ (v), index)
+            onChange: (v) => commit(ev, 'scaleX', /** @type {number} */ (v))
           }),
           buildCell({
             label: 'Y',
             value: ev.scaleY ?? 100,
             unit: '%',
-            onChange: (v) => commit(ev, 'scaleY', /** @type {number} */ (v), index)
+            onChange: (v) => commit(ev, 'scaleY', /** @type {number} */ (v))
           })
         )
       );
     })
   );
 
-  // ----- Effects -----
   wrap.appendChild(
     buildSection('Effects', (body) => {
       body.appendChild(
@@ -109,7 +95,7 @@ export function renderPictureProperties(ev, index) {
             value: ev.opacity ?? 255,
             min: 0,
             max: 255,
-            onChange: (v) => commit(ev, 'opacity', v, index)
+            onChange: (v) => commit(ev, 'opacity', v)
           })
         )
       );
@@ -124,7 +110,7 @@ export function renderPictureProperties(ev, index) {
               { value: 2, label: 'Multiply' },
               { value: 3, label: 'Screen' }
             ],
-            onChange: (v) => commit(ev, 'blend', v, index)
+            onChange: (v) => commit(ev, 'blend', v)
           })
         )
       );

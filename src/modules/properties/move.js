@@ -11,32 +11,16 @@ import {
   buildSelect,
   buildSlider,
   buildPathMini,
-  commit
+  buildTargetPictureSection,
+  commit,
+  triggerRerender
 } from './shared.js';
 
-export function renderMoveProperties(ev, index) {
+export function renderMoveProperties(ev) {
   const wrap = document.createElement('div');
 
-  // Quick re-render helper to refresh the path-mini viz after X/Y change.
-  // Lazy-imported to avoid a circular dep with index.js.
-  function refresh() {
-    import('./index.js').then((m) => m.renderProperties()).catch(() => {});
-  }
+  wrap.appendChild(buildTargetPictureSection(ev));
 
-  // ----- Target picture -----
-  wrap.appendChild(
-    buildSection('Target', (body) => {
-      body.appendChild(
-        buildCell({
-          label: 'PIC #',
-          value: ev.pictureNumber ?? 1,
-          onChange: (v) => commit(ev, 'pictureNumber', Math.max(1, Math.min(100, /** @type {number} */ (v))), index)
-        })
-      );
-    })
-  );
-
-  // ----- Destination -----
   wrap.appendChild(
     buildSection('Destination', (body) => {
       body.appendChild(
@@ -46,8 +30,8 @@ export function renderMoveProperties(ev, index) {
             value: ev.x || 0,
             unit: 'px',
             onChange: (v) => {
-              commit(ev, 'x', /** @type {number} */ (v), index);
-              refresh();
+              commit(ev, 'x', /** @type {number} */ (v));
+              triggerRerender();
             }
           }),
           buildCell({
@@ -55,8 +39,8 @@ export function renderMoveProperties(ev, index) {
             value: ev.y || 0,
             unit: 'px',
             onChange: (v) => {
-              commit(ev, 'y', /** @type {number} */ (v), index);
-              refresh();
+              commit(ev, 'y', /** @type {number} */ (v));
+              triggerRerender();
             }
           })
         )
@@ -65,7 +49,6 @@ export function renderMoveProperties(ev, index) {
     })
   );
 
-  // ----- Scale -----
   wrap.appendChild(
     buildSection('Scale', (body) => {
       body.appendChild(
@@ -74,20 +57,19 @@ export function renderMoveProperties(ev, index) {
             label: 'X',
             value: ev.scaleX ?? 100,
             unit: '%',
-            onChange: (v) => commit(ev, 'scaleX', /** @type {number} */ (v), index)
+            onChange: (v) => commit(ev, 'scaleX', /** @type {number} */ (v))
           }),
           buildCell({
             label: 'Y',
             value: ev.scaleY ?? 100,
             unit: '%',
-            onChange: (v) => commit(ev, 'scaleY', /** @type {number} */ (v), index)
+            onChange: (v) => commit(ev, 'scaleY', /** @type {number} */ (v))
           })
         )
       );
     })
   );
 
-  // ----- Effects -----
   wrap.appendChild(
     buildSection('Effects', (body) => {
       body.appendChild(
@@ -97,7 +79,7 @@ export function renderMoveProperties(ev, index) {
             value: ev.opacity ?? 255,
             min: 0,
             max: 255,
-            onChange: (v) => commit(ev, 'opacity', v, index)
+            onChange: (v) => commit(ev, 'opacity', v)
           })
         )
       );
@@ -112,7 +94,7 @@ export function renderMoveProperties(ev, index) {
               { value: 2, label: 'Ease Out' },
               { value: 3, label: 'Ease In-Out' }
             ],
-            onChange: (v) => commit(ev, 'easingType', v, index)
+            onChange: (v) => commit(ev, 'easingType', v)
           })
         )
       );

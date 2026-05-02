@@ -5,24 +5,17 @@
 import {
   buildSection,
   buildRow,
-  buildCell,
   buildSlider,
   buildColorBubble,
   buildTintPresets,
-  commit
+  buildTargetPictureSection,
+  commit,
+  triggerRerender
 } from './shared.js';
+import { clamp } from '../utils.js';
 
-export function renderTintProperties(ev, index) {
+export function renderTintProperties(ev) {
   const wrap = document.createElement('div');
-
-  // Refresh helper: redraw the section so the color bubble reflects the
-  // latest tone after a preset click. Sliders skip this and update only
-  // the stage preview to keep drags responsive — the inspector catches
-  // up on the next full render. Lazy-imported to avoid circular dep
-  // with index.js.
-  function refresh() {
-    import('./index.js').then((m) => m.renderProperties()).catch(() => {});
-  }
 
   const previewColor = toneToCssColor({
     r: ev.red ?? 0,
@@ -31,20 +24,8 @@ export function renderTintProperties(ev, index) {
     gray: ev.gray ?? 0
   });
 
-  // ----- Target -----
-  wrap.appendChild(
-    buildSection('Target', (body) => {
-      body.appendChild(
-        buildCell({
-          label: 'PIC #',
-          value: ev.pictureNumber ?? 1,
-          onChange: (v) => commit(ev, 'pictureNumber', Math.max(1, Math.min(100, /** @type {number} */ (v))), index)
-        })
-      );
-    })
-  );
+  wrap.appendChild(buildTargetPictureSection(ev));
 
-  // ----- Tone -----
   wrap.appendChild(
     buildSection('Tone', (body) => {
       const tintRow = document.createElement('div');
@@ -54,11 +35,14 @@ export function renderTintProperties(ev, index) {
         buildTintPresets({
           active: null,
           onChange: (preset) => {
-            commit(ev, 'red', preset.r, index);
-            commit(ev, 'green', preset.g, index);
-            commit(ev, 'blue', preset.b, index);
-            commit(ev, 'gray', preset.gray, index);
-            refresh();
+            commit(ev, 'red', preset.r);
+            commit(ev, 'green', preset.g);
+            commit(ev, 'blue', preset.b);
+            commit(ev, 'gray', preset.gray);
+            // Sliders skip this and update only the stage preview to keep
+            // drags responsive — the inspector catches up on the next full
+            // render. Preset clicks redraw to refresh the bubble.
+            triggerRerender();
           }
         })
       );
@@ -66,7 +50,6 @@ export function renderTintProperties(ev, index) {
     })
   );
 
-  // ----- Channels -----
   wrap.appendChild(
     buildSection('Channels', (body) => {
       const fields = /** @type {const} */ ([
@@ -83,7 +66,7 @@ export function renderTintProperties(ev, index) {
               value: ev[f.prop] ?? 0,
               min: f.min,
               max: f.max,
-              onChange: (v) => commit(ev, f.prop, v, index)
+              onChange: (v) => commit(ev, f.prop, v)
             })
           )
         );
@@ -106,8 +89,4 @@ function toneToCssColor({ r, g, b, gray }) {
   const grayPct = (gray / 255) * 0.5;
   const lerp = (c) => c * (1 - grayPct) + base * grayPct;
   return `rgb(${Math.round(lerp(cr))}, ${Math.round(lerp(cg))}, ${Math.round(lerp(cb))})`;
-}
-
-function clamp(v, min, max) {
-  return Math.max(min, Math.min(max, v));
 }

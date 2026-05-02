@@ -4,13 +4,16 @@
 // Director's Console inspector. Every property section composes
 // these helpers; no innerHTML, no template strings.
 
-import { state } from '../state.js';
+import { state, LANE_DATA, MAX_PICTURE_NUMBER } from '../state.js';
 import { markDirty } from '../undo-redo.js';
 import { eventBus, Events } from '../event-bus.js';
+import { clamp } from '../utils.js';
 
-// ---------- Lane metadata ----------
-
-const LANE_DATA = ['picture', 'effect', 'text', 'aux'];
+// Fields whose mutation changes the timeline's lane positions, widths, or
+// labels. commit() emits RENDER_TIMELINE only when one of these changes;
+// non-timeline fields (opacity, RGB, easing, etc.) skip the full timeline
+// rebuild so slider drags don't trigger 60 Hz lane re-rendering.
+const TIMELINE_AFFECTING_FIELDS = new Set(['startFrame', 'duration', 'frames', 'pictureNumber', 'text']);
 
 const TYPE_LABELS = {
   showPicture: 'Show',
@@ -47,14 +50,13 @@ const TINT_PRESETS = [
 // ---------- Section primitives ----------
 
 /**
- * @param {number} index
  * @param {any} ev
  * @returns {HTMLDivElement}
  */
-export function buildEventTag(index, ev) {
+export function buildEventTag(ev) {
   const wrap = document.createElement('div');
   wrap.className = 'event-tag';
-  wrap.dataset.lane = LANE_DATA[laneOf(ev.type)] || 'pic';
+  wrap.dataset.lane = LANE_DATA[laneOf(ev.type)];
 
   const icon = document.createElement('div');
   icon.className = 'ev-icon';
@@ -338,15 +340,21 @@ export function buildColorBubble({ color, glow = false }) {
 }
 
 /**
- * @param {{ active: string | null;
- *          onChange: (preset: { name: string; r: number; g: number;
- *                                b: number; gray: number }) => void }} opts
+ * Build the .tint-presets pill grid. Each preset is a small button whose
+ * background is its `color` swatch and whose label is the first 4 chars
+ * of `name` upper-cased. The preset whose `name` matches `active` gets
+ * the `is-active` class.
+ *
+ * @template T
+ * @param {{ presets: ReadonlyArray<T & { name: string; color: string }>;
+ *           active: string | null;
+ *           onChange: (preset: T & { name: string; color: string }) => void }} opts
  */
-export function buildTintPresets({ active, onChange }) {
+export function buildPresetGrid({ presets, active, onChange }) {
   const grid = document.createElement('div');
   grid.className = 'tint-presets';
 
-  for (const preset of TINT_PRESETS) {
+  for (const preset of presets) {
     const btn = document.createElement('button');
     btn.type = 'button';
     btn.className = `tint-preset${preset.name === active ? ' is-active' : ''}`;
@@ -360,17 +368,25 @@ export function buildTintPresets({ active, onChange }) {
 }
 
 /**
+ * @param {{ active: string | null;
+ *          onChange: (preset: { name: string; r: number; g: number;
+ *                                b: number; gray: number }) => void }} opts
+ */
+export function buildTintPresets({ active, onChange }) {
+  return buildPresetGrid({ presets: TINT_PRESETS, active, onChange });
+}
+
+/**
  * @param {any} ev
- * @param {number} index
  * @param {{ showDuration?: boolean }} [opts]
  */
-export function buildTimingSection(ev, index, opts = {}) {
+export function buildTimingSection(ev, opts = {}) {
   return buildSection('Timing', (body) => {
     const startCell = buildCell({
       label: 'START',
       value: ev.startFrame || 0,
       unit: 'f',
-      onChange: (v) => commit(ev, 'startFrame', /** @type {number} */ (v), index)
+      onChange: (v) => commit(ev, 'startFrame', /** @type {number} */ (v))
     });
 
     if (opts.showDuration) {
@@ -379,12 +395,31 @@ export function buildTimingSection(ev, index, opts = {}) {
         label: 'LEN',
         value: ev[durField] || 0,
         unit: 'f',
-        onChange: (v) => commit(ev, durField, /** @type {number} */ (v), index)
+        onChange: (v) => commit(ev, durField, /** @type {number} */ (v))
       });
       body.appendChild(buildPair(startCell, durCell));
     } else {
       body.appendChild(startCell);
     }
+  });
+}
+
+/**
+ * Standard "Target → PIC #" section used by every picture-affecting
+ * inspector (Show / Move / Tint / Rotate / Erase). The cell clamps to
+ * 1..MAX_PICTURE_NUMBER on commit.
+ *
+ * @param {any} ev
+ */
+export function buildTargetPictureSection(ev) {
+  return buildSection('Target', (body) => {
+    body.appendChild(
+      buildCell({
+        label: 'PIC #',
+        value: ev.pictureNumber ?? 1,
+        onChange: (v) => commit(ev, 'pictureNumber', clamp(/** @type {number} */ (v), 1, MAX_PICTURE_NUMBER))
+      })
+    );
   });
 }
 
@@ -418,19 +453,31 @@ export function buildImagePickerControl({ imageName, onPick }) {
 }
 
 /**
- * Mutate state.events[index][prop] and propagate.
+ * Mutate ev[prop] and propagate. Emits RENDER_PREVIEW for every change;
+ * RENDER_TIMELINE only fires when the field affects the timeline's
+ * positions, widths, or labels (see TIMELINE_AFFECTING_FIELDS) — so
+ * slider drags on opacity/scale/RGB don't trigger 60 Hz lane rebuilds.
  *
  * @param {any} ev
  * @param {string} prop
  * @param {any} value
- * @param {number} _index — currently unused but kept for future tooling
- *   (e.g. partial re-render of just this event's row).
  */
-export function commit(ev, prop, value, _index) {
+export function commit(ev, prop, value) {
   ev[prop] = value;
   markDirty();
-  eventBus.emit(Events.RENDER_TIMELINE);
+  if (TIMELINE_AFFECTING_FIELDS.has(prop)) {
+    eventBus.emit(Events.RENDER_TIMELINE);
+  }
   eventBus.emit(Events.RENDER_PREVIEW, state.currentFrame);
+}
+
+/**
+ * Re-render the inspector (e.g. after a preset click that touches multiple
+ * fields and needs the section to redraw). Lazy-imported to avoid a
+ * circular dep with index.js, which imports every section module.
+ */
+export function triggerRerender() {
+  import('./index.js').then((m) => m.renderProperties());
 }
 
 // ---------- Internals ----------
@@ -463,10 +510,6 @@ function labelForEvent(ev) {
     default:
       return TYPE_LABELS[ev.type] || ev.type;
   }
-}
-
-function clamp(v, min, max) {
-  return Math.max(min, Math.min(max, v));
 }
 
 function formatNumber(v) {

@@ -4,22 +4,20 @@
 
 import { buildSection, buildRow, buildSelect, commit } from './shared.js';
 
-export function renderTextProperties(ev, index) {
+export function renderTextProperties(ev) {
   const wrap = document.createElement('div');
 
-  // ----- Body -----
   wrap.appendChild(
     buildSection('Body', (body) => {
       const ta = document.createElement('textarea');
       ta.className = 'prop-input';
       ta.rows = 4;
       ta.value = ev.text || '';
-      ta.addEventListener('change', () => commit(ev, 'text', ta.value, index));
+      ta.addEventListener('change', () => commit(ev, 'text', ta.value));
       body.appendChild(ta);
     })
   );
 
-  // ----- Style -----
   wrap.appendChild(
     buildSection('Style', (body) => {
       body.appendChild(
@@ -32,7 +30,7 @@ export function renderTextProperties(ev, index) {
               { value: 1, label: 'Dim' },
               { value: 2, label: 'Transparent' }
             ],
-            onChange: (v) => commit(ev, 'background', v, index)
+            onChange: (v) => commit(ev, 'background', v)
           })
         )
       );
@@ -46,7 +44,7 @@ export function renderTextProperties(ev, index) {
               { value: 1, label: 'Middle' },
               { value: 2, label: 'Bottom' }
             ],
-            onChange: (v) => commit(ev, 'position', v, index)
+            onChange: (v) => commit(ev, 'position', v)
           })
         )
       );
