@@ -7,7 +7,8 @@ let rgbToHex,
   getNextInsertOrder,
   resetInsertOrderCounter,
   makeTrailingThrottle,
-  assignSubLanes;
+  assignSubLanes,
+  formatFrameTime;
 
 beforeAll(async () => {
   const mod = await import('../src/modules/utils.js');
@@ -19,7 +20,8 @@ beforeAll(async () => {
     getNextInsertOrder,
     resetInsertOrderCounter,
     makeTrailingThrottle,
-    assignSubLanes
+    assignSubLanes,
+    formatFrameTime
   } = mod);
 });
 
@@ -89,6 +91,41 @@ describe('hexToRgb', () => {
     expect(hexToRgb('invalid')).toEqual({ r: 0, g: 0, b: 0 });
     expect(hexToRgb('#fff')).toEqual({ r: 0, g: 0, b: 0 }); // 3-digit hex not supported
     expect(hexToRgb(null)).toEqual({ r: 0, g: 0, b: 0 });
+  });
+});
+
+describe('formatFrameTime', () => {
+  describe('default ss:ff mode', () => {
+    it('formats sub-second frames as 00:ff', () => {
+      expect(formatFrameTime(0)).toBe('00:00');
+      expect(formatFrameTime(7)).toBe('00:07');
+      expect(formatFrameTime(59)).toBe('00:59');
+    });
+
+    it('rolls over to seconds at 60 frames', () => {
+      expect(formatFrameTime(60)).toBe('01:00');
+      expect(formatFrameTime(125)).toBe('02:05');
+    });
+  });
+
+  describe('mm:ss mode', () => {
+    it('returns 00:00 for zero frames', () => {
+      expect(formatFrameTime(0, 'mm:ss')).toBe('00:00');
+    });
+
+    it('rolls seconds at every 60 frames', () => {
+      expect(formatFrameTime(60, 'mm:ss')).toBe('00:01');
+      expect(formatFrameTime(60 * 30, 'mm:ss')).toBe('00:30');
+    });
+
+    it('rolls minutes at every 3600 frames', () => {
+      expect(formatFrameTime(60 * 60, 'mm:ss')).toBe('01:00');
+      expect(formatFrameTime(60 * 125, 'mm:ss')).toBe('02:05');
+    });
+
+    it('floors negative frames to 00:00', () => {
+      expect(formatFrameTime(-30, 'mm:ss')).toBe('00:00');
+    });
   });
 });
 
