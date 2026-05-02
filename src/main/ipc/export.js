@@ -8,16 +8,15 @@ const fsPromises = require('node:fs').promises;
 
 const { convertToMZFormat } = require('../../lib/mz-converter');
 const { logger } = require('../../lib/main-logger');
-const { getProjectPath } = require('../state');
-const { pathExists } = require('../util');
+const { pathExists, requireProject, mapFilePath } = require('../util');
 
 function register() {
   // List maps from MapInfos.json. Returns [{ id, name }, ...] or { error }.
   ipcMain.handle('get-maps', async () => {
-    const projectPath = getProjectPath();
-    if (!projectPath) return { error: 'No project loaded' };
+    const proj = requireProject();
+    if (proj.error) return proj;
 
-    const mapInfoFile = path.join(projectPath, 'data', 'MapInfos.json');
+    const mapInfoFile = path.join(proj.projectPath, 'data', 'MapInfos.json');
     if (!(await pathExists(mapInfoFile))) {
       return { error: 'MapInfos.json not found' };
     }
@@ -35,14 +34,14 @@ function register() {
 
   // List events for a single map. Returns [{ id, name, pages }, ...] or { error }.
   ipcMain.handle('get-map-events', async (_event, mapId) => {
-    const projectPath = getProjectPath();
-    if (!projectPath) return { error: 'No project loaded' };
+    const proj = requireProject();
+    if (proj.error) return proj;
 
     if (!Number.isInteger(mapId) || mapId < 1 || mapId > 999) {
       return { error: 'Invalid map ID' };
     }
 
-    const mapFile = path.join(projectPath, 'data', `Map${String(mapId).padStart(3, '0')}.json`);
+    const mapFile = mapFilePath(proj.projectPath, mapId);
     if (!(await pathExists(mapFile))) {
       return { error: 'Map file not found' };
     }
@@ -62,8 +61,8 @@ function register() {
   // sequence (preserving the trailing `code: 0` terminator). The renderer
   // pre-validates the inputs but we re-check at the boundary.
   ipcMain.handle('export-to-map', async (_event, { events: evtList, mapId, eventId, pageIndex }) => {
-    const projectPath = getProjectPath();
-    if (!projectPath) return { error: 'No project loaded' };
+    const proj = requireProject();
+    if (proj.error) return proj;
 
     if (!Number.isInteger(mapId) || mapId < 1 || mapId > 999) {
       return { error: 'Invalid map ID' };
@@ -76,7 +75,7 @@ function register() {
       return { error: 'Invalid page index' };
     }
 
-    const mapFile = path.join(projectPath, 'data', `Map${String(mapId).padStart(3, '0')}.json`);
+    const mapFile = mapFilePath(proj.projectPath, mapId);
     if (!(await pathExists(mapFile))) {
       return { error: `Map file not found: Map${String(mapId).padStart(3, '0')}.json` };
     }

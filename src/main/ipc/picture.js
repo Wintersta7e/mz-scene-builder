@@ -9,7 +9,7 @@ const fsPromises = require('node:fs').promises;
 const { isPathSafe } = require('../../lib/mz-converter');
 const { logger } = require('../../lib/main-logger');
 const { getProjectPath } = require('../state');
-const { pathExists } = require('../util');
+const { pathExists, requireProject } = require('../util');
 
 // Folders named `claude_only` are excluded everywhere — they hold
 // project-internal assets the renderer should never surface.
@@ -54,10 +54,10 @@ async function scanDirectory(dirPath, basePath, depth = 0) {
 function register() {
   // Initial folder structure (lazy beyond depth 2).
   ipcMain.handle('get-pictures-folders', async () => {
-    const projectPath = getProjectPath();
-    if (!projectPath) return { error: 'No project loaded' };
+    const proj = requireProject();
+    if (proj.error) return proj;
 
-    const picturesPath = path.join(projectPath, 'img', 'pictures');
+    const picturesPath = path.join(proj.projectPath, 'img', 'pictures');
     if (!(await pathExists(picturesPath))) {
       logger.warn('Pictures folder not found:', picturesPath);
       return { error: 'Pictures folder not found' };
@@ -71,10 +71,10 @@ function register() {
   // + images, never the deeper tree). All paths are validated against
   // the pictures base via isPathSafe.
   ipcMain.handle('get-folder-contents', async (_event, folderPath) => {
-    const projectPath = getProjectPath();
-    if (!projectPath) return { error: 'No project loaded' };
+    const proj = requireProject();
+    if (proj.error) return proj;
 
-    const picturesBase = path.join(projectPath, 'img', 'pictures');
+    const picturesBase = path.join(proj.projectPath, 'img', 'pictures');
     if (!isPathSafe(picturesBase, folderPath)) {
       logger.warn('Blocked unsafe folder path:', folderPath);
       return { error: 'Invalid folder path' };
