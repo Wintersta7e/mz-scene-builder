@@ -17,6 +17,7 @@
     "lint:fix": "node node_modules/eslint/bin/eslint.js . --fix",
     "format": "node node_modules/prettier/bin/prettier.cjs --write .",
     "format:check": "node node_modules/prettier/bin/prettier.cjs --check .",
+    "typecheck": "node node_modules/typescript/bin/tsc -p jsconfig.json --noEmit",
     "prepare": "husky",
     "fetch-fonts": "bash scripts/fetch-fonts.sh"
   },

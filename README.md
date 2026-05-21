@@ -2,10 +2,11 @@
 
 A visual timeline editor for creating cutscenes and picture sequences for RPG Maker MZ. Arrange pictures, effects, and text on a frame-based timeline, then export directly to RPG Maker event commands.
 
-![Electron](https://img.shields.io/badge/Electron-41-47848F?logo=electron)
+![Electron](https://img.shields.io/badge/Electron-42-47848F?logo=electron)
 ![JavaScript](https://img.shields.io/badge/JavaScript-ES2022-F7DF1E?logo=javascript)
+![Typecheck](https://img.shields.io/badge/tsc-strict-3178C6?logo=typescript)
 [![CI](https://github.com/Wintersta7e/mz-scene-builder/actions/workflows/ci.yml/badge.svg)](https://github.com/Wintersta7e/mz-scene-builder/actions/workflows/ci.yml)
-![Tests](https://img.shields.io/badge/Tests-200%20passing-success)
+![Tests](https://img.shields.io/badge/Tests-265%20passing-success)
 [![code style: prettier](https://img.shields.io/badge/code_style-prettier-ff69b4.svg)](https://prettier.io/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE.txt)
 
@@ -103,10 +104,11 @@ Select a target Map, Event, and Page — commands are inserted at the end of the
 
 ## Tech Stack
 
-- **Runtime**: Electron 41
-- **Language**: Vanilla JavaScript (ES Modules in renderer, CJS in main/preload)
+- **Runtime**: Electron 42
+- **Language**: Vanilla JavaScript with JSDoc types (ES Modules in renderer, CJS in main/preload)
 - **Architecture**: Event bus with centralized state, contextIsolation + sandbox + CSP
-- **Testing**: Jest (200 tests, per-file coverage thresholds, jsdom-backed DOM smoke tests)
+- **Typecheck**: `tsc --noEmit` with `strict + checkJs` gated in CI; ambient types in `src/types/global.d.ts`
+- **Testing**: Jest (265 tests, per-file coverage thresholds, jsdom-backed DOM smoke tests)
 - **Linting**: ESLint (strict rules) + Prettier, enforced via husky pre-commit hooks
 - **Build**: electron-builder (NSIS + portable)
 
@@ -146,8 +148,11 @@ npm run lint:fix      # ESLint auto-fix
 npm run format        # Prettier write
 npm run format:check  # Prettier check
 
+# Typecheck (strict tsc + checkJs, gated in CI)
+npm run typecheck
+
 # Run tests
-npm test              # 200 tests
+npm test              # 265 tests
 npm run test:watch    # Watch mode
 npm run test:coverage # Coverage report
 
@@ -156,7 +161,7 @@ npm run build:win
 npm run build:mac
 ```
 
-Pre-commit hooks (husky + lint-staged) automatically run ESLint and Prettier on staged files.
+Pre-commit hooks (husky + lint-staged) automatically run ESLint and Prettier on staged files. CI additionally runs the typecheck and `npm audit` on every push and PR.
 
 ### Debug log
 
