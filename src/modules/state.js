@@ -126,7 +126,9 @@ const state = {
   _arrowKeyUndoTimer: null,
 
   // Export cache (prefetched data)
+  /** @type {Array<{ id: number; name: string }> | null} */
   cachedMaps: null,
+  /** @type {Record<number, Array<{ id: number; name: string; pages: number }>>} */
   cachedMapEvents: {} // { mapId: eventsArray }
 };
 

@@ -14,15 +14,23 @@ import { showError, showWarning, showSuccess } from './notifications.js';
 const LAST_EXPORT_KEY = `${SETTINGS_KEY}_lastExport`;
 
 // Selected values
+/** @type {number | null} */
 let selectedMapId = null;
+/** @type {number | null} */
 let selectedEventId = null;
 let selectedPageIndex = 0;
 let selectedEventPages = 1;
 
-// Virtual dropdown instances
-let mapDropdown = null;
-let eventDropdown = null;
-let pageDropdown = null;
+// Virtual dropdown instances — assigned in initExportDropdowns(); every
+// public entry point in this module runs after init, so callers treat
+// these as non-null. The unknown-cast keeps tsc happy without a runtime
+// guard at every access.
+/** @type {VirtualDropdown} */
+let mapDropdown = /** @type {VirtualDropdown} */ (/** @type {unknown} */ (null));
+/** @type {VirtualDropdown} */
+let eventDropdown = /** @type {VirtualDropdown} */ (/** @type {unknown} */ (null));
+/** @type {VirtualDropdown} */
+let pageDropdown = /** @type {VirtualDropdown} */ (/** @type {unknown} */ (null));
 
 function initExportDropdowns() {
   const elements = getElements();
@@ -78,6 +86,7 @@ function prerenderMapsDropdown() {
 }
 
 // Pre-render events dropdown for a map
+/** @param {number} mapId */
 function prerenderEventsDropdown(mapId) {
   const mapEvents = state.cachedMapEvents[mapId];
   if (!mapEvents || !eventDropdown) return;
@@ -92,6 +101,7 @@ function prerenderEventsDropdown(mapId) {
 }
 
 // Render page options
+/** @param {number} pageCount */
 function renderPageOptions(pageCount) {
   const items = [];
   for (let i = 0; i < pageCount; i++) {
@@ -280,6 +290,11 @@ async function doExportToMap() {
 }
 
 // Save last export settings to localStorage
+/**
+ * @param {number} mapId
+ * @param {number} eventId
+ * @param {number} pageIndex
+ */
 function saveLastExport(mapId, eventId, pageIndex) {
   try {
     localStorage.setItem(LAST_EXPORT_KEY, JSON.stringify({ mapId, eventId, pageIndex }));

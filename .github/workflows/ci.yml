@@ -26,6 +26,9 @@ jobs:
       - name: Format check
         run: npx prettier --check .
 
+      - name: Typecheck
+        run: npx tsc -p jsconfig.json --noEmit
+
       - name: Security audit
         run: npm audit --omit=dev
 

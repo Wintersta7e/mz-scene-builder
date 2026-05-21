@@ -33,7 +33,11 @@ const isDev = process.argv.includes('--dev');
 contextBridge.exposeInMainWorld('api', {
   isDev,
   // IPC invoke with channel validation
-  invoke: (channel, ...args) => {
+  /**
+   * @param {string} channel
+   * @param {unknown[]} args
+   */
+  invoke: (channel, /** @type {unknown[]} */ ...args) => {
     if (ALLOWED_CHANNELS.includes(channel)) {
       return ipcRenderer.invoke(channel, ...args);
     }
@@ -42,6 +46,10 @@ contextBridge.exposeInMainWorld('api', {
 
   // Fire-and-forget log forwarding from renderer → main. Renderer pre-
   // stringifies each argument (DOM nodes / functions are not cloneable).
+  /**
+   * @param {string} level
+   * @param {unknown[]} args
+   */
   log: (level, args) => {
     try {
       ipcRenderer.send('log-message', { level, args });
@@ -51,6 +59,7 @@ contextBridge.exposeInMainWorld('api', {
   },
 
   // Shell operations (limited)
+  /** @param {string} url */
   openExternal: (url) => {
     // Only allow specific URLs
     const allowedHosts = ['github.com'];

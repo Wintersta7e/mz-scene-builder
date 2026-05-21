@@ -365,9 +365,10 @@ function init() {
   initTimeline();
 
   // Search (debounced for large image sets)
+  /** @type {ReturnType<typeof setTimeout> | null} */
   let searchTimer = null;
   elements.imageSearch.addEventListener('input', () => {
-    clearTimeout(searchTimer);
+    if (searchTimer !== null) clearTimeout(searchTimer);
     searchTimer = setTimeout(filterImages, 150);
   });
 

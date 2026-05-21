@@ -23,8 +23,8 @@ function isPathSafe(basePath, requestedPath) {
 
 /**
  * Convert timeline events to RPG Maker MZ format
- * @param {Array} events - Array of timeline events
- * @returns {Array} Array of MZ command objects
+ * @param {Array<any>} events - Array of timeline events
+ * @returns {Array<any>} Array of MZ command objects
  */
 function convertToMZFormat(events) {
   const mzCommands = [];

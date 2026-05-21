@@ -29,7 +29,7 @@ const eventBus = {
    * @param {Function} callback - Handler function
    */
   once(event, callback) {
-    const wrapper = (...args) => {
+    const wrapper = (/** @type {unknown[]} */ ...args) => {
       this.off(event, wrapper);
       callback(...args);
     };

@@ -10,7 +10,15 @@ const VIEWPORT_HEIGHT = 250; // Max visible height
 const BUFFER_SIZE = 3; // Extra items above/below viewport
 const VISIBLE_COUNT = Math.ceil(VIEWPORT_HEIGHT / ITEM_HEIGHT) + BUFFER_SIZE * 2;
 
+/**
+ * @typedef {{ value: any; label: string; [k: string]: any }} DropdownItem
+ */
 export class VirtualDropdown {
+  /**
+   * @param {{ container: HTMLElement; placeholder?: string;
+   *           searchable?: boolean;
+   *           onSelect?: (value: any, item: DropdownItem) => void }} options
+   */
   constructor(options) {
     this.container = options.container;
     this.placeholder = options.placeholder || '-- Select --';
@@ -18,18 +26,42 @@ export class VirtualDropdown {
     this.onSelect = options.onSelect || (() => {});
 
     // Data
+    /** @type {DropdownItem[]} */
     this.items = []; // Full data array [{value, label, ...}]
+    /** @type {DropdownItem[]} */
     this.filteredItems = []; // After search filter
+    /** @type {any} */
     this.selectedValue = null;
+    /** @type {string | null} */
     this.selectedLabel = null;
 
     // Virtual scroll state
     this.scrollTop = 0;
     this.startIndex = 0;
+    /** @type {number | null} */
     this.rafId = null;
 
     // Pre-allocated pool
+    /** @type {Array<{ el: HTMLElement; index: number }>} */
     this.pool = new Array(VISIBLE_COUNT);
+
+    // DOM elements assigned in _buildDOM()
+    /** @type {HTMLElement} */
+    this.trigger = /** @type {HTMLElement} */ (/** @type {unknown} */ (null));
+    /** @type {HTMLElement} */
+    this.dropdown = /** @type {HTMLElement} */ (/** @type {unknown} */ (null));
+    /** @type {HTMLInputElement | undefined} */
+    this.searchInput = undefined;
+    /** @type {HTMLElement} */
+    this.viewport = /** @type {HTMLElement} */ (/** @type {unknown} */ (null));
+    /** @type {HTMLElement} */
+    this.content = /** @type {HTMLElement} */ (/** @type {unknown} */ (null));
+    /** @type {HTMLElement} */
+    this.emptyMsg = /** @type {HTMLElement} */ (/** @type {unknown} */ (null));
+    /** @type {(e: MouseEvent) => void} */
+    this._onDocClick = () => {};
+    /** @type {(e: KeyboardEvent) => void} */
+    this._onDocKey = () => {};
 
     // State
     this.isOpen = false;
@@ -107,18 +139,21 @@ export class VirtualDropdown {
 
     // Search input - no debounce since filtering is fast (<3ms)
     if (this.searchInput) {
-      this.searchInput.addEventListener('input', () => {
-        this._filterItems(this.searchInput.value);
+      const search = this.searchInput;
+      search.addEventListener('input', () => {
+        this._filterItems(search.value);
       });
-      this.searchInput.addEventListener('click', (e) => e.stopPropagation());
-      this.searchInput.addEventListener('keydown', (e) => this._handleKeydown(e));
+      search.addEventListener('click', (e) => e.stopPropagation());
+      search.addEventListener('keydown', (e) => this._handleKeydown(e));
     }
 
     // Event delegation for clicks (single handler)
     this.content.addEventListener('click', (e) => {
-      const el = e.target.closest('.virtual-dropdown-item');
+      const target = /** @type {HTMLElement | null} */ (e.target);
+      if (!target) return;
+      const el = /** @type {HTMLElement | null} */ (target.closest('.virtual-dropdown-item'));
       if (el) {
-        const idx = parseInt(el.dataset.idx, 10);
+        const idx = parseInt(el.dataset.idx || '-1', 10);
         if (!isNaN(idx) && idx >= 0 && idx < this.filteredItems.length) {
           this._selectByIndex(idx);
         }
@@ -142,14 +177,17 @@ export class VirtualDropdown {
     this.viewport.addEventListener('keydown', (e) => this._handleKeydown(e));
 
     // Close on outside click
+    /** @type {(e: MouseEvent) => void} */
     this._onDocClick = (e) => {
-      if (this.isOpen && !this.container.contains(e.target) && !this.dropdown.contains(e.target)) {
+      const target = /** @type {Node | null} */ (e.target);
+      if (this.isOpen && target && !this.container.contains(target) && !this.dropdown.contains(target)) {
         this.close();
       }
     };
     document.addEventListener('click', this._onDocClick);
 
     // Escape
+    /** @type {(e: KeyboardEvent) => void} */
     this._onDocKey = (e) => {
       if (e.key === 'Escape' && this.isOpen) this.close();
     };
@@ -195,7 +233,7 @@ export class VirtualDropdown {
       if (el.textContent !== item.label) {
         el.textContent = item.label;
       }
-      el.dataset.idx = dataIdx;
+      el.dataset.idx = String(dataIdx);
       el.style.visibility = 'visible';
 
       // Build className
@@ -215,6 +253,7 @@ export class VirtualDropdown {
     }
   }
 
+  /** @param {string} query */
   _filterItems(query) {
     const q = query.toLowerCase().trim();
     // Avoid array copy when not filtering
@@ -231,6 +270,7 @@ export class VirtualDropdown {
     this.emptyMsg.style.display = this.filteredItems.length === 0 ? '' : 'none';
   }
 
+  /** @param {KeyboardEvent} e */
   _handleKeydown(e) {
     if (!this.isOpen) return;
     const len = this.filteredItems.length;
@@ -279,6 +319,7 @@ export class VirtualDropdown {
     this._render();
   }
 
+  /** @param {number} index */
   _selectByIndex(index) {
     const item = this.filteredItems[index];
     if (!item || item.disabled) return;
@@ -292,6 +333,7 @@ export class VirtualDropdown {
 
   // Public API
 
+  /** @param {DropdownItem[]} items */
   setItems(items) {
     this.items = items || [];
     this.filteredItems = this.items;
@@ -302,6 +344,10 @@ export class VirtualDropdown {
     this.emptyMsg.style.display = this.items.length === 0 ? '' : 'none';
   }
 
+  /**
+   * @param {any} value
+   * @param {string} [label]
+   */
   setSelected(value, label) {
     this.selectedValue = value;
     if (value !== null && value !== undefined) {
@@ -321,7 +367,7 @@ export class VirtualDropdown {
   }
 
   clear() {
-    this.setSelected(null, null);
+    this.setSelected(null);
   }
 
   open() {
@@ -371,12 +417,14 @@ export class VirtualDropdown {
     this.container.classList.remove('open');
   }
 
+  /** @param {boolean} disabled */
   setDisabled(disabled) {
     this.disabled = disabled;
     this.container.classList.toggle('disabled', disabled);
     if (disabled && this.isOpen) this.close();
   }
 
+  /** @param {string} text */
   setPlaceholder(text) {
     this.placeholder = text;
     if (this.selectedValue === null) this.trigger.textContent = text;
