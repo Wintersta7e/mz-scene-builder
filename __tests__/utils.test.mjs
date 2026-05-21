@@ -1,3 +1,6 @@
+/**
+ * @jest-environment jsdom
+ */
 import { jest } from '@jest/globals';
 
 let rgbToHex,
@@ -8,7 +11,10 @@ let rgbToHex,
   resetInsertOrderCounter,
   makeTrailingThrottle,
   assignSubLanes,
-  formatFrameTime;
+  formatFrameTime,
+  clamp,
+  clearChildren,
+  formatFrameNumber;
 
 beforeAll(async () => {
   const mod = await import('../src/modules/utils.js');
@@ -21,7 +27,10 @@ beforeAll(async () => {
     resetInsertOrderCounter,
     makeTrailingThrottle,
     assignSubLanes,
-    formatFrameTime
+    formatFrameTime,
+    clamp,
+    clearChildren,
+    formatFrameNumber
   } = mod);
 });
 
@@ -105,6 +114,11 @@ describe('formatFrameTime', () => {
     it('rolls over to seconds at 60 frames', () => {
       expect(formatFrameTime(60)).toBe('01:00');
       expect(formatFrameTime(125)).toBe('02:05');
+    });
+
+    it('floors negative frames to 00:00 (matches mm:ss behavior)', () => {
+      expect(formatFrameTime(-1)).toBe('00:00');
+      expect(formatFrameTime(-60)).toBe('00:00');
     });
   });
 
@@ -363,6 +377,79 @@ describe('makeTrailingThrottle', () => {
     throttled('hello', 42);
     jest.advanceTimersByTime(50);
     expect(fn).toHaveBeenCalledWith('hello', 42);
+  });
+
+  it('fires with the latest args when called multiple times in one window', () => {
+    // The semantics in the docstring: trailing throttle, i.e. the last
+    // call's args win, not the first. This regressed prior to fix in the
+    // post-handoff cleanup pass.
+    const fn = jest.fn();
+    const throttled = makeTrailingThrottle(100, fn);
+    throttled('first');
+    throttled('second');
+    throttled('third');
+    jest.advanceTimersByTime(100);
+    expect(fn).toHaveBeenCalledTimes(1);
+    expect(fn).toHaveBeenCalledWith('third');
+  });
+});
+
+describe('clamp', () => {
+  it('returns value unchanged when within range', () => {
+    expect(clamp(5, 0, 10)).toBe(5);
+    expect(clamp(0, 0, 10)).toBe(0);
+    expect(clamp(10, 0, 10)).toBe(10);
+  });
+
+  it('clamps to min when below', () => {
+    expect(clamp(-5, 0, 10)).toBe(0);
+    expect(clamp(-100, -10, 10)).toBe(-10);
+  });
+
+  it('clamps to max when above', () => {
+    expect(clamp(15, 0, 10)).toBe(10);
+    expect(clamp(99, 1, 100)).toBe(99);
+    expect(clamp(101, 1, 100)).toBe(100);
+  });
+
+  it('handles floating-point values', () => {
+    expect(clamp(0.5, 0, 1)).toBe(0.5);
+    expect(clamp(1.5, 0, 1)).toBe(1);
+  });
+});
+
+describe('formatFrameNumber', () => {
+  it('zero-pads to width 4 by default', () => {
+    expect(formatFrameNumber(0)).toBe('0000');
+    expect(formatFrameNumber(5)).toBe('0005');
+    expect(formatFrameNumber(300)).toBe('0300');
+  });
+
+  it('does not truncate numbers wider than the default width', () => {
+    expect(formatFrameNumber(12345)).toBe('12345');
+  });
+
+  it('respects custom width', () => {
+    expect(formatFrameNumber(5, 2)).toBe('05');
+    expect(formatFrameNumber(5, 6)).toBe('000005');
+  });
+});
+
+describe('clearChildren', () => {
+  it('removes every child of the element', () => {
+    const div = document.createElement('div');
+    div.appendChild(document.createElement('span'));
+    div.appendChild(document.createElement('span'));
+    div.appendChild(document.createTextNode('text'));
+    expect(div.childNodes.length).toBe(3);
+    clearChildren(div);
+    expect(div.childNodes.length).toBe(0);
+  });
+
+  it('is a no-op on an already-empty element', () => {
+    const div = document.createElement('div');
+    expect(() => clearChildren(div)).not.toThrow();
+    expect(div.childNodes.length).toBe(0);
   });
 });
 
