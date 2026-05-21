@@ -121,11 +121,12 @@ app.whenReady().then(() => {
 // chronological file. The payload is intentionally a plain object: the
 // renderer pre-stringifies its arguments to avoid IPC clone failures on
 // DOM nodes / functions.
+const RENDERER_LOG_LEVELS = new Set(['debug', 'info', 'warn', 'error']);
 ipcMain.on('log-message', (_event, payload) => {
   if (!payload || typeof payload !== 'object') return;
   const level = String(payload.level || 'info').toLowerCase();
   const args = Array.isArray(payload.args) ? payload.args : [];
-  const fn = logger[level] || logger.info;
+  const fn = RENDERER_LOG_LEVELS.has(level) ? logger[level] : logger.info;
   fn('[renderer]', ...args);
 });
 

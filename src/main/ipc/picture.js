@@ -8,12 +8,19 @@ const fsPromises = require('node:fs').promises;
 
 const { isPathSafe } = require('../../lib/mz-converter');
 const { logger } = require('../../lib/main-logger');
-const { getProjectPath } = require('../state');
 const { pathExists, requireProject } = require('../util');
 
 // Folders named `claude_only` are excluded everywhere — they hold
 // project-internal assets the renderer should never surface.
 const HIDDEN_FOLDER = 'claude_only';
+
+// Renderer-supplied path arg must be a string with no embedded null
+// bytes. Node's path APIs accept embedded nulls but the underlying fs
+// calls eventually throw an unhelpful ENOENT whose message echoes the
+// crafted path into the log file.
+function isSafePathInput(p) {
+  return typeof p === 'string' && p.length > 0 && !p.includes('\0');
+}
 
 async function scanDirectory(dirPath, basePath, depth = 0) {
   const items = [];
@@ -71,6 +78,10 @@ function register() {
   // + images, never the deeper tree). All paths are validated against
   // the pictures base via isPathSafe.
   ipcMain.handle('get-folder-contents', async (_event, folderPath) => {
+    if (!isSafePathInput(folderPath)) {
+      return { error: 'Invalid folder path' };
+    }
+
     const proj = requireProject();
     if (proj.error) return proj;
 
@@ -122,12 +133,16 @@ function register() {
   });
 
   // Read a thumbnail and return it as a data URL. isPathSafe blocks any
-  // attempt to escape the pictures base.
+  // attempt to escape the pictures base. Returns null on any failure —
+  // the renderer treats this as "skip this tile" rather than surfacing
+  // an error to the user.
   ipcMain.handle('get-thumbnail', async (_event, imagePath) => {
-    const projectPath = getProjectPath();
-    if (!projectPath) return null;
+    if (!isSafePathInput(imagePath)) return null;
 
-    const picturesBase = path.join(projectPath, 'img', 'pictures');
+    const proj = requireProject();
+    if (proj.error) return null;
+
+    const picturesBase = path.join(proj.projectPath, 'img', 'pictures');
     if (!isPathSafe(picturesBase, `${imagePath}.png`)) {
       logger.warn('Blocked unsafe thumbnail path:', imagePath);
       return null;
@@ -146,12 +161,15 @@ function register() {
   });
 
   // Resolve the absolute path for a picture so the renderer can use it as
-  // the <img> src attribute. Same path-safety rules as thumbnails.
+  // the <img> src attribute. Same path-safety rules as thumbnails; same
+  // null-on-failure contract.
   ipcMain.handle('get-image-path', async (_event, imagePath) => {
-    const projectPath = getProjectPath();
-    if (!projectPath) return null;
+    if (!isSafePathInput(imagePath)) return null;
 
-    const picturesBase = path.join(projectPath, 'img', 'pictures');
+    const proj = requireProject();
+    if (proj.error) return null;
+
+    const picturesBase = path.join(proj.projectPath, 'img', 'pictures');
     if (!isPathSafe(picturesBase, `${imagePath}.png`)) {
       logger.warn('Blocked unsafe image path:', imagePath);
       return null;
