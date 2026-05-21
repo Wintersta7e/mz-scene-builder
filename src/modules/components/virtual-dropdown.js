@@ -3,6 +3,8 @@
 // High-performance dropdown with virtual scrolling
 // ============================================
 
+import { clearChildren } from '../utils.js';
+
 const ITEM_HEIGHT = 28; // Fixed height per item (px)
 const VIEWPORT_HEIGHT = 250; // Max visible height
 const BUFFER_SIZE = 3; // Extra items above/below viewport
@@ -39,7 +41,7 @@ export class VirtualDropdown {
   }
 
   _buildDOM() {
-    this.container.innerHTML = '';
+    clearChildren(this.container);
     this.container.className = 'virtual-dropdown';
 
     // Trigger button
@@ -385,6 +387,6 @@ export class VirtualDropdown {
     document.removeEventListener('click', this._onDocClick);
     document.removeEventListener('keydown', this._onDocKey);
     if (this.dropdown.parentNode) this.dropdown.parentNode.removeChild(this.dropdown);
-    this.container.innerHTML = '';
+    clearChildren(this.container);
   }
 }

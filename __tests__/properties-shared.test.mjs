@@ -38,6 +38,10 @@ jest.unstable_mockModule('../src/modules/event-bus.js', () => ({
   }
 }));
 
+// getEventLane is stubbed because the tested entry point `commit()` never
+// calls it. If a future buildEventTag-class test is added here, swap to
+// the real events.js (its own deps are mocked above) so a real lane-
+// mapping regression can fail this suite.
 jest.unstable_mockModule('../src/modules/events.js', () => ({
   getEventLane: jest.fn(() => 0)
 }));

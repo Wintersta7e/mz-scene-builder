@@ -365,16 +365,14 @@ function updateTimelineCursor() {
 
   if (_lastCursorSelectedIndex !== state.selectedEventIndex) {
     _lastCursorSelectedIndex = state.selectedEventIndex;
+    const selectedKey = String(state.selectedEventIndex);
     const prevSelected = els.timelineEvents.querySelector('.event-block.is-selected');
-    if (prevSelected) {
-      const prevIdx = parseInt(prevSelected.dataset.eventIndex, 10);
-      if (prevIdx !== state.selectedEventIndex) {
-        prevSelected.classList.remove('is-selected');
-        const newSelected = els.timelineEvents.querySelector(
-          `.event-block[data-event-index="${state.selectedEventIndex}"]`
-        );
-        if (newSelected) newSelected.classList.add('is-selected');
-      }
+    if (prevSelected && prevSelected.dataset.eventIndex !== selectedKey) {
+      prevSelected.classList.remove('is-selected');
+    }
+    if (state.selectedEventIndex >= 0) {
+      const newSelected = els.timelineEvents.querySelector(`.event-block[data-event-index="${selectedKey}"]`);
+      if (newSelected) newSelected.classList.add('is-selected');
     }
   }
 

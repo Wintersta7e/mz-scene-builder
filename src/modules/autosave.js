@@ -35,13 +35,13 @@ async function performAutosave() {
       timestamp: Date.now()
     };
     const result = await window.api.invoke('autosave-write', sceneData);
-    if (result.success) {
+    if (result?.success) {
       logger.debug('Autosaved');
       state._autosaveFailCount = 0;
       eventBus.emit(Events.AUTOSAVE_SUCCESS, { timestamp: Date.now() });
     } else {
       state._autosaveFailCount = (state._autosaveFailCount || 0) + 1;
-      logger.warn('Autosave returned error:', result.error);
+      logger.warn('Autosave returned error:', result?.error || 'no response');
       if (state._autosaveFailCount === 3) {
         const { showWarning } = await import('./notifications.js');
         showWarning('Autosave is failing repeatedly. Your work may not be auto-saved.');
