@@ -8,39 +8,54 @@ import { saveState, markDirty } from '../undo-redo.js';
 import { eventBus, Events } from '../event-bus.js';
 import { clamp } from '../utils.js';
 
+/**
+ * @param {number} clientX
+ * @param {number} clientY
+ */
 function findImagesAtPoint(clientX, clientY) {
   const elements = getElements();
-  const images = elements.previewCanvas.querySelectorAll('.stage-pic');
+  const images = /** @type {NodeListOf<HTMLElement>} */ (elements.previewCanvas.querySelectorAll('.stage-pic'));
+  /** @type {number[]} */
   const result = [];
 
   for (const img of images) {
     const rect = img.getBoundingClientRect();
     if (clientX >= rect.left && clientX <= rect.right && clientY >= rect.top && clientY <= rect.bottom) {
-      result.push(parseInt(img.dataset.eventIndex, 10));
+      result.push(parseInt(img.dataset.eventIndex || '-1', 10));
     }
   }
 
   return result;
 }
 
+/**
+ * @param {HTMLElement} img
+ * @param {TimelineEvent} evt
+ */
 function updateImagePosition(img, evt) {
-  img.style.left = `${(evt.x / state.screenWidth) * 100}%`;
-  img.style.top = `${(evt.y / state.screenHeight) * 100}%`;
-  img.style.transform = `scale(${evt.scaleX / 100}, ${evt.scaleY / 100})`;
+  img.style.left = `${((evt.x || 0) / state.screenWidth) * 100}%`;
+  img.style.top = `${((evt.y || 0) / state.screenHeight) * 100}%`;
+  img.style.transform = `scale(${(evt.scaleX || 100) / 100}, ${(evt.scaleY || 100) / 100})`;
   img.style.transformOrigin = evt.origin === 1 ? 'center' : 'top left';
-  img.style.opacity = evt.opacity / 255;
-  img.style.mixBlendMode = ['normal', 'lighten', 'multiply', 'screen'][evt.blend] || 'normal';
+  img.style.opacity = String((evt.opacity || 0) / 255);
+  img.style.mixBlendMode = ['normal', 'lighten', 'multiply', 'screen'][evt.blend || 0] || 'normal';
 }
 
 function highlightSelectedImage() {
   document.querySelectorAll('.stage-pic, .stage-text').forEach((el) => {
     el.classList.toggle(
       'is-selected',
-      parseInt(/** @type {HTMLElement} */ (el).dataset.eventIndex, 10) === state.selectedEventIndex
+      parseInt(/** @type {HTMLElement} */ (el).dataset.eventIndex || '-1', 10) === state.selectedEventIndex
     );
   });
 }
 
+/**
+ * @param {MouseEvent} e
+ * @param {HTMLElement} img
+ * @param {TimelineEvent} evt
+ * @param {number} eventIndex
+ */
 function startDrag(e, img, evt, eventIndex) {
   if (e.button !== 0) return;
 
@@ -57,8 +72,8 @@ function startDrag(e, img, evt, eventIndex) {
   state.dragEventIndex = eventIndex;
   state.dragStartX = e.clientX;
   state.dragStartY = e.clientY;
-  state.dragStartEvtX = evt.x;
-  state.dragStartEvtY = evt.y;
+  state.dragStartEvtX = evt.x || 0;
+  state.dragStartEvtY = evt.y || 0;
   // Stash live conversion factors on the state object so onDrag uses
   // the same values for the whole gesture.
   state._dragPxPerMzX = rect.width / state.screenWidth;
@@ -71,8 +86,9 @@ function startDrag(e, img, evt, eventIndex) {
   e.preventDefault();
 }
 
+/** @param {MouseEvent} e */
 function onDrag(e) {
-  if (!state.isDragging) return;
+  if (!state.isDragging || !state.dragEvt || !state.dragImg) return;
 
   const pxPerMzX = state._dragPxPerMzX || 1;
   const pxPerMzY = state._dragPxPerMzY || 1;

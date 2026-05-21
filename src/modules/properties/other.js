@@ -20,6 +20,7 @@ const FLASH_COLORS = [
   { name: 'Cyan', r: 64, g: 255, b: 255, color: 'rgb(64, 255, 255)' }
 ];
 
+/** @param {TimelineEvent} ev */
 export function renderRotateProperties(ev) {
   const wrap = document.createElement('div');
   wrap.appendChild(buildTargetPictureSection(ev));
@@ -41,6 +42,7 @@ export function renderRotateProperties(ev) {
   return wrap;
 }
 
+/** @param {TimelineEvent} ev */
 export function renderEraseProperties(ev) {
   const wrap = document.createElement('div');
   wrap.appendChild(buildTargetPictureSection(ev));
@@ -53,6 +55,7 @@ export function renderWaitProperties() {
   return document.createElement('div');
 }
 
+/** @param {TimelineEvent} ev */
 export function renderFlashProperties(ev) {
   const wrap = document.createElement('div');
 

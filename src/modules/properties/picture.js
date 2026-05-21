@@ -16,6 +16,7 @@ import {
   commit
 } from './shared.js';
 
+/** @param {TimelineEvent} ev */
 export function renderPictureProperties(ev) {
   const wrap = document.createElement('div');
 

@@ -14,6 +14,7 @@ import { renderRotateProperties, renderEraseProperties, renderWaitProperties, re
 import { clearChildren } from '../utils.js';
 import { logger } from '../logger.js';
 
+/** @type {Record<string, (ev: TimelineEvent) => HTMLElement>} */
 const SECTION_RENDERERS = {
   showPicture: renderPictureProperties,
   movePicture: renderMoveProperties,

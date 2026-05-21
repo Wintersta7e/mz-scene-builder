@@ -110,6 +110,12 @@ const state = {
   timelineDragStartX: 0,
   timelineDragStartFrame: 0,
 
+  // Live preview-drag conversion factors (px / MZ unit), cached for the
+  // duration of a single drag gesture so onDrag uses the same value
+  // throughout even if the canvas is resized mid-drag.
+  _dragPxPerMzX: 1,
+  _dragPxPerMzY: 1,
+
   // Minimap
   minimapDragging: false,
 

@@ -14,6 +14,7 @@ import {
 } from './shared.js';
 import { clamp } from '../utils.js';
 
+/** @param {TimelineEvent} ev */
 export function renderTintProperties(ev) {
   const wrap = document.createElement('div');
 
@@ -81,12 +82,14 @@ export function renderTintProperties(ev) {
  * Naive bubble preview color from RGB tone deltas + gray amount.
  * @param {{ r: number; g: number; b: number; gray: number }} tone
  */
+/** @param {{ r: number; g: number; b: number; gray: number }} tone */
 function toneToCssColor({ r, g, b, gray }) {
   const base = 128;
   const cr = clamp(base + r, 0, 255);
   const cg = clamp(base + g, 0, 255);
   const cb = clamp(base + b, 0, 255);
   const grayPct = (gray / 255) * 0.5;
+  /** @param {number} c */
   const lerp = (c) => c * (1 - grayPct) + base * grayPct;
   return `rgb(${Math.round(lerp(cr))}, ${Math.round(lerp(cg))}, ${Math.round(lerp(cb))})`;
 }

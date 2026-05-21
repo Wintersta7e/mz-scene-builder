@@ -4,6 +4,7 @@
 
 import { buildSection, buildRow, buildSelect, commit } from './shared.js';
 
+/** @param {TimelineEvent} ev */
 export function renderTextProperties(ev) {
   const wrap = document.createElement('div');
 

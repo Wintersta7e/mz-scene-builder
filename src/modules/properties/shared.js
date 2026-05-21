@@ -16,6 +16,7 @@ import { getEventLane } from '../events.js';
 // rebuild so slider drags don't trigger 60 Hz lane re-rendering.
 const TIMELINE_AFFECTING_FIELDS = new Set(['startFrame', 'duration', 'frames', 'pictureNumber', 'text']);
 
+/** @type {Record<string, string>} */
 const TYPE_LABELS = {
   showPicture: 'Show',
   movePicture: 'Move',
@@ -242,6 +243,7 @@ export function buildSlider({ value, min, max, step = 1, unit = '', onChange }) 
   }
   paint();
 
+  /** @param {MouseEvent} e */
   function setFromEvent(e) {
     const rect = slider.getBoundingClientRect();
     const ratio = clamp((e.clientX - rect.left) / rect.width, 0, 1);
@@ -254,6 +256,7 @@ export function buildSlider({ value, min, max, step = 1, unit = '', onChange }) 
 
   slider.addEventListener('mousedown', (e) => {
     setFromEvent(e);
+    /** @param {MouseEvent} ev */
     const onMove = (ev) => setFromEvent(ev);
     const onUp = () => {
       document.removeEventListener('mousemove', onMove);
@@ -283,6 +286,7 @@ export function buildOriginPad({ origin, onChange }) {
   // render visibly so the 3x3 layout reads correctly, but are disabled
   // until the renderer learns to interpret origin codes 2-8.
   const SUPPORTED = new Set([0, 4]);
+  /** @type {Record<number, number>} */
   const ORIGIN_FOR_INDEX = { 0: 0, 4: 1 };
 
   for (let i = 0; i < 9; i++) {
@@ -504,6 +508,7 @@ export function triggerRerender() {
 
 // ---------- Internals ----------
 
+/** @param {TimelineEvent} ev */
 function labelForEvent(ev) {
   switch (ev.type) {
     case 'showPicture':
@@ -515,10 +520,15 @@ function labelForEvent(ev) {
   }
 }
 
+/** @param {number} v */
 function formatNumber(v) {
   return Number.isInteger(v) ? String(v) : v.toFixed(2);
 }
 
+/**
+ * @param {string} raw
+ * @param {Array<{ value: any; label: string }>} options
+ */
 function parseAutoValue(raw, options) {
   const sample = options[0]?.value;
   if (typeof sample === 'number') return Number(raw);
@@ -526,6 +536,10 @@ function parseAutoValue(raw, options) {
   return raw;
 }
 
+/**
+ * @param {string} s
+ * @param {number} max
+ */
 function truncateMiddle(s, max) {
   if (s.length <= max) return s;
   const half = Math.floor((max - 1) / 2);

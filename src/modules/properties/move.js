@@ -16,6 +16,7 @@ import {
   triggerRerender
 } from './shared.js';
 
+/** @param {TimelineEvent} ev */
 export function renderMoveProperties(ev) {
   const wrap = document.createElement('div');
 
