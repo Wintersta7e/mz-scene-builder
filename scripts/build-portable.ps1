@@ -13,6 +13,12 @@
   pwsh scripts/build-portable.ps1
 
 .NOTES
+  Prerequisite: `node_modules/` must be installed by Windows-native npm
+  (just `npm install` from a Windows shell). A WSL/Linux install will
+  not work here even on the same host — Windows-native node expects
+  `.cmd` shims in node_modules/.bin/ that the Linux install does not
+  create.
+
   If PowerShell blocks the script with an execution-policy error, run:
     Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
   or invoke once with:
