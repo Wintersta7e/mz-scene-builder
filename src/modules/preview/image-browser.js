@@ -11,7 +11,7 @@
 import { state } from '../state.js';
 import { getElements } from '../elements.js';
 import { saveState, markDirty } from '../undo-redo.js';
-import { sortEvents, makeTrailingThrottle } from '../utils.js';
+import { sortEvents, makeTrailingThrottle, clearChildren } from '../utils.js';
 import { createDefaultEvent, clearImageSelection, getEventDuration } from '../events.js';
 import { logger } from '../logger.js';
 import { eventBus, Events } from '../event-bus.js';
@@ -32,6 +32,14 @@ let _treeRoot = null;
  * @type {Array<{ name: string; path: string; folder: string }>}
  */
 let imageFlat = [];
+
+/**
+ * path -> item lookup, rebuilt whenever `imageFlat` is. Lets badge
+ * refresh resolve the folder name in O(1) instead of an O(N) scan
+ * inside an O(N) walk over rendered tiles.
+ * @type {Map<string, { name: string; path: string; folder: string }>}
+ */
+let imageByPath = new Map();
 
 /**
  * Top-level folder names (sorted), derived from the folder tree.
@@ -133,6 +141,18 @@ function flattenImageTree(items, parent = '', topFolder = '') {
 }
 
 /**
+ * Refresh `imageFlat` from a tree, and rebuild the parallel
+ * `imageByPath` lookup map. Callers must use this instead of
+ * assigning `imageFlat` directly so the two stay in sync.
+ *
+ * @param {Array<any>} tree
+ */
+function rebuildImageFlat(tree) {
+  imageFlat = flattenImageTree(tree);
+  imageByPath = new Map(imageFlat.map((it) => [it.path, it]));
+}
+
+/**
  * Recompute per-image usage counts from state.events.
  */
 function computeImageUsage() {
@@ -160,7 +180,7 @@ function renderFolderChips() {
     counts.set(f, imageFlat.filter((it) => it.folder === f).length);
   }
 
-  while (container.firstChild) container.removeChild(container.firstChild);
+  clearChildren(container);
 
   container.appendChild(makeChip('All', null, counts.get('__all__') || 0, active === null));
   for (const folder of topFolders) {
@@ -216,7 +236,7 @@ function renderLibraryList() {
       thumbnailObserver = null;
     }
 
-    while (list.firstChild) list.removeChild(list.firstChild);
+    clearChildren(list);
     let visibleCount = 0;
 
     for (const item of imageFlat) {
@@ -386,7 +406,7 @@ function addSelectedImagesAsEvents() {
  */
 function renderFolderTree(_container, items) {
   _treeRoot = items;
-  imageFlat = flattenImageTree(items);
+  rebuildImageFlat(items);
   topFolders = Array.from(new Set(imageFlat.map((it) => it.folder).filter(Boolean))).sort();
   state.libraryActiveFolder = null;
   renderFolderChips();
@@ -401,7 +421,7 @@ function filterImages() {
  * @param {string} path
  */
 function expandToPath(path) {
-  const item = imageFlat.find((it) => it.path === path);
+  const item = imageByPath.get(path);
   if (!item) return;
 
   if (item.folder && state.libraryActiveFolder !== item.folder) {
@@ -441,7 +461,7 @@ function updateLibraryUsageBadges() {
     const info = el.querySelector('.lib-info');
     if (!info) continue;
     const usage = usageCounts.get(path) || 0;
-    while (info.firstChild) info.removeChild(info.firstChild);
+    clearChildren(info);
     if (usage > 0) {
       const used = document.createElement('span');
       used.className = 'used';
@@ -449,8 +469,7 @@ function updateLibraryUsageBadges() {
       info.appendChild(used);
     } else {
       const folderSpan = document.createElement('span');
-      const fromFlat = imageFlat.find((it) => it.path === path);
-      folderSpan.textContent = (fromFlat && fromFlat.folder) || '/';
+      folderSpan.textContent = imageByPath.get(path)?.folder || '/';
       info.appendChild(folderSpan);
     }
   }
@@ -471,7 +490,7 @@ eventBus.on(Events.IMAGES_LOADED, () => {
   if (!_treeRoot) return;
   // Cancel any pending badge refresh — the full rebuild below covers it.
   refreshBadgesThrottled.cancel();
-  imageFlat = flattenImageTree(_treeRoot);
+  rebuildImageFlat(_treeRoot);
   topFolders = Array.from(new Set(imageFlat.map((it) => it.folder).filter(Boolean))).sort();
   renderFolderChips();
   renderLibraryList();

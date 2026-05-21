@@ -37,14 +37,15 @@ function formatFrameNumber(frame, width = 4) {
  * @param {'ss:ff' | 'mm:ss'} [mode]
  */
 function formatFrameTime(frame, mode = 'ss:ff') {
+  const safeFrame = Math.max(0, frame);
   if (mode === 'mm:ss') {
-    const totalSec = Math.max(0, Math.floor(frame / 60));
+    const totalSec = Math.floor(safeFrame / 60);
     const mm = String(Math.floor(totalSec / 60)).padStart(2, '0');
     const ss = String(totalSec % 60).padStart(2, '0');
     return `${mm}:${ss}`;
   }
-  const ss = String(Math.floor(frame / 60)).padStart(2, '0');
-  const ff = String(frame % 60).padStart(2, '0');
+  const ss = String(Math.floor(safeFrame / 60)).padStart(2, '0');
+  const ff = String(safeFrame % 60).padStart(2, '0');
   return `${ss}:${ff}`;
 }
 
@@ -103,8 +104,10 @@ function resetInsertOrderCounter(maxOrder = 0) {
 }
 
 /**
- * Trailing-throttle wrapper. The first call schedules `fn` to fire after
- * `ms`; subsequent calls during the wait are dropped. After firing, the
+ * Trailing-throttle wrapper. Each call records the latest args; the
+ * first call schedules `fn` to fire after `ms` and subsequent calls
+ * within the wait reset the recorded args but do not reschedule. When
+ * the timer fires `fn` is invoked with the most-recent args, then the
  * next call is free to schedule again. Exposes a `cancel()` method that
  * clears any pending fire without invoking `fn`.
  *
@@ -116,12 +119,17 @@ function resetInsertOrderCounter(maxOrder = 0) {
 function makeTrailingThrottle(ms, fn) {
   /** @type {ReturnType<typeof setTimeout> | null} */
   let timer = null;
+  /** @type {any[] | null} */
+  let latestArgs = null;
   /** @type {any} */
   const throttled = (...args) => {
+    latestArgs = args;
     if (timer !== null) return;
     timer = setTimeout(() => {
       timer = null;
-      fn(...args);
+      const callArgs = latestArgs || [];
+      latestArgs = null;
+      fn(...callArgs);
     }, ms);
   };
   throttled.cancel = () => {
@@ -129,6 +137,7 @@ function makeTrailingThrottle(ms, fn) {
       clearTimeout(timer);
       timer = null;
     }
+    latestArgs = null;
   };
   return throttled;
 }

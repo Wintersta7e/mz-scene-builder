@@ -14,6 +14,13 @@ import { logger } from '../logger.js';
 
 const PX_PER_FRAME_DEFAULT = 5;
 
+// Cache the last selectedEventIndex that updateTimelineCursor synced to
+// the DOM. selectedEventIndex changes only on click / keyboard nav / undo
+// — not during normal playback — so guarding the DOM-query block on this
+// counter keeps the playback hot path to one integer compare per tick
+// instead of two timeline-wide querySelector calls.
+let _lastCursorSelectedIndex = -2;
+
 // Each row inside a lane is BLOCK_HEIGHT tall, with LANE_PADDING above the
 // first row and below the last. The lane's CSS `--sublane-count` drives
 // both the visible flex-grow and the min-height.
@@ -32,8 +39,10 @@ const POINT_EVENT_TYPES = new Set(['rotatePicture', 'erasePicture']);
 
 /**
  * Compute per-lane sub-lane assignments using greedy interval-scheduling
- * over each lane's events. Returns a map keyed by event reference and a
- * parallel `counts` array (one entry per lane) of max sub-lanes used.
+ * over each lane's events. Returns a map keyed by event reference, a
+ * parallel `counts` array of max sub-lanes used per lane, and the per-
+ * lane clip count (callers need both — renderLanesCol displays clip
+ * counts, renderEventBlocks needs the sub-lane row height).
  */
 function computeSubLaneAssignments(events) {
   const grouped = LANE_LABELS.map(() => /** @type {Array<*>} */ ([]));
@@ -44,6 +53,7 @@ function computeSubLaneAssignments(events) {
 
   const assignments = new Map();
   const counts = [];
+  const clipCounts = grouped.map((g) => g.length);
   for (let laneIdx = 0; laneIdx < grouped.length; laneIdx++) {
     const laneEvents = grouped[laneIdx];
     const { subLanes, maxSubLanes } = assignSubLanes(laneEvents, (ev) => {
@@ -56,7 +66,7 @@ function computeSubLaneAssignments(events) {
     }
     counts.push(Math.max(1, maxSubLanes));
   }
-  return { assignments, counts };
+  return { assignments, counts, clipCounts };
 }
 
 // ============================================
@@ -94,20 +104,15 @@ function getTimelineEventLabel(evt) {
  * Render the 4 lane heads in the lanes column. Each shows: lane-colored
  * swatch, name, and mono `CODE · N clip(s)` line.
  */
-function renderLanesCol(subLaneCounts) {
+function renderLanesCol(subLaneCounts, clipCounts) {
   const els = getElements();
   const col = els.timelineLanes;
-
-  const counts = [0, 0, 0, 0];
-  for (const ev of state.events) {
-    const idx = getEventLane(ev.type);
-    if (idx >= 0 && idx < counts.length) counts[idx]++;
-  }
 
   clearChildren(col);
 
   for (let i = 0; i < LANE_LABELS.length; i++) {
     const meta = LANE_LABELS[i];
+    const clips = clipCounts[i];
     const head = document.createElement('div');
     head.className = 'lane-head';
     head.dataset.lane = LANE_DATA[i];
@@ -125,7 +130,7 @@ function renderLanesCol(subLaneCounts) {
     info.appendChild(nameEl);
     const codeEl = document.createElement('div');
     codeEl.className = 'lane-count';
-    codeEl.textContent = `${meta.code} · ${counts[i]} ${counts[i] === 1 ? 'clip' : 'clips'}`;
+    codeEl.textContent = `${meta.code} · ${clips} ${clips === 1 ? 'clip' : 'clips'}`;
     info.appendChild(codeEl);
     head.appendChild(info);
 
@@ -326,8 +331,8 @@ function initTimeline() {
 
 function renderTimeline() {
   logger.timed('renderTimeline', () => {
-    const { assignments, counts } = computeSubLaneAssignments(state.events);
-    renderLanesCol(counts);
+    const { assignments, counts, clipCounts } = computeSubLaneAssignments(state.events);
+    renderLanesCol(counts, clipCounts);
     renderRuler();
     renderEventBlocks(assignments, counts);
     renderTransportReadout();
@@ -358,15 +363,18 @@ function updateTimelineCursor() {
 
   updateTransportFrameTime();
 
-  const prevSelected = els.timelineEvents.querySelector('.event-block.is-selected');
-  if (prevSelected) {
-    const prevIdx = parseInt(prevSelected.dataset.eventIndex, 10);
-    if (prevIdx !== state.selectedEventIndex) {
-      prevSelected.classList.remove('is-selected');
-      const newSelected = els.timelineEvents.querySelector(
-        `.event-block[data-event-index="${state.selectedEventIndex}"]`
-      );
-      if (newSelected) newSelected.classList.add('is-selected');
+  if (_lastCursorSelectedIndex !== state.selectedEventIndex) {
+    _lastCursorSelectedIndex = state.selectedEventIndex;
+    const prevSelected = els.timelineEvents.querySelector('.event-block.is-selected');
+    if (prevSelected) {
+      const prevIdx = parseInt(prevSelected.dataset.eventIndex, 10);
+      if (prevIdx !== state.selectedEventIndex) {
+        prevSelected.classList.remove('is-selected');
+        const newSelected = els.timelineEvents.querySelector(
+          `.event-block[data-event-index="${state.selectedEventIndex}"]`
+        );
+        if (newSelected) newSelected.classList.add('is-selected');
+      }
     }
   }
 
