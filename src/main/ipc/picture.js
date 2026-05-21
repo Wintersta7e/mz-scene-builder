@@ -18,17 +18,31 @@ const HIDDEN_FOLDER = 'claude_only';
 // bytes. Node's path APIs accept embedded nulls but the underlying fs
 // calls eventually throw an unhelpful ENOENT whose message echoes the
 // crafted path into the log file.
+/** @param {unknown} p */
 function isSafePathInput(p) {
   return typeof p === 'string' && p.length > 0 && !p.includes('\0');
 }
 
+/**
+ * @typedef {{ type: 'folder', name: string, path: string, children: PictureItem[] | null }
+ *          | { type: 'file', name: string, path: string }} PictureItem
+ */
+
+/**
+ * @param {string} dirPath
+ * @param {string} basePath
+ * @param {number} [depth]
+ * @returns {Promise<PictureItem[]>}
+ */
 async function scanDirectory(dirPath, basePath, depth = 0) {
+  /** @type {PictureItem[]} */
   const items = [];
   let entries;
   try {
     entries = await fsPromises.readdir(dirPath, { withFileTypes: true });
   } catch (e) {
-    logger.warn('Failed to read directory, skipping:', dirPath, e.message);
+    const msg = e instanceof Error ? e.message : String(e);
+    logger.warn('Failed to read directory, skipping:', dirPath, msg);
     return items;
   }
 
@@ -62,7 +76,7 @@ function register() {
   // Initial folder structure (lazy beyond depth 2).
   ipcMain.handle('get-pictures-folders', async () => {
     const proj = requireProject();
-    if (proj.error) return proj;
+    if (proj.error !== null) return { error: proj.error };
 
     const picturesPath = path.join(proj.projectPath, 'img', 'pictures');
     if (!(await pathExists(picturesPath))) {
@@ -83,7 +97,7 @@ function register() {
     }
 
     const proj = requireProject();
-    if (proj.error) return proj;
+    if (proj.error !== null) return { error: proj.error };
 
     const picturesBase = path.join(proj.projectPath, 'img', 'pictures');
     if (!isPathSafe(picturesBase, folderPath)) {
@@ -99,13 +113,15 @@ function register() {
 
     logger.debug('Loading folder contents:', folderPath);
 
+    /** @type {PictureItem[]} */
     const items = [];
     let entries;
     try {
       entries = await fsPromises.readdir(fullPath, { withFileTypes: true });
     } catch (e) {
-      logger.error('Failed to read folder contents:', fullPath, e.message);
-      return { error: `Failed to read folder: ${e.message}` };
+      const msg = e instanceof Error ? e.message : String(e);
+      logger.error('Failed to read folder contents:', fullPath, msg);
+      return { error: `Failed to read folder: ${msg}` };
     }
 
     for (const entry of entries) {
@@ -140,7 +156,7 @@ function register() {
     if (!isSafePathInput(imagePath)) return null;
 
     const proj = requireProject();
-    if (proj.error) return null;
+    if (proj.error !== null) return null;
 
     const picturesBase = path.join(proj.projectPath, 'img', 'pictures');
     if (!isPathSafe(picturesBase, `${imagePath}.png`)) {
@@ -167,7 +183,7 @@ function register() {
     if (!isSafePathInput(imagePath)) return null;
 
     const proj = requireProject();
-    if (proj.error) return null;
+    if (proj.error !== null) return null;
 
     const picturesBase = path.join(proj.projectPath, 'img', 'pictures');
     if (!isPathSafe(picturesBase, `${imagePath}.png`)) {

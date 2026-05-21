@@ -15,10 +15,13 @@ function register() {
   // { error } when validation fails. Setting the path is the renderer's
   // job — see `set-project-path` below.
   ipcMain.handle('open-project', async () => {
-    const result = await dialog.showOpenDialog(getMainWindow(), {
+    const win = getMainWindow();
+    /** @type {Electron.OpenDialogOptions} */
+    const opts = {
       properties: ['openDirectory'],
       title: 'Select RPG Maker MZ Project Folder'
-    });
+    };
+    const result = win ? await dialog.showOpenDialog(win, opts) : await dialog.showOpenDialog(opts);
 
     if (!result.canceled && result.filePaths.length > 0) {
       const candidate = result.filePaths[0];

@@ -24,17 +24,17 @@ describe('requireProject', () => {
     currentProjectPath = null;
   });
 
-  it('returns `{ error }` when no project is loaded', () => {
+  it('returns `{ error }` with null projectPath when no project is loaded', () => {
     const result = requireProject();
     expect(result.error).toBe('No project loaded');
-    expect(result.projectPath).toBeUndefined();
+    expect(result.projectPath).toBeNull();
   });
 
-  it('returns `{ projectPath }` when a project is loaded', () => {
+  it('returns `{ projectPath }` with null error when a project is loaded', () => {
     currentProjectPath = '/some/project';
     const result = requireProject();
     expect(result.projectPath).toBe('/some/project');
-    expect(result.error).toBeUndefined();
+    expect(result.error).toBeNull();
   });
 });
 

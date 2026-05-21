@@ -22,10 +22,8 @@ const autosaveIpc = require('./src/main/ipc/autosave');
 app.disableHardwareAcceleration();
 app.commandLine.appendSwitch('use-gl', 'swiftshader');
 
-let mainWindow;
-
 function createWindow() {
-  mainWindow = new BrowserWindow({
+  const win = new BrowserWindow({
     width: 1600,
     height: 900,
     minWidth: 1200,
@@ -43,30 +41,30 @@ function createWindow() {
     title: 'Timeline Scene Builder'
   });
 
-  setMainWindow(mainWindow);
+  setMainWindow(win);
 
-  mainWindow.once('ready-to-show', () => {
-    mainWindow.maximize();
-    mainWindow.show();
+  win.once('ready-to-show', () => {
+    win.maximize();
+    win.show();
   });
 
   logger.info('Window created');
-  mainWindow.loadFile('src/index.html');
+  win.loadFile('src/index.html');
 
   // Manual zoom (Ctrl+Plus/Minus/0) and DevTools toggle (F12 /
   // Ctrl+Shift+I). The default Electron menu — which would normally
   // carry these accelerators — is suppressed in production, so wire
   // them locally.
-  mainWindow.webContents.on('before-input-event', (event, input) => {
+  win.webContents.on('before-input-event', (event, input) => {
     if (input.control) {
       if (input.key === '=' || input.key === '+') {
-        mainWindow.webContents.setZoomFactor(mainWindow.webContents.getZoomFactor() + 0.1);
+        win.webContents.setZoomFactor(win.webContents.getZoomFactor() + 0.1);
         event.preventDefault();
       } else if (input.key === '-') {
-        mainWindow.webContents.setZoomFactor(Math.max(0.5, mainWindow.webContents.getZoomFactor() - 0.1));
+        win.webContents.setZoomFactor(Math.max(0.5, win.webContents.getZoomFactor() - 0.1));
         event.preventDefault();
       } else if (input.key === '0') {
-        mainWindow.webContents.setZoomFactor(1.0);
+        win.webContents.setZoomFactor(1.0);
         event.preventDefault();
       } else if (input.shift && (input.key === 'I' || input.key === 'i')) {
         toggleDevTools();
@@ -79,15 +77,15 @@ function createWindow() {
   });
 
   function toggleDevTools() {
-    if (mainWindow.webContents.isDevToolsOpened()) {
-      mainWindow.webContents.closeDevTools();
+    if (win.webContents.isDevToolsOpened()) {
+      win.webContents.closeDevTools();
     } else {
-      mainWindow.webContents.openDevTools({ mode: 'detach' });
+      win.webContents.openDevTools({ mode: 'detach' });
     }
   }
 
   if (process.argv.includes('--dev')) {
-    mainWindow.webContents.openDevTools();
+    win.webContents.openDevTools();
   }
 }
 
@@ -121,12 +119,18 @@ app.whenReady().then(() => {
 // chronological file. The payload is intentionally a plain object: the
 // renderer pre-stringifies its arguments to avoid IPC clone failures on
 // DOM nodes / functions.
-const RENDERER_LOG_LEVELS = new Set(['debug', 'info', 'warn', 'error']);
+/** @type {Record<string, (...args: unknown[]) => void>} */
+const RENDERER_LOG_FNS = {
+  debug: logger.debug.bind(logger),
+  info: logger.info.bind(logger),
+  warn: logger.warn.bind(logger),
+  error: logger.error.bind(logger)
+};
 ipcMain.on('log-message', (_event, payload) => {
   if (!payload || typeof payload !== 'object') return;
   const level = String(payload.level || 'info').toLowerCase();
   const args = Array.isArray(payload.args) ? payload.args : [];
-  const fn = RENDERER_LOG_LEVELS.has(level) ? logger[level] : logger.info;
+  const fn = RENDERER_LOG_FNS[level] || RENDERER_LOG_FNS.info;
   fn('[renderer]', ...args);
 });
 

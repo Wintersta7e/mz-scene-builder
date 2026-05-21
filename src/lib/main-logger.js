@@ -15,6 +15,7 @@ const isDev = process.argv.includes('--dev');
 // are captured without DEBUG-level spam. Dev mode keeps full DEBUG output.
 let logLevel = isDev ? LOG_LEVELS.DEBUG : LOG_LEVELS.INFO;
 
+/** @type {string | null} */
 let logFilePath = null;
 
 function timestamp() {
@@ -27,6 +28,7 @@ function timestamp() {
   return `[${date} ${h}:${m}:${s}.${ms}]`;
 }
 
+/** @param {unknown} value */
 function safeStringify(value) {
   if (value === null || value === undefined) {
     return String(value);
@@ -47,11 +49,16 @@ function safeStringify(value) {
   }
 }
 
+/**
+ * @param {string} level
+ * @param {unknown[]} args
+ */
 function format(level, args) {
   const parts = args.map(safeStringify);
   return `${timestamp()} [${level}] ${parts.join(' ')}`;
 }
 
+/** @param {string} line */
 function appendToFile(line) {
   if (!logFilePath) {
     return;
@@ -95,7 +102,8 @@ function attachFile(filePath) {
   } catch (err) {
     // Couldn't set up the file at all. Stay console-only.
     logFilePath = null;
-    console.warn(`${timestamp()} [WARN] Failed to attach log file:`, err && err.message ? err.message : err);
+    const msg = err instanceof Error ? err.message : String(err);
+    console.warn(`${timestamp()} [WARN] Failed to attach log file:`, msg);
   }
 }
 
@@ -104,11 +112,13 @@ function getLogFilePath() {
 }
 
 const logger = {
+  /** @param {keyof typeof LOG_LEVELS} level */
   setLevel(level) {
     logLevel = LOG_LEVELS[level] ?? LOG_LEVELS.WARN;
   },
 
-  debug(...args) {
+  /** @param {unknown[]} args */
+  debug(/** @type {unknown[]} */ ...args) {
     if (logLevel <= LOG_LEVELS.DEBUG) {
       const line = format('DEBUG', args);
       console.log(line);
@@ -116,7 +126,8 @@ const logger = {
     }
   },
 
-  info(...args) {
+  /** @param {unknown[]} args */
+  info(/** @type {unknown[]} */ ...args) {
     if (logLevel <= LOG_LEVELS.INFO) {
       const line = format('INFO', args);
       console.log(line);
@@ -124,7 +135,8 @@ const logger = {
     }
   },
 
-  warn(...args) {
+  /** @param {unknown[]} args */
+  warn(/** @type {unknown[]} */ ...args) {
     if (logLevel <= LOG_LEVELS.WARN) {
       const line = format('WARN', args);
       console.warn(line);
@@ -132,7 +144,8 @@ const logger = {
     }
   },
 
-  error(...args) {
+  /** @param {unknown[]} args */
+  error(/** @type {unknown[]} */ ...args) {
     if (logLevel <= LOG_LEVELS.ERROR) {
       const line = format('ERROR', args);
       console.error(line);
@@ -140,12 +153,14 @@ const logger = {
     }
   },
 
+  /** @param {string} label */
   time(label) {
     if (logLevel <= LOG_LEVELS.DEBUG) {
       console.time(label);
     }
   },
 
+  /** @param {string} label */
   timeEnd(label) {
     if (logLevel <= LOG_LEVELS.DEBUG) {
       console.timeEnd(label);

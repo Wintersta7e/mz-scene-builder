@@ -13,11 +13,13 @@ function register() {
   ipcMain.handle('save-scene', async (_event, sceneData) => {
     try {
       const projectPath = getProjectPath();
-      const result = await dialog.showSaveDialog(getMainWindow(), {
+      const win = getMainWindow();
+      const opts = {
         title: 'Save Scene',
         defaultPath: projectPath ? path.join(projectPath, 'scenes') : undefined,
         filters: [{ name: 'Scene Files', extensions: ['mzscene'] }]
-      });
+      };
+      const result = win ? await dialog.showSaveDialog(win, opts) : await dialog.showSaveDialog(opts);
 
       if (!result.canceled && result.filePath) {
         await fsPromises.writeFile(result.filePath, JSON.stringify(sceneData, null, 2));
@@ -26,18 +28,21 @@ function register() {
       }
       return null;
     } catch (e) {
-      logger.error('Failed to save scene:', e.message);
-      return { error: e.message };
+      const msg = e instanceof Error ? e.message : String(e);
+      logger.error('Failed to save scene:', msg);
+      return { error: msg };
     }
   });
 
   ipcMain.handle('load-scene', async () => {
     try {
-      const result = await dialog.showOpenDialog(getMainWindow(), {
+      const win = getMainWindow();
+      const opts = {
         title: 'Load Scene',
         filters: [{ name: 'Scene Files', extensions: ['mzscene'] }],
-        properties: ['openFile']
-      });
+        properties: /** @type {Array<'openFile'>} */ (['openFile'])
+      };
+      const result = win ? await dialog.showOpenDialog(win, opts) : await dialog.showOpenDialog(opts);
 
       if (!result.canceled && result.filePaths.length > 0) {
         const filePath = result.filePaths[0];
@@ -47,8 +52,9 @@ function register() {
       }
       return null;
     } catch (e) {
-      logger.error('Failed to load scene:', e.message);
-      return { error: e.message };
+      const msg = e instanceof Error ? e.message : String(e);
+      logger.error('Failed to load scene:', msg);
+      return { error: msg };
     }
   });
 }

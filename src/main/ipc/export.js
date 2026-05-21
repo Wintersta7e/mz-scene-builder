@@ -14,7 +14,7 @@ function register() {
   // List maps from MapInfos.json. Returns [{ id, name }, ...] or { error }.
   ipcMain.handle('get-maps', async () => {
     const proj = requireProject();
-    if (proj.error) return proj;
+    if (proj.error !== null) return { error: proj.error };
 
     const mapInfoFile = path.join(proj.projectPath, 'data', 'MapInfos.json');
     if (!(await pathExists(mapInfoFile))) {
@@ -23,19 +23,22 @@ function register() {
 
     try {
       const mapInfos = JSON.parse(await fsPromises.readFile(mapInfoFile, 'utf-8'));
-      const maps = mapInfos.filter((m) => m).map((m) => ({ id: m.id, name: m.name }));
+      const maps = mapInfos
+        .filter(/** @param {{ id: number; name: string } | null} m */ (m) => m)
+        .map(/** @param {{ id: number; name: string }} m */ (m) => ({ id: m.id, name: m.name }));
       logger.debug('Loaded', maps.length, 'maps');
       return maps;
     } catch (e) {
-      logger.error('Failed to load maps:', e.message);
-      return { error: e.message };
+      const msg = e instanceof Error ? e.message : String(e);
+      logger.error('Failed to load maps:', msg);
+      return { error: msg };
     }
   });
 
   // List events for a single map. Returns [{ id, name, pages }, ...] or { error }.
   ipcMain.handle('get-map-events', async (_event, mapId) => {
     const proj = requireProject();
-    if (proj.error) return proj;
+    if (proj.error !== null) return { error: proj.error };
 
     if (!Number.isInteger(mapId) || mapId < 1 || mapId > 999) {
       return { error: 'Invalid map ID' };
@@ -48,12 +51,21 @@ function register() {
 
     try {
       const mapData = JSON.parse(await fsPromises.readFile(mapFile, 'utf-8'));
-      const events = mapData.events.filter((e) => e).map((e) => ({ id: e.id, name: e.name, pages: e.pages.length }));
+      /** @type {Array<{ id: number; name: string; pages: unknown[] } | null>} */
+      const rawEvents = mapData.events;
+      const events = rawEvents
+        .filter((e) => e !== null)
+        .map((e) => ({
+          id: /** @type {{ id: number; name: string; pages: unknown[] }} */ (e).id,
+          name: /** @type {{ id: number; name: string; pages: unknown[] }} */ (e).name,
+          pages: /** @type {{ id: number; name: string; pages: unknown[] }} */ (e).pages.length
+        }));
       logger.debug('Map', mapId, ':', events.length, 'events');
       return events;
     } catch (e) {
-      logger.error('Failed to load map events for map', mapId, ':', e.message);
-      return { error: e.message };
+      const msg = e instanceof Error ? e.message : String(e);
+      logger.error('Failed to load map events for map', mapId, ':', msg);
+      return { error: msg };
     }
   });
 
@@ -62,7 +74,7 @@ function register() {
   // pre-validates the inputs but we re-check at the boundary.
   ipcMain.handle('export-to-map', async (_event, { events: evtList, mapId, eventId, pageIndex }) => {
     const proj = requireProject();
-    if (proj.error) return proj;
+    if (proj.error !== null) return { error: proj.error };
 
     if (!Number.isInteger(mapId) || mapId < 1 || mapId > 999) {
       return { error: 'Invalid map ID' };
@@ -86,7 +98,9 @@ function register() {
       const mapData = JSON.parse(await fsPromises.readFile(mapFile, 'utf-8'));
       const mzCommands = convertToMZFormat(evtList);
 
-      const mapEvent = mapData.events.find((e) => e && e.id === eventId);
+      /** @type {Array<{ id: number; pages: Array<{ list: Array<{ code: number }> }> } | null>} */
+      const mapEvents = mapData.events;
+      const mapEvent = mapEvents.find((e) => e !== null && e.id === eventId);
       if (!mapEvent) {
         return { error: `Event ID ${eventId} not found in map` };
       }
@@ -109,8 +123,9 @@ function register() {
       logger.info('Export success:', mzCommands.length, 'commands written');
       return { success: true, commandCount: mzCommands.length };
     } catch (e) {
-      logger.error('Export failed:', e.message);
-      return { error: e.message };
+      const msg = e instanceof Error ? e.message : String(e);
+      logger.error('Export failed:', msg);
+      return { error: msg };
     }
   });
 }

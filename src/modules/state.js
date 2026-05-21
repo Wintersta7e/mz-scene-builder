@@ -107,14 +107,21 @@ const state = {
   cachedMapEvents: {} // { mapId: eventsArray }
 };
 
+/** @param {keyof typeof state} key */
 function get(key) {
   return state[key];
 }
 
+/**
+ * @template {keyof typeof state} K
+ * @param {K} key
+ * @param {(typeof state)[K]} value
+ */
 function set(key, value) {
   state[key] = value;
 }
 
+/** @param {Partial<typeof state>} updates */
 function update(updates) {
   Object.assign(state, updates);
 }

@@ -49,7 +49,13 @@ function formatFrameTime(frame, mode = 'ss:ff') {
   return `${ss}:${ff}`;
 }
 
+/**
+ * @param {number} r
+ * @param {number} g
+ * @param {number} b
+ */
 function rgbToHex(r, g, b) {
+  /** @param {number} c */
   const toHex = (c) => {
     const hex = clamp(Math.round(c), 0, 255).toString(16);
     return hex.length === 1 ? `0${hex}` : hex;
@@ -57,7 +63,9 @@ function rgbToHex(r, g, b) {
   return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
 }
 
+/** @param {string | null | undefined} hex */
 function hexToRgb(hex) {
+  if (typeof hex !== 'string') return { r: 0, g: 0, b: 0 };
   const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
   return result
     ? {
@@ -69,6 +77,7 @@ function hexToRgb(hex) {
 }
 
 // Event type priority for sorting
+/** @type {Record<string, number>} */
 const TYPE_PRIORITY = {
   showPicture: 0,
   movePicture: 1,
@@ -80,13 +89,16 @@ const TYPE_PRIORITY = {
   showText: 7
 };
 
+/**
+ * @param {Array<{ startFrame?: number; type?: string; _insertOrder?: number }>} events
+ */
 function sortEvents(events) {
   events.sort((a, b) => {
     // First, sort by frame
     const frameDiff = (a.startFrame || 0) - (b.startFrame || 0);
     if (frameDiff !== 0) return frameDiff;
     // At same frame, sort by type priority (pictures before text, etc.)
-    const typeDiff = (TYPE_PRIORITY[a.type] || 0) - (TYPE_PRIORITY[b.type] || 0);
+    const typeDiff = (TYPE_PRIORITY[a.type || ''] || 0) - (TYPE_PRIORITY[b.type || ''] || 0);
     if (typeDiff !== 0) return typeDiff;
     // Same type at same frame: newer events (higher _insertOrder) come first
     return (b._insertOrder || 0) - (a._insertOrder || 0);
@@ -122,7 +134,7 @@ function makeTrailingThrottle(ms, fn) {
   /** @type {any[] | null} */
   let latestArgs = null;
   /** @type {any} */
-  const throttled = (...args) => {
+  const throttled = (/** @type {any[]} */ ...args) => {
     latestArgs = args;
     if (timer !== null) return;
     timer = setTimeout(() => {
