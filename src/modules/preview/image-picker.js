@@ -45,6 +45,11 @@ async function openImagePicker() {
   const closeBtn = modal.querySelector('.btn-close');
   if (closeBtn instanceof HTMLElement) closeBtn.focus();
 
+  // Disconnect any leftover observer from a rapid re-open before the
+  // close handler ran (e.g. double-click on the picker button). Without
+  // this, the prior observer leaks for the session, still holding
+  // references to its detached tile elements.
+  if (_thumbObserver) _thumbObserver.disconnect();
   _thumbObserver = new IntersectionObserver(onThumbsIntersect);
 
   clearChildren(elements.pickerFolders);

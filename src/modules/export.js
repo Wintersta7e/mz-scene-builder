@@ -173,32 +173,35 @@ async function onMapSelected() {
     return;
   }
 
+  // Capture the map ID at the start of the call so a faster second
+  // selection (while this fetch is in flight) doesn't write stale
+  // events under the new map's key.
+  const requestedMapId = selectedMapId;
+
   try {
-    // Check if events are cached
-    if (state.cachedMapEvents[selectedMapId]) {
-      logger.debug('Map events cache hit:', selectedMapId);
+    if (state.cachedMapEvents[requestedMapId]) {
+      logger.debug('Map events cache hit:', requestedMapId);
       eventDropdown.clear();
       eventDropdown.setPlaceholder('-- Select Event --');
-      prerenderEventsDropdown(selectedMapId);
+      prerenderEventsDropdown(requestedMapId);
       eventDropdown.setDisabled(false);
     } else {
-      // Fetch events
       eventDropdown.setPlaceholder('Loading events...');
       eventDropdown.setDisabled(true);
 
-      const mapEvents = await api.invoke('get-map-events', selectedMapId);
+      const mapEvents = await api.invoke('get-map-events', requestedMapId);
+      if (selectedMapId !== requestedMapId) return; // user moved on; discard
       if (mapEvents.error) {
         showError(`Error loading events: ${mapEvents.error}`);
         eventDropdown.setPlaceholder('Error loading events');
         return;
       }
-      state.cachedMapEvents[selectedMapId] = mapEvents;
-      prerenderEventsDropdown(selectedMapId);
+      state.cachedMapEvents[requestedMapId] = mapEvents;
+      prerenderEventsDropdown(requestedMapId);
       eventDropdown.setPlaceholder('-- Select Event --');
       eventDropdown.setDisabled(false);
     }
 
-    // Reset event and page selection
     selectedEventId = null;
     eventDropdown.clear();
     pageDropdown.setDisabled(true);
@@ -232,14 +235,16 @@ function closeExportModal() {
   const elements = getElements();
   elements.exportModal.style.display = 'none';
 
-  // Close any open dropdowns
   if (mapDropdown) mapDropdown.close();
   if (eventDropdown) eventDropdown.close();
   if (pageDropdown) pageDropdown.close();
 
-  // Map events cache is kept across modal opens so re-exporting to the
-  // same map is instant. It is cleared on project change in
-  // openProjectPath.
+  // The per-map events cache only benefits within-modal switching; reset
+  // it on close so a long session that browses many maps doesn't
+  // accumulate one event-array per map ID for the rest of the project
+  // session. Quick Export re-uses `last export` settings directly and
+  // never reads this cache.
+  state.cachedMapEvents = {};
 }
 
 async function doExportToMap() {
@@ -330,11 +335,15 @@ async function quickExport() {
 
   try {
     const { mapId, eventId, pageIndex } = lastExport;
-    if (!Number.isInteger(mapId) || mapId < 1 || mapId > 999) {
-      showWarning('Invalid cached export settings. Use "Export to Map" to set a new target.');
-      return;
-    }
-    if (!Number.isInteger(eventId) || eventId < 1 || !Number.isInteger(pageIndex) || pageIndex < 0) {
+    const validIds =
+      Number.isInteger(mapId) &&
+      mapId >= 1 &&
+      mapId <= 999 &&
+      Number.isInteger(eventId) &&
+      eventId >= 1 &&
+      Number.isInteger(pageIndex) &&
+      pageIndex >= 0;
+    if (!validIds) {
       showWarning('Invalid cached export settings. Use "Export to Map" to set a new target.');
       return;
     }

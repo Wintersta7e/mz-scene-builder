@@ -8,6 +8,7 @@ import { state, LANE_DATA, MAX_PICTURE_NUMBER } from '../state.js';
 import { markDirty } from '../undo-redo.js';
 import { eventBus, Events } from '../event-bus.js';
 import { clamp } from '../utils.js';
+import { getEventLane } from '../events.js';
 
 // Fields whose mutation changes the timeline's lane positions, widths, or
 // labels. commit() emits RENDER_TIMELINE only when one of these changes;
@@ -56,7 +57,7 @@ const TINT_PRESETS = [
 export function buildEventTag(ev) {
   const wrap = document.createElement('div');
   wrap.className = 'event-tag';
-  wrap.dataset.lane = LANE_DATA[laneOf(ev.type)];
+  wrap.dataset.lane = LANE_DATA[getEventLane(ev.type)];
 
   const icon = document.createElement('div');
   icon.className = 'ev-icon';
@@ -138,9 +139,10 @@ export function buildPair(a, b) {
 /**
  * @param {{ label: string; value: number | string; unit?: string;
  *          onChange: (value: number | string) => void;
- *          type?: 'number' | 'text'; step?: number; }} opts
+ *          type?: 'number' | 'text'; step?: number;
+ *          min?: number; max?: number; }} opts
  */
-export function buildCell({ label, value, unit, onChange, type = 'number', step = 1 }) {
+export function buildCell({ label, value, unit, onChange, type = 'number', step = 1, min, max }) {
   const cell = document.createElement('div');
   cell.className = 'prop-cell';
 
@@ -152,10 +154,26 @@ export function buildCell({ label, value, unit, onChange, type = 'number', step 
   const input = document.createElement('input');
   input.className = 'cell-input';
   input.type = type;
-  if (type === 'number') input.step = String(step);
+  if (type === 'number') {
+    input.step = String(step);
+    if (min !== undefined) input.min = String(min);
+    if (max !== undefined) input.max = String(max);
+  }
   input.value = String(value);
   input.addEventListener('change', () => {
-    const v = type === 'number' ? Number(input.value) : input.value;
+    if (type !== 'number') {
+      onChange(/** @type {any} */ (input.value));
+      return;
+    }
+    const raw = Number(input.value);
+    // `Number('')` is 0, which is safe; `NaN` arises when the browser
+    // accepts unparseable input. Coerce to a finite fallback so the
+    // event object never holds a NaN that would poison sortEvents and
+    // the timeline's left:NaN px positioning.
+    let v = Number.isFinite(raw) ? raw : Number(value) || 0;
+    if (min !== undefined && v < min) v = min;
+    if (max !== undefined && v > max) v = max;
+    if (v !== raw) input.value = String(v);
     onChange(/** @type {any} */ (v));
   });
   cell.appendChild(input);
@@ -386,6 +404,7 @@ export function buildTimingSection(ev, opts = {}) {
       label: 'START',
       value: ev.startFrame || 0,
       unit: 'f',
+      min: 0,
       onChange: (v) => commit(ev, 'startFrame', /** @type {number} */ (v))
     });
 
@@ -395,6 +414,7 @@ export function buildTimingSection(ev, opts = {}) {
         label: 'LEN',
         value: ev[durField] || 0,
         unit: 'f',
+        min: 0,
         onChange: (v) => commit(ev, durField, /** @type {number} */ (v))
       });
       body.appendChild(buildPair(startCell, durCell));
@@ -417,7 +437,9 @@ export function buildTargetPictureSection(ev) {
       buildCell({
         label: 'PIC #',
         value: ev.pictureNumber ?? 1,
-        onChange: (v) => commit(ev, 'pictureNumber', clamp(/** @type {number} */ (v), 1, MAX_PICTURE_NUMBER))
+        min: 1,
+        max: MAX_PICTURE_NUMBER,
+        onChange: (v) => commit(ev, 'pictureNumber', /** @type {number} */ (v))
       })
     );
   });
@@ -481,25 +503,6 @@ export function triggerRerender() {
 }
 
 // ---------- Internals ----------
-
-function laneOf(type) {
-  switch (type) {
-    case 'showPicture':
-    case 'movePicture':
-    case 'rotatePicture':
-    case 'erasePicture':
-      return 0;
-    case 'tintPicture':
-    case 'screenFlash':
-      return 1;
-    case 'showText':
-      return 2;
-    case 'wait':
-      return 3;
-    default:
-      return 0;
-  }
-}
 
 function labelForEvent(ev) {
   switch (ev.type) {

@@ -146,21 +146,29 @@ async function loadScene() {
 
   try {
     const elements = getElements();
-    const sceneData = await api.invoke('load-scene');
-    if (sceneData) {
-      state.events = sceneData.events || [];
-      sanitizeEvents(state.events);
-      syncInsertOrderCounter(state.events);
-      state.timelineLength = sceneData.timelineLength || 300;
-      elements.timelineLengthInput.value = state.timelineLength;
-      state.selectedEventIndex = state.events.length > 0 ? 0 : -1;
-      state.currentFrame = 0;
-      state.undoStack = [];
-      state.redoStack = [];
-      state.processedTextEvents.clear();
-      eventBus.emit(Events.RENDER);
-      markClean();
+    const result = await api.invoke('load-scene');
+    if (!result) return; // user canceled the dialog
+    if (result.error) {
+      showError(`Failed to load scene: ${result.error}`);
+      return;
     }
+
+    const sceneData = result.data;
+    state.events = sceneData.events || [];
+    sanitizeEvents(state.events);
+    syncInsertOrderCounter(state.events);
+    state.timelineLength = sceneData.timelineLength || 300;
+    elements.timelineLengthInput.value = state.timelineLength;
+    state.currentScenePath = result.filePath;
+    eventBus.emit(Events.SCENE_PATH_CHANGED);
+    state.selectedEventIndex = state.events.length > 0 ? 0 : -1;
+    state.currentFrame = 0;
+    state.undoStack = [];
+    state.redoStack = [];
+    state.processedTextEvents.clear();
+    eventBus.emit(Events.RENDER);
+    markClean();
+    logger.info('Loaded scene from:', result.filePath);
   } catch (err) {
     logger.error('Failed to load scene:', err);
     showError(`Failed to load scene: ${err.message}`);

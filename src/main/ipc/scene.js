@@ -40,9 +40,10 @@ function register() {
       });
 
       if (!result.canceled && result.filePaths.length > 0) {
-        const data = await fsPromises.readFile(result.filePaths[0], 'utf-8');
-        logger.info('Scene loaded:', result.filePaths[0]);
-        return JSON.parse(data);
+        const filePath = result.filePaths[0];
+        const data = await fsPromises.readFile(filePath, 'utf-8');
+        logger.info('Scene loaded:', filePath);
+        return { data: JSON.parse(data), filePath };
       }
       return null;
     } catch (e) {
