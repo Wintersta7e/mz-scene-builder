@@ -11,6 +11,11 @@ import { eventBus, Events } from '../event-bus.js';
 import { logger } from '../logger.js';
 import { renderProperties } from '../properties/index.js';
 
+/**
+ * @param {MouseEvent} e
+ * @param {TimelineEvent} evt
+ * @param {number} index
+ */
 function startTimelineDrag(e, evt, index) {
   if (e.button !== 0) return;
 
@@ -22,6 +27,7 @@ function startTimelineDrag(e, evt, index) {
   state.timelineDragStartX = e.clientX;
   state.timelineDragStartFrame = evt.startFrame || 0;
 
+  /** @param {MouseEvent} ev */
   const onDrag = (ev) => onTimelineDrag(ev);
   const onStop = () => stopTimelineDrag(onDrag, onStop);
 
@@ -31,6 +37,7 @@ function startTimelineDrag(e, evt, index) {
   e.stopPropagation();
 }
 
+/** @param {MouseEvent} e */
 function onTimelineDrag(e) {
   if (!state.timelineDragEvt) return;
 
@@ -46,12 +53,18 @@ function onTimelineDrag(e) {
 
   // Lightweight update: only move the dragged element instead of full DOM rebuild
   const elements = getElements();
-  const el = elements.timelineEvents.querySelector(`.event-block[data-event-index="${state.timelineDragIndex}"]`);
+  const el = /** @type {HTMLElement | null} */ (
+    elements.timelineEvents.querySelector(`.event-block[data-event-index="${state.timelineDragIndex}"]`)
+  );
   if (el) {
     el.style.left = `${newFrame * state.timelineScale}px`;
   }
 }
 
+/**
+ * @param {(ev: MouseEvent) => void} onDrag
+ * @param {() => void} onStop
+ */
 function stopTimelineDrag(onDrag, onStop) {
   const draggedEvt = state.timelineDragEvt;
   const draggedIdx = state.timelineDragIndex;
@@ -95,6 +108,7 @@ function stopTimelineDrag(onDrag, onStop) {
  * @returns {string | null} the field name on `evt` that holds its visual
  *   duration in frames, or null if the event type doesn't support resize.
  */
+/** @param {TimelineEvent} evt */
 function durationField(evt) {
   if (evt.type === 'wait') return 'frames';
   if (
@@ -171,6 +185,7 @@ function startTimelineResize(e, evt, index, edge) {
   state.timelineDragEvt = evt;
   state.timelineDragIndex = index;
 
+  /** @param {MouseEvent} ev */
   const onMove = (ev) => {
     const deltaPx = ev.clientX - startX;
     const deltaFrames = Math.round(deltaPx / state.timelineScale);

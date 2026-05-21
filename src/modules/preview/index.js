@@ -17,8 +17,10 @@ import { clamp, clearChildren, formatFrameNumber, formatFrameTime } from '../uti
 
 // Image path cache — cleared on project change, capped to prevent unbounded growth
 const IMAGE_PATH_CACHE_MAX = 500;
+/** @type {Map<string, string>} */
 const imagePathCache = new Map();
 let _renderInFlight = false;
+/** @type {number | null} */
 let _pendingFrame = null;
 
 function clearImagePathCache() {
@@ -304,6 +306,7 @@ function applyTintFilter(img, tint) {
   }
 }
 
+/** @param {number} frame */
 async function renderPreviewAtFrame(frame) {
   if (_renderInFlight) {
     _pendingFrame = frame;
@@ -314,6 +317,7 @@ async function renderPreviewAtFrame(frame) {
   return logger.timed(`renderPreviewAtFrame(frame=${frame})`, async () => renderPreviewAtFrameInner(frame));
 }
 
+/** @param {number} frame */
 async function renderPreviewAtFrameInner(frame) {
   try {
     updateSlateAndRec(frame);
@@ -335,16 +339,26 @@ async function renderPreviewAtFrameInner(frame) {
     gridEl.className = `preview-grid${state.gridVisible ? ' visible' : ''}`;
 
     // Build picture states
+    /**
+     * @typedef {{ eventIndex: number; imageName?: string; origin?: number;
+     *             x?: number; y?: number; scaleX?: number; scaleY?: number;
+     *             opacity?: number; blend?: number;
+     *             tint: { r: number; g: number; b: number; gray: number };
+     *             rotation: number; rotationSpeed: number; erased: boolean }} PictureState
+     */
+    /** @type {Record<number, PictureState>} */
     const pictureStates = {};
 
     for (let evtIdx = 0; evtIdx < state.events.length; evtIdx++) {
       const evt = state.events[evtIdx];
       const evtStart = evt.startFrame || 0;
       if (evtStart > frame) continue;
+      const pnum = evt.pictureNumber;
 
       switch (evt.type) {
         case 'showPicture':
-          pictureStates[evt.pictureNumber] = {
+          if (pnum === undefined) break;
+          pictureStates[pnum] = {
             eventIndex: evtIdx,
             imageName: evt.imageName,
             origin: evt.origin,
@@ -361,9 +375,10 @@ async function renderPreviewAtFrameInner(frame) {
           };
           break;
 
-        case 'movePicture':
-          if (pictureStates[evt.pictureNumber]) {
-            const s = pictureStates[evt.pictureNumber];
+        case 'movePicture': {
+          if (pnum === undefined) break;
+          const s = pictureStates[pnum];
+          if (s) {
             s.origin = evt.origin;
             s.x = evt.x;
             s.y = evt.y;
@@ -373,30 +388,39 @@ async function renderPreviewAtFrameInner(frame) {
             s.blend = evt.blend;
           }
           break;
+        }
 
-        case 'tintPicture':
-          if (pictureStates[evt.pictureNumber]) {
-            pictureStates[evt.pictureNumber].tint = {
-              r: evt.red,
-              g: evt.green,
-              b: evt.blue,
-              gray: evt.gray
+        case 'tintPicture': {
+          if (pnum === undefined) break;
+          const s = pictureStates[pnum];
+          if (s) {
+            s.tint = {
+              r: evt.red || 0,
+              g: evt.green || 0,
+              b: evt.blue || 0,
+              gray: evt.gray || 0
             };
           }
           break;
+        }
 
-        case 'rotatePicture':
-          if (pictureStates[evt.pictureNumber]) {
-            pictureStates[evt.pictureNumber].rotationSpeed = evt.speed;
-            pictureStates[evt.pictureNumber].rotation = evt.speed !== 0 ? (evt.speed > 0 ? 15 : -15) : 0;
+        case 'rotatePicture': {
+          if (pnum === undefined) break;
+          const s = pictureStates[pnum];
+          if (s) {
+            const speed = evt.speed || 0;
+            s.rotationSpeed = speed;
+            s.rotation = speed !== 0 ? (speed > 0 ? 15 : -15) : 0;
           }
           break;
+        }
 
-        case 'erasePicture':
-          if (pictureStates[evt.pictureNumber]) {
-            pictureStates[evt.pictureNumber].erased = true;
-          }
+        case 'erasePicture': {
+          if (pnum === undefined) break;
+          const s = pictureStates[pnum];
+          if (s) s.erased = true;
           break;
+        }
       }
     }
 
@@ -408,17 +432,19 @@ async function renderPreviewAtFrameInner(frame) {
     // Fetch image paths in parallel using cache
     const pathResults = await Promise.all(
       sortedPictures.map(async ([_num, ps]) => {
-        if (imagePathCache.has(ps.imageName)) {
-          return imagePathCache.get(ps.imageName);
+        const imageName = ps.imageName;
+        if (!imageName) return null;
+        if (imagePathCache.has(imageName)) {
+          return imagePathCache.get(imageName);
         }
-        const resolved = await api.invoke('get-image-path', ps.imageName);
+        const resolved = await api.invoke('get-image-path', imageName);
         if (resolved) {
           if (imagePathCache.size >= IMAGE_PATH_CACHE_MAX) {
             // Evict oldest entry
             const firstKey = imagePathCache.keys().next().value;
-            imagePathCache.delete(firstKey);
+            if (firstKey !== undefined) imagePathCache.delete(firstKey);
           }
-          imagePathCache.set(ps.imageName, resolved);
+          imagePathCache.set(imageName, resolved);
         }
         return resolved;
       })

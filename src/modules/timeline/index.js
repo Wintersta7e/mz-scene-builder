@@ -44,6 +44,7 @@ const POINT_EVENT_TYPES = new Set(['rotatePicture', 'erasePicture']);
  * lane clip count (callers need both — renderLanesCol displays clip
  * counts, renderEventBlocks needs the sub-lane row height).
  */
+/** @param {TimelineEvent[]} events */
 function computeSubLaneAssignments(events) {
   const grouped = LANE_LABELS.map(() => /** @type {Array<*>} */ ([]));
   for (const ev of events) {
@@ -73,6 +74,7 @@ function computeSubLaneAssignments(events) {
 // Pure label helper
 // ============================================
 
+/** @param {TimelineEvent} evt */
 function getTimelineEventLabel(evt) {
   switch (evt.type) {
     case 'showPicture':
@@ -103,6 +105,10 @@ function getTimelineEventLabel(evt) {
 /**
  * Render the 4 lane heads in the lanes column. Each shows: lane-colored
  * swatch, name, and mono `CODE · N clip(s)` line.
+ */
+/**
+ * @param {number[]} subLaneCounts
+ * @param {number[]} clipCounts
  */
 function renderLanesCol(subLaneCounts, clipCounts) {
   const els = getElements();
@@ -166,6 +172,10 @@ function renderRuler() {
  * (Rotate, Erase) are narrow (22px) chips with a downward triangle (drawn
  * by CSS via .is-point::after). Duration events get edge handles for
  * resize. Selected event gets the `.is-selected` class.
+ */
+/**
+ * @param {Map<TimelineEvent, number>} assignments
+ * @param {number[]} counts
  */
 function renderEventBlocks(assignments, counts) {
   const els = getElements();
@@ -307,6 +317,7 @@ function initTimeline() {
     e.preventDefault();
     e.stopPropagation();
 
+    /** @param {MouseEvent} mouseEvt */
     function move(mouseEvt) {
       // Read geometry and scale fresh each tick: panel resize or a future
       // timeline-zoom feature would otherwise leave cached values stale.
@@ -366,7 +377,9 @@ function updateTimelineCursor() {
   if (_lastCursorSelectedIndex !== state.selectedEventIndex) {
     _lastCursorSelectedIndex = state.selectedEventIndex;
     const selectedKey = String(state.selectedEventIndex);
-    const prevSelected = els.timelineEvents.querySelector('.event-block.is-selected');
+    const prevSelected = /** @type {HTMLElement | null} */ (
+      els.timelineEvents.querySelector('.event-block.is-selected')
+    );
     if (prevSelected && prevSelected.dataset.eventIndex !== selectedKey) {
       prevSelected.classList.remove('is-selected');
     }
@@ -379,6 +392,7 @@ function updateTimelineCursor() {
   updateMinimapCursor();
 }
 
+/** @param {MouseEvent} e */
 function onTimelineClick(e) {
   const elements = getElements();
   const rect = elements.timelineTrack.getBoundingClientRect();

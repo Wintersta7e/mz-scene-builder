@@ -79,6 +79,10 @@ function closeImagePicker() {
   }
 }
 
+/**
+ * @param {HTMLElement} target
+ * @param {string} text
+ */
 function setPlaceholder(target, text) {
   clearChildren(target);
   const p = document.createElement('p');
@@ -120,6 +124,10 @@ async function loadThumb(tile) {
   }
 }
 
+/**
+ * @param {Array<any>} items
+ * @param {HTMLElement | null} [container]
+ */
 function renderPickerFolders(items, container = null) {
   const elements = getElements();
   const target = container ?? elements.pickerFolders;
@@ -164,7 +172,7 @@ function renderPickerFolders(items, container = null) {
           } else if (contents && !contents.error) {
             item.children = contents;
             renderPickerFolders(
-              contents.filter((c) => c.type === 'folder'),
+              contents.filter(/** @param {{ type: string }} c */ (c) => c.type === 'folder'),
               children
             );
           }
@@ -180,7 +188,7 @@ function renderPickerFolders(items, container = null) {
 
     if (item.children) {
       renderPickerFolders(
-        item.children.filter((c) => c.type === 'folder'),
+        item.children.filter(/** @param {{ type: string }} c */ (c) => c.type === 'folder'),
         children
       );
     }
@@ -189,6 +197,7 @@ function renderPickerFolders(items, container = null) {
   }
 }
 
+/** @param {string} folderPath */
 async function loadPickerImages(folderPath) {
   if (_thumbObserver) {
     _thumbObserver.disconnect();
@@ -205,7 +214,7 @@ async function loadPickerImages(folderPath) {
       return;
     }
 
-    const images = contents.filter((item) => item.type === 'file');
+    const images = contents.filter(/** @param {{ type: string }} item */ (item) => item.type === 'file');
     if (images.length === 0) {
       setPlaceholder(elements.pickerImages, 'No images in this folder');
       return;
@@ -238,6 +247,7 @@ async function loadPickerImages(folderPath) {
   }
 }
 
+/** @param {string} imagePath */
 function selectPickerImage(imagePath) {
   if (state.selectedEventIndex >= 0 && state.events[state.selectedEventIndex].type === 'showPicture') {
     saveState('change image');

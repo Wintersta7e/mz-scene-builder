@@ -346,10 +346,10 @@ function addSelectedImagesAsEvents() {
   if (state.selectedImages.size === 0) return;
 
   const elements = getElements();
-  const allItems = Array.from(elements.imageBrowser.querySelectorAll('.lib-item'));
+  const allItems = /** @type {HTMLElement[]} */ (Array.from(elements.imageBrowser.querySelectorAll('.lib-item')));
   const orderedPaths = allItems
-    .filter((item) => state.selectedImages.has(item.dataset.path))
-    .map((item) => item.dataset.path);
+    .filter((item) => item.dataset.path && state.selectedImages.has(item.dataset.path))
+    .map((item) => /** @type {string} */ (item.dataset.path));
 
   if (orderedPaths.length === 0) return;
 
@@ -375,8 +375,10 @@ function addSelectedImagesAsEvents() {
 
   logger.debug('Inserting', orderedPaths.length, 'images at frame', startFrame);
 
+  /** @type {TimelineEvent[]} */
   const addedEvents = [];
   orderedPaths.forEach((imagePath, index) => {
+    /** @type {TimelineEvent} */
     const evt = createDefaultEvent('showPicture');
     evt.pictureNumber = pictureNumber;
     evt.imageName = imagePath;
@@ -390,7 +392,7 @@ function addSelectedImagesAsEvents() {
   if (addedEvents.length > 0) {
     state.selectedEventIndex = state.events.indexOf(addedEvents[0]);
     // Jump playhead to the first added image so it shows in preview
-    state.currentFrame = addedEvents[0].startFrame;
+    state.currentFrame = addedEvents[0].startFrame || 0;
   }
 
   clearImageSelection();
