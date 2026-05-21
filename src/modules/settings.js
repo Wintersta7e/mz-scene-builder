@@ -5,40 +5,47 @@
 import { SETTINGS_KEY, MAX_RECENT_PROJECTS } from './state.js';
 
 // Simple path.basename replacement for browser context
+/** @param {string} p */
 function basename(p) {
   return p.split(/[/\\]/).pop() || p;
 }
 import { logger } from './logger.js';
 import { eventBus, Events } from './event-bus.js';
 
+/** @returns {{ recentProjects?: string[]; [key: string]: any }} */
 function getSettings() {
   try {
     const data = localStorage.getItem(SETTINGS_KEY);
     return data ? JSON.parse(data) : {};
   } catch (e) {
-    logger.warn('Failed to parse settings from localStorage:', e.message);
+    const msg = e instanceof Error ? e.message : String(e);
+    logger.warn('Failed to parse settings from localStorage:', msg);
     return {};
   }
 }
 
+/** @param {Record<string, any>} settings */
 function saveSettings(settings) {
   try {
     localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
   } catch (e) {
-    logger.warn('Failed to save settings to localStorage:', e.message);
+    const msg = e instanceof Error ? e.message : String(e);
+    logger.warn('Failed to save settings to localStorage:', msg);
   }
 }
 
+/** @returns {string[]} */
 function getRecentProjects() {
   const settings = getSettings();
   return settings.recentProjects || [];
 }
 
+/** @param {string} projPath */
 function addRecentProject(projPath) {
   const settings = getSettings();
   let recent = settings.recentProjects || [];
 
-  recent = recent.filter((p) => p !== projPath);
+  recent = recent.filter(/** @param {string} p */ (p) => p !== projPath);
   recent.unshift(projPath);
   recent = recent.slice(0, MAX_RECENT_PROJECTS);
 
@@ -62,21 +69,23 @@ function updateRecentProjectsDropdown() {
     return;
   }
 
-  recent.forEach((p) => {
-    const item = document.createElement('div');
-    item.className = 'dropdown-item';
-    item.textContent = basename(p);
-    item.title = p;
-    item.addEventListener('click', (e) => {
-      e.stopPropagation();
-      e.preventDefault();
-      // Close the dropdown right away so the user gets immediate
-      // feedback while the project loads in the background.
-      dropdown.classList.remove('is-open');
-      eventBus.emit(Events.OPEN_RECENT_PROJECT, p);
-    });
-    dropdown.appendChild(item);
-  });
+  recent.forEach(
+    /** @param {string} p */ (p) => {
+      const item = document.createElement('div');
+      item.className = 'dropdown-item';
+      item.textContent = basename(p);
+      item.title = p;
+      item.addEventListener('click', (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        // Close the dropdown right away so the user gets immediate
+        // feedback while the project loads in the background.
+        dropdown.classList.remove('is-open');
+        eventBus.emit(Events.OPEN_RECENT_PROJECT, p);
+      });
+      dropdown.appendChild(item);
+    }
+  );
 }
 
 function initRecentProjectsDropdown() {

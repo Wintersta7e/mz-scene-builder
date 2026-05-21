@@ -26,6 +26,7 @@ function updateSnapButton() {
   // Visual state is managed by refreshStageToggles in init.js via .is-on.
 }
 
+/** @param {number} value */
 function snapPosition(value) {
   if (!state.snapToGrid) return value;
   return Math.round(value / GRID_SIZE) * GRID_SIZE;

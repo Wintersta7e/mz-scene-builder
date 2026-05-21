@@ -31,10 +31,13 @@ const DEFAULT_DURATION = 60;
 // Central state object
 const state = {
   // Project
+  /** @type {string | null} */
   projectPath: null,
+  /** @type {any} */
   folderStructure: null,
 
   // Events
+  /** @type {TimelineEvent[]} */
   events: [],
   selectedEventIndex: -1,
 
@@ -45,19 +48,25 @@ const state = {
 
   // Playback
   isPlaying: false,
+  /** @type {ReturnType<typeof setInterval> | null} */
   playbackInterval: null,
   waitingForTextClick: false,
+  /** @type {Set<number>} */
   processedTextEvents: new Set(),
 
   // Undo/Redo
+  /** @type {Array<{ events: TimelineEvent[]; selectedEventIndex: number; currentFrame: number; timelineLength: number; description: string }>} */
   undoStack: [],
+  /** @type {Array<{ events: TimelineEvent[]; selectedEventIndex: number; currentFrame: number; timelineLength: number; description: string }>} */
   redoStack: [],
 
   // Dirty state
   isDirty: false,
+  /** @type {string | null} */
   currentScenePath: null,
 
   // Autosave
+  /** @type {ReturnType<typeof setInterval> | null} */
   autosaveInterval: null,
 
   // Grid
@@ -69,14 +78,18 @@ const state = {
   screenHeight: 624,
 
   // Clipboard
+  /** @type {TimelineEvent | null} */
   clipboardEvent: null,
 
   // Image selection
+  /** @type {Set<string>} */
   selectedImages: new Set(),
+  /** @type {string | null} */
   lastClickedImage: null,
 
   // Library filter (non-serialized; resets on project reload)
-  libraryActiveFolder: /** @type {string | null} */ (null),
+  /** @type {string | null} */
+  libraryActiveFolder: null,
 
   // Drag state
   isDragging: false,
@@ -84,11 +97,14 @@ const state = {
   dragStartY: 0,
   dragStartEvtX: 0,
   dragStartEvtY: 0,
+  /** @type {HTMLElement | null} */
   dragImg: null,
+  /** @type {TimelineEvent | null} */
   dragEvt: null,
   dragEventIndex: -1,
 
   // Timeline drag
+  /** @type {TimelineEvent | null} */
   timelineDragEvt: null,
   timelineDragIndex: -1,
   timelineDragStartX: 0,

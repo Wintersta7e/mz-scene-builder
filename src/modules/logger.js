@@ -26,6 +26,7 @@ const LONG_TASK_THRESHOLD_MS = 50;
 // initial layout).
 const STARTUP_GRACE_MS = 2000;
 
+/** @param {unknown} value */
 function safeStringify(value) {
   if (value === null || value === undefined) return String(value);
   const t = typeof value;
@@ -43,6 +44,10 @@ function safeStringify(value) {
   }
 }
 
+/**
+ * @param {'debug' | 'info' | 'warn' | 'error'} level
+ * @param {unknown[]} args
+ */
 function forwardToMain(level, args) {
   if (typeof window === 'undefined' || !window.api || !window.api.log) return;
   try {
@@ -53,44 +58,47 @@ function forwardToMain(level, args) {
 }
 
 const logger = {
+  /** @param {keyof typeof LOG_LEVELS} level */
   setLevel(level) {
     logLevel = LOG_LEVELS[level] ?? LOG_LEVELS.WARN;
   },
 
-  debug(...args) {
+  debug(/** @type {unknown[]} */ ...args) {
     if (logLevel <= LOG_LEVELS.DEBUG) {
       console.log('%c[DEBUG]', 'color: #888', ...args);
       forwardToMain('debug', args);
     }
   },
 
-  info(...args) {
+  info(/** @type {unknown[]} */ ...args) {
     if (logLevel <= LOG_LEVELS.INFO) {
       console.log('%c[INFO]', 'color: #4a9', ...args);
       forwardToMain('info', args);
     }
   },
 
-  warn(...args) {
+  warn(/** @type {unknown[]} */ ...args) {
     if (logLevel <= LOG_LEVELS.WARN) {
       console.warn('%c[WARN]', 'color: #f90', ...args);
       forwardToMain('warn', args);
     }
   },
 
-  error(...args) {
+  error(/** @type {unknown[]} */ ...args) {
     if (logLevel <= LOG_LEVELS.ERROR) {
       console.error('%c[ERROR]', 'color: #f44', ...args);
       forwardToMain('error', args);
     }
   },
 
+  /** @param {string} label */
   time(label) {
     if (logLevel <= LOG_LEVELS.DEBUG) {
       console.time(label);
     }
   },
 
+  /** @param {string} label */
   timeEnd(label) {
     if (logLevel <= LOG_LEVELS.DEBUG) {
       console.timeEnd(label);
@@ -126,14 +134,15 @@ const logger = {
       report();
       throw err;
     }
-    if (result && typeof result.then === 'function') {
+    const maybePromise = /** @type {any} */ (result);
+    if (maybePromise && typeof maybePromise.then === 'function') {
       return /** @type {T} */ (
-        result.then(
-          (v) => {
+        maybePromise.then(
+          (/** @type {any} */ v) => {
             report();
             return v;
           },
-          (e) => {
+          (/** @type {any} */ e) => {
             report();
             throw e;
           }
