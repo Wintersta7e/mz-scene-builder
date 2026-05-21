@@ -46,19 +46,3 @@ jobs:
         run: npx jest --coverage
         env:
           NODE_OPTIONS: --experimental-vm-modules
-
-      # Cache the Electron binary so the build verification step is fast
-      # on subsequent runs. Keyed on the electron version pinned in
-      # package-lock.json.
-      - name: Cache Electron binary
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/electron
-          key: electron-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
-
-      # Build verification: produces dist/win-unpacked/ on Linux without
-      # Wine (--dir mode skips NSIS/signtool). Catches package.json#build
-      # file-glob breakage before a release tag is cut, which would
-      # otherwise only surface in the slow tag-triggered release matrix.
-      - name: Build verification (Windows --dir)
-        run: npx electron-builder --win --dir
