@@ -93,7 +93,7 @@ async function checkAutosaveRecovery(openProjectPath) {
         sanitizeEvents(state.events);
         syncInsertOrderCounter(state.events);
         state.timelineLength = data.timelineLength || 300;
-        elements.timelineLengthInput.value = state.timelineLength;
+        elements.timelineLengthInput.value = String(state.timelineLength);
 
         eventBus.emit(Events.RENDER);
         markDirty();

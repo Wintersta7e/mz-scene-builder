@@ -39,6 +39,7 @@ const NUMERIC_FIELDS = [
   '_insertOrder'
 ];
 
+/** @param {TimelineEvent[]} events */
 function sanitizeEvents(events) {
   for (const evt of events) {
     for (const field of NUMERIC_FIELDS) {
@@ -50,8 +51,12 @@ function sanitizeEvents(events) {
 }
 
 // Reset insert order counter based on loaded events
+/** @param {TimelineEvent[]} events */
 function syncInsertOrderCounter(events) {
-  const maxOrder = events.reduce((max, e) => Math.max(max, e._insertOrder || 0), 0);
+  const maxOrder = events.reduce(
+    (/** @type {number} */ max, /** @type {TimelineEvent} */ e) => Math.max(max, e._insertOrder || 0),
+    0
+  );
   resetInsertOrderCounter(maxOrder);
 }
 
@@ -64,6 +69,7 @@ function initDragDrop() {
   document.addEventListener('drop', async (e) => {
     e.preventDefault();
     e.stopPropagation();
+    if (!e.dataTransfer) return;
 
     const files = Array.from(e.dataTransfer.files);
     const mzsceneFile = files.find((f) => f.name.endsWith('.mzscene'));
@@ -78,6 +84,7 @@ function initDragDrop() {
 }
 
 // Load scene from a File object (drag-drop)
+/** @param {File} file */
 async function loadSceneFromFile(file) {
   try {
     const elements = getElements();
@@ -87,7 +94,7 @@ async function loadSceneFromFile(file) {
     sanitizeEvents(state.events);
     syncInsertOrderCounter(state.events);
     state.timelineLength = data.timelineLength || 300;
-    elements.timelineLengthInput.value = state.timelineLength;
+    elements.timelineLengthInput.value = String(state.timelineLength);
     state.currentScenePath = file.name;
     eventBus.emit(Events.SCENE_PATH_CHANGED);
 
@@ -158,7 +165,7 @@ async function loadScene() {
     sanitizeEvents(state.events);
     syncInsertOrderCounter(state.events);
     state.timelineLength = sceneData.timelineLength || 300;
-    elements.timelineLengthInput.value = state.timelineLength;
+    elements.timelineLengthInput.value = String(state.timelineLength);
     state.currentScenePath = result.filePath;
     eventBus.emit(Events.SCENE_PATH_CHANGED);
     state.selectedEventIndex = state.events.length > 0 ? 0 : -1;

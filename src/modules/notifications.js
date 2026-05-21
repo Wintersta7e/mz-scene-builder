@@ -3,6 +3,7 @@
 // ============================================
 // Toast-style notifications for errors, warnings, and success messages
 
+/** @type {HTMLElement | null} */
 let notificationContainer = null;
 
 function ensureContainer() {
@@ -24,12 +25,18 @@ function ensureContainer() {
   return notificationContainer;
 }
 
+/**
+ * @param {string} message
+ * @param {'error' | 'warning' | 'success' | 'info'} [type]
+ * @param {number} [duration]
+ */
 function showNotification(message, type = 'info', duration = 5000) {
   const container = ensureContainer();
 
   const notification = document.createElement('div');
   notification.className = `notification notification-${type}`;
 
+  /** @type {Record<'error' | 'warning' | 'success' | 'info', { bg: string; border: string }>} */
   const colors = {
     error: { bg: 'rgba(239, 68, 68, 0.95)', border: '#dc2626' },
     warning: { bg: 'rgba(234, 179, 8, 0.95)', border: '#ca8a04' },
@@ -96,18 +103,22 @@ function showNotification(message, type = 'info', duration = 5000) {
   return notification;
 }
 
+/** @param {string} message */
 function showError(message) {
   return showNotification(message, 'error', 8000);
 }
 
+/** @param {string} message */
 function showWarning(message) {
   return showNotification(message, 'warning', 6000);
 }
 
+/** @param {string} message */
 function showSuccess(message) {
   return showNotification(message, 'success', 4000);
 }
 
+/** @param {string} message */
 function showInfo(message) {
   return showNotification(message, 'info', 5000);
 }

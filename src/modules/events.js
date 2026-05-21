@@ -9,6 +9,7 @@ import { sortEvents, getNextInsertOrder } from './utils.js';
 import { eventBus, Events } from './event-bus.js';
 import { logger } from './logger.js';
 
+/** @param {string} type */
 function getEventLane(type) {
   switch (type) {
     case 'showPicture':
@@ -28,6 +29,10 @@ function getEventLane(type) {
   }
 }
 
+/**
+ * @param {string} type
+ * @param {TimelineEvent} [evt]
+ */
 function getEventDuration(type, evt) {
   if (type === 'showText') return 1;
   if (type === 'erasePicture') return 1;
@@ -59,6 +64,7 @@ function getLastUsedPictureNumber() {
   return 1;
 }
 
+/** @param {string} type */
 function createDefaultEvent(type) {
   const baseProps = { startFrame: state.currentFrame, _insertOrder: getNextInsertOrder() };
 
@@ -152,6 +158,7 @@ function createDefaultEvent(type) {
   }
 }
 
+/** @param {string} type */
 function addEvent(type) {
   saveState(`add ${type}`);
   const evt = createDefaultEvent(type);
@@ -173,8 +180,10 @@ function addEvent(type) {
   eventBus.emit(Events.RENDER);
 }
 
+/** @param {string} imagePath */
 function addPictureEvent(imagePath) {
   saveState('add picture');
+  /** @type {TimelineEvent} */
   const evt = createDefaultEvent('showPicture');
   evt.imageName = imagePath;
   state.events.push(evt);
@@ -195,6 +204,7 @@ function deleteSelectedEvent() {
   }
 }
 
+/** @param {number} index */
 function selectEvent(index) {
   const elements = getElements();
   state.selectedEventIndex = index;

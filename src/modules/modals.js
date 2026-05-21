@@ -7,12 +7,15 @@ import { APP_VERSION } from './state.js';
 /**
  * Trap focus within a modal element.
  * Returns a cleanup function to remove the event listener.
+ *
+ * @param {HTMLElement} modal
  */
 function trapFocus(modal) {
+  /** @param {KeyboardEvent} e */
   const handler = (e) => {
     if (e.key !== 'Tab') return;
-    const focusable = modal.querySelectorAll(
-      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+    const focusable = /** @type {NodeListOf<HTMLElement>} */ (
+      modal.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])')
     );
     if (focusable.length === 0) return;
     const first = focusable[0];
@@ -36,9 +39,12 @@ function trapFocus(modal) {
 /**
  * Set up common modal behavior: ARIA, focus trap, Escape to close, backdrop click.
  * Returns a remove function that cleans up and restores focus.
+ *
+ * @param {HTMLElement} modal
+ * @param {string} label
  */
 function setupModal(modal, label) {
-  const previousFocus = document.activeElement;
+  const previousFocus = /** @type {HTMLElement | null} */ (document.activeElement);
 
   modal.setAttribute('role', 'dialog');
   modal.setAttribute('aria-modal', 'true');
@@ -49,7 +55,7 @@ function setupModal(modal, label) {
   const closeModal = () => {
     removeTrap();
     modal.remove();
-    if (previousFocus && previousFocus.focus) previousFocus.focus();
+    if (previousFocus && typeof previousFocus.focus === 'function') previousFocus.focus();
   };
 
   modal.querySelectorAll('.btn-close').forEach((btn) => {
@@ -101,7 +107,8 @@ function showAboutModal() {
   }
 
   document.body.appendChild(modal);
-  modal.querySelector('.btn-close').focus();
+  const closeBtn = /** @type {HTMLElement | null} */ (modal.querySelector('.btn-close'));
+  if (closeBtn) closeBtn.focus();
 }
 
 function showShortcutsModal() {
@@ -151,7 +158,8 @@ function showShortcutsModal() {
   setupModal(modal, 'Keyboard Shortcuts');
 
   document.body.appendChild(modal);
-  modal.querySelector('.btn-close').focus();
+  const closeBtn = /** @type {HTMLElement | null} */ (modal.querySelector('.btn-close'));
+  if (closeBtn) closeBtn.focus();
 }
 
 export { showAboutModal, showShortcutsModal, setupModal };

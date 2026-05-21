@@ -2,20 +2,91 @@
 // DOM Elements Cache
 // ============================================
 
-/** @type {Record<string, HTMLElement> | null} */
+/**
+ * @typedef {object} Elements
+ * @property {HTMLButtonElement} openProject
+ * @property {HTMLButtonElement} newScene
+ * @property {HTMLButtonElement} loadScene
+ * @property {HTMLButtonElement} saveScene
+ * @property {HTMLButtonElement} exportMap
+ * @property {HTMLButtonElement} quickExport
+ * @property {HTMLElement} imageBrowser
+ * @property {HTMLInputElement} imageSearch
+ * @property {HTMLElement} libraryFolders
+ * @property {HTMLElement} libraryCount
+ * @property {HTMLCanvasElement} previewCanvas
+ * @property {HTMLElement} stageVignette
+ * @property {HTMLElement} stageFlash
+ * @property {HTMLElement} stageSlate
+ * @property {HTMLElement} slateScene
+ * @property {HTMLElement} slateTake
+ * @property {HTMLElement} slateTime
+ * @property {HTMLElement} slateFrame
+ * @property {HTMLElement} stageRec
+ * @property {HTMLElement} stageRecLabel
+ * @property {HTMLElement} propertiesPanel
+ * @property {HTMLButtonElement} addPicture
+ * @property {HTMLButtonElement} addMove
+ * @property {HTMLButtonElement} addRotate
+ * @property {HTMLButtonElement} addTint
+ * @property {HTMLButtonElement} addErase
+ * @property {HTMLButtonElement} addText
+ * @property {HTMLButtonElement} addWait
+ * @property {HTMLButtonElement} addFlash
+ * @property {HTMLButtonElement} deleteEvent
+ * @property {HTMLButtonElement} duplicateEvent
+ * @property {HTMLButtonElement} clearScene
+ * @property {HTMLButtonElement} btnPlay
+ * @property {HTMLButtonElement} btnStop
+ * @property {HTMLButtonElement} btnSkipBack
+ * @property {HTMLButtonElement} btnSkipFwd
+ * @property {HTMLInputElement} timelineLengthInput
+ * @property {HTMLElement} timelineLanes
+ * @property {HTMLElement} timelineTrack
+ * @property {HTMLElement} timelineRuler
+ * @property {HTMLElement} timelineEvents
+ * @property {HTMLElement} timelineCursor
+ * @property {HTMLElement} timelineMinimap
+ * @property {HTMLElement} minimapTrack
+ * @property {HTMLElement} minimapViewport
+ * @property {HTMLElement} minimapCursor
+ * @property {HTMLElement} imagePickerModal
+ * @property {HTMLElement} pickerFolders
+ * @property {HTMLElement} pickerImages
+ * @property {HTMLElement} exportModal
+ * @property {HTMLButtonElement} doExport
+ * @property {HTMLElement} exportMapSelect
+ * @property {HTMLElement} exportEventSelect
+ * @property {HTMLElement} exportPageSelect
+ * @property {HTMLElement} sceneMeta
+ * @property {HTMLInputElement} sceneNameInput
+ * @property {HTMLElement} sceneFolderName
+ * @property {HTMLElement} sceneSavedTime
+ * @property {HTMLButtonElement} segDesign
+ * @property {HTMLButtonElement} segPreview
+ * @property {HTMLButtonElement} segInspect
+ * @property {HTMLButtonElement} btnSettings
+ * @property {HTMLButtonElement} btnRecent
+ * @property {HTMLElement} readoutFrame
+ * @property {HTMLElement} readoutTime
+ * @property {HTMLElement} readoutEvents
+ */
+
+/** @type {Elements | null} */
 let elements = null;
 
 function initElements() {
   /**
    * Resolve a required element by ID, throwing with a clear message if missing.
    * Used to satisfy strict TypeScript without scattering null checks.
+   * @template {HTMLElement} T
    * @param {string} id
-   * @returns {HTMLElement}
+   * @returns {T}
    */
   const $ = (id) => {
     const el = document.getElementById(id);
     if (!el) throw new Error(`Required DOM element #${id} not found in index.html`);
-    return el;
+    return /** @type {T} */ (el);
   };
 
   elements = {
