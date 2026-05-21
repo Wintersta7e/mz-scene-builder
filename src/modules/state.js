@@ -71,9 +71,6 @@ const state = {
   // Clipboard
   clipboardEvent: null,
 
-  // Image picker
-  imagePickerCallback: null,
-
   // Image selection
   selectedImages: new Set(),
   lastClickedImage: null,

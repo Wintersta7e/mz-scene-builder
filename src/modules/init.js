@@ -32,6 +32,9 @@ import {
   updateQuickExportButton
 } from './export.js';
 
+/** @type {ReturnType<typeof setInterval> | null} */
+let _savedTimeTicker = null;
+
 function render() {
   renderTimeline();
   renderProperties();
@@ -182,7 +185,7 @@ function wireTopRail() {
     refreshSavedTime();
   });
   // Tick every 10s so "12s ago" / "2m ago" stays current without re-emitting.
-  setInterval(refreshSavedTime, 10_000);
+  _savedTimeTicker = setInterval(refreshSavedTime, 10_000);
 
   // ----- Scene/project path → folder name + scene-name input default -----
   function refreshScenePath() {
@@ -198,7 +201,9 @@ function wireTopRail() {
   eventBus.on(Events.PROJECT_LOADED, refreshScenePath);
   refreshScenePath();
 
-  // ----- Segmented control (visual only — Plan F wires real behavior) -----
+  // ----- Segmented control: Design / Preview / Inspect mode switcher -----
+  // Each segment toggles a `mode-*` class on `.main`; the canvas reflows
+  // after the layout settles.
   /** @type {HTMLElement[]} */
   const segs = [els.segDesign, els.segPreview, els.segInspect];
   const mainEl = document.querySelector('.main');
@@ -219,9 +224,9 @@ function wireTopRail() {
     });
   }
 
-  // ----- Settings stub (Plan F provides the panel) -----
+  // ----- Settings button: panel not implemented yet -----
   els.btnSettings.addEventListener('click', () => {
-    logger.info('Settings panel TBD (Plan F)');
+    logger.debug('Settings panel not implemented');
   });
 
   // ----- Recent button toggles the recent-projects dropdown -----
@@ -434,6 +439,10 @@ function init() {
   window.addEventListener('beforeunload', () => {
     stopPlayback();
     stopAutosave();
+    if (_savedTimeTicker !== null) {
+      clearInterval(_savedTimeTicker);
+      _savedTimeTicker = null;
+    }
     teardownMinimapEvents();
   });
 
