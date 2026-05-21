@@ -48,6 +48,10 @@ function buildTextFrameMap() {
   return map;
 }
 
+/**
+ * @param {Map<number, number[]>} textFrameMap
+ * @param {number} frame
+ */
 function findUnprocessedTextAt(textFrameMap, frame) {
   const indices = textFrameMap.get(frame);
   if (!indices) return -1;

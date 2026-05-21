@@ -55,9 +55,9 @@ const state = {
   processedTextEvents: new Set(),
 
   // Undo/Redo
-  /** @type {Array<{ events: TimelineEvent[]; selectedEventIndex: number; currentFrame: number; timelineLength: number; description: string }>} */
+  /** @type {Array<{ events: TimelineEvent[]; selectedEventIndex: number; currentFrame: number; action?: string }>} */
   undoStack: [],
-  /** @type {Array<{ events: TimelineEvent[]; selectedEventIndex: number; currentFrame: number; timelineLength: number; description: string }>} */
+  /** @type {Array<{ events: TimelineEvent[]; selectedEventIndex: number; currentFrame: number; action?: string }>} */
   redoStack: [],
 
   // Dirty state
@@ -116,6 +116,7 @@ const state = {
   // Internal runtime flags (not serialized)
   _autosaveFailCount: 0,
   _arrowKeyUndoSaved: false,
+  /** @type {ReturnType<typeof setTimeout> | null} */
   _arrowKeyUndoTimer: null,
 
   // Export cache (prefetched data)

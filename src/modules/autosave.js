@@ -52,6 +52,7 @@ async function performAutosave() {
   }
 }
 
+/** @param {(path: string) => Promise<void> | void} openProjectPath */
 async function checkAutosaveRecovery(openProjectPath) {
   try {
     const exists = await window.api.invoke('autosave-exists');

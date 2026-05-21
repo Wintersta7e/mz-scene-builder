@@ -7,6 +7,7 @@ import { getElements } from './elements.js';
 import { logger } from './logger.js';
 import { eventBus, Events } from './event-bus.js';
 
+/** @param {string} actionName */
 function saveState(actionName) {
   const stateSnapshot = {
     action: actionName,
@@ -50,6 +51,7 @@ function undo() {
   state.redoStack.push(currentState);
 
   const prevState = state.undoStack.pop();
+  if (!prevState) return;
   state.events = prevState.events;
   state.selectedEventIndex = prevState.selectedEventIndex;
   state.currentFrame = prevState.currentFrame;
@@ -71,6 +73,7 @@ function redo() {
   state.undoStack.push(currentState);
 
   const nextState = state.redoStack.pop();
+  if (!nextState) return;
   state.events = nextState.events;
   state.selectedEventIndex = nextState.selectedEventIndex;
   state.currentFrame = nextState.currentFrame;
@@ -110,9 +113,15 @@ async function checkUnsavedChanges() {
   return result === 'Continue';
 }
 
+/**
+ * @param {string} title
+ * @param {string} message
+ * @param {string[]} buttons
+ * @returns {Promise<string>}
+ */
 function showConfirmDialog(title, message, buttons) {
   return new Promise((resolve) => {
-    const previousFocus = document.activeElement;
+    const previousFocus = /** @type {HTMLElement | null} */ (document.activeElement);
     const modal = document.createElement('div');
     modal.className = 'modal';
 
@@ -138,12 +147,14 @@ function showConfirmDialog(title, message, buttons) {
     btnContainer.style.cssText = 'display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;';
 
     // Mutual references between closeModal and handleKeydown require forward declaration
+    /** @type {(e: KeyboardEvent) => void} */
     let handleKeydown; // eslint-disable-line prefer-const -- assigned below, used in closeModal
 
+    /** @param {string} result */
     const closeModal = (result) => {
       modal.removeEventListener('keydown', handleKeydown);
       modal.remove();
-      if (previousFocus) previousFocus.focus();
+      if (previousFocus && typeof previousFocus.focus === 'function') previousFocus.focus();
       resolve(result);
     };
 

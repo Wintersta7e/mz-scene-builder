@@ -31,17 +31,21 @@ function isEditableTarget(target) {
   return false;
 }
 
+/** @type {(() => void) | null} */
 let saveSceneCallback = null;
 
+/** @param {() => void} callback */
 function setSaveCallback(callback) {
   saveSceneCallback = callback;
 }
 
+/** @param {KeyboardEvent} e */
 function handleKeyboardMove(e) {
   const elements = getElements();
+  const target = /** @type {HTMLElement | null} */ (e.target);
 
   // Don't handle if typing in an input/textarea
-  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') {
+  if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT')) {
     return;
   }
 
@@ -117,7 +121,7 @@ function handleKeyboardMove(e) {
     if (state.selectedEventIndex >= 0) {
       e.preventDefault();
       state.clipboardEvent = JSON.parse(JSON.stringify(state.events[state.selectedEventIndex]));
-      logger.debug('Copied event:', state.clipboardEvent.type);
+      if (state.clipboardEvent) logger.debug('Copied event:', state.clipboardEvent.type);
     }
     return;
   }
@@ -183,15 +187,19 @@ function handleKeyboardMove(e) {
   if (!state._arrowKeyUndoSaved) {
     saveState('move image with arrow keys');
     state._arrowKeyUndoSaved = true;
-    // Clear the flag after a pause in arrow key input
-    clearTimeout(state._arrowKeyUndoTimer);
   }
-  clearTimeout(state._arrowKeyUndoTimer);
+  if (state._arrowKeyUndoTimer !== null) clearTimeout(state._arrowKeyUndoTimer);
   state._arrowKeyUndoTimer = setTimeout(() => {
     state._arrowKeyUndoSaved = false;
   }, 500);
 
   const step = e.shiftKey ? 10 : 1;
+
+  // Seed missing x/y from showPicture defaults so the arrow handler can
+  // always nudge a valid number; surfaces under strict tsc that x/y are
+  // optional on the TimelineEvent shape.
+  if (typeof evt.x !== 'number') evt.x = 0;
+  if (typeof evt.y !== 'number') evt.y = 0;
 
   switch (e.key) {
     case 'ArrowUp':
@@ -211,17 +219,19 @@ function handleKeyboardMove(e) {
 
   // Update image position directly
   const scale = getPreviewScale();
-  const imgEl = elements.previewCanvas.querySelector(`img[data-event-index="${state.selectedEventIndex}"]`);
+  const imgEl = /** @type {HTMLElement | null} */ (
+    elements.previewCanvas.querySelector(`img[data-event-index="${state.selectedEventIndex}"]`)
+  );
   if (imgEl) {
     imgEl.style.left = `${evt.x * scale}px`;
     imgEl.style.top = `${evt.y * scale}px`;
   }
 
   // Update properties panel
-  const xInput = document.getElementById('prop-x');
-  const yInput = document.getElementById('prop-y');
-  if (xInput) xInput.value = evt.x;
-  if (yInput) yInput.value = evt.y;
+  const xInput = /** @type {HTMLInputElement | null} */ (document.getElementById('prop-x'));
+  const yInput = /** @type {HTMLInputElement | null} */ (document.getElementById('prop-y'));
+  if (xInput) xInput.value = String(evt.x);
+  if (yInput) yInput.value = String(evt.y);
 }
 
 export { handleKeyboardMove, setSaveCallback };

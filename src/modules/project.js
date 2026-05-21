@@ -30,6 +30,7 @@ async function openProject() {
   }
 }
 
+/** @param {string} projPath */
 async function openProjectPath(projPath) {
   try {
     const result = await api.invoke('set-project-path', projPath);
@@ -85,6 +86,7 @@ async function prefetchMaps() {
   }
 }
 
+/** @param {boolean} enabled */
 function enableButtons(enabled) {
   const elements = getElements();
   elements.newScene.disabled = !enabled;
