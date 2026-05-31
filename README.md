@@ -1,5 +1,8 @@
 # Timeline Scene Builder
 
+> [!NOTE]
+> **This project is archived and no longer actively maintained.** The repository is read-only — issues and pull requests are closed. The app is feature-complete and remains fully functional at its last release ([v2.0.0](https://github.com/Wintersta7e/mz-scene-builder/releases/tag/v2.0.0)). Feel free to fork it to continue development.
+
 A visual timeline editor for creating cutscenes and picture sequences for RPG Maker MZ. Arrange pictures, effects, and text on a frame-based timeline, then export directly to RPG Maker event commands.
 
 ![Electron](https://img.shields.io/badge/Electron-42-47848F?logo=electron)
